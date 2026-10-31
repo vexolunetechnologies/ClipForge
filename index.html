@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<!--
+  ClipForge Studio: one single page (HTML + CSS + JavaScript in one file)
+  Turns a long video into shorts, makes trailers, and animates pictures.
+  Everything runs inside the browser; videos never leave the device.
+
+  FILE MAP (search for these markers):
+    1. HEAD    page title and fonts
+    2. STYLE   all CSS (look and layout)
+    3. BODY    all HTML (page structure)
+    4. SCRIPT  main JavaScript (app logic), section list at its top
+    5. SCRIPT  Image Animator (separate small tool)
+    6. SCRIPT  Video Reverser (separate small tool, last script block)
+
+  Libraries (mp4-muxer, MediaPipe face detector, Whisper) are loaded from CDNs
+  only when needed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ClipForge Studio – Long video to Shorts</title>
+<!-- ===== CSS: look and layout ===== -->
+<style>
+
+/* ===== THEME COLOURS (CSS variables)
+   Light colours by default; dark colours follow the device setting, or the
+   theme button (data-theme="dark" / "light" on <html>). ===== */
+:root {
+  --bg: #fafaf7;
+  --card: #fff;
+  --tx: #1c1b18;
+  --mu: #6b675e;
+  --bd: #e4e1d8;
+  --ac: #d9480f;
+  --acx: #fff;
+  --ft: #16150f;
+  --ftx: #cfcabd;
+}
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme=light]) {
+    --bg: #121211;
+    --card: #1d1c1a;
+    --tx: #f1efe8;
+    --mu: #a09b8f;
+    --bd: #33312d;
+    --ac: #ff7a3d;
+    --acx: #141413;
+    --ft: #0b0b0a;
+  }
+}
+:root[data-theme=dark] {
+  --bg: #121211;
+  --card: #1d1c1a;
+  --tx: #f1efe8;
+  --mu: #a09b8f;
+  --bd: #33312d;
+  --ac: #ff7a3d;
+  --acx: #141413;
+  --ft: #0b0b0a;
+}
+
+/* ===== BASE STYLES: box sizing, page font, links ===== */
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 70px;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font: 16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+a {
+  color: inherit;
+}
+
+/* ===== HEADER AND NAVIGATION: sticky top bar, logo, menu, privacy pill, theme button ===== */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--bd);
+  padding-top: env(safe-area-inset-top,0px);
+}
+.nav {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 18px;
+  text-decoration: none;
+}
+.nav nav {
+  margin-left: auto;
+  display: flex;
+  gap: 18px;
+  font-size: 14px;
+}
+.nav nav a {
+  text-decoration: none;
+  color: var(--mu);
+}
+.nav nav a:hover {
+  color: var(--tx);
+}
+.pill {
+  font-size: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: var(--mu);
+  white-space: nowrap;
+}
+.tbtn {
+  background: transparent;
+  border: 1px solid var(--bd);
+  color: var(--tx);
+  border-radius: 999px;
+  width: 36px;
+  height: 32px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.tbtn:focus-visible,
+.chip:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 2px;
+}
+@media (max-width:600px) {
+  .nav {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .nav nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+    gap: 16px;
+    padding-bottom: 2px;
+    white-space: nowrap;
+  }
+  .pill {
+    margin-left: auto;
+  }
+}
+
+/* ===== PAGE LAYOUT AND HERO: centred column and the big heading at the top ===== */
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+.hero {
+  padding: 34px 0 18px;
+}
+.hero h1 {
+  font-size: clamp(28px,6vw,44px);
+  line-height: 1.1;
+  margin: 0 0 10px;
+  letter-spacing: -.02em;
+}
+.hero p {
+  color: var(--mu);
+  max-width: 560px;
+  margin: 0;
+}
+
+/* ===== CARDS, UPLOAD BOX AND SOURCE VIDEO: white panels, the "Choose a video" drop area, the video player ===== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 16px 0;
+}
+.drop {
+  display: block;
+  text-align: center;
+  padding: 30px 14px;
+  border: 2px dashed var(--bd);
+  border-radius: 14px;
+  cursor: pointer;
+  color: var(--mu);
+}
+.drop b {
+  color: var(--tx);
+  display: block;
+  font-size: 17px;
+  margin-bottom: 4px;
+}
+input[type=file] {
+  display: none;
+}
+video#src {
+  width: 100%;
+  max-height: 240px;
+  border-radius: 10px;
+  background: #000;
+}
+
+/* ===== FORM LABELS, OPTION CHIPS AND INPUTS: small headings, rows of chips (the round option buttons), number/range boxes ===== */
+.lbl {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+.lbl small {
+  font-weight: 400;
+  color: var(--mu);
+}
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.chip {
+  border: 1px solid var(--bd);
+  background: transparent;
+  color: var(--tx);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.chip.on {
+  background: var(--ac);
+  color: var(--acx);
+  border-color: var(--ac);
+}
+input[type=number] {
+  width: 76px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--bd);
+  background: var(--bg);
+  color: var(--tx);
+  font: inherit;
+}
+input[type=range] {
+  width: 100%;
+  accent-color: var(--ac);
+}
+
+/* ===== BUTTONS: main action button, small buttons ===== */
+button.main {
+  width: 100%;
+  margin-top: 18px;
+  background: var(--ac);
+  color: var(--acx);
+  border: 0;
+  border-radius: 12px;
+  padding: 14px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: .5;
+}
+button.sm {
+  background: transparent;
+  border: 1px solid var(--bd);
+  color: var(--tx);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+button.sm.p {
+  background: var(--ac);
+  color: var(--acx);
+  border-color: var(--ac);
+}
+
+/* ===== PROGRESS BAR, NOTES AND UTILITY CLASSES (.hide hides an element) ===== */
+.bar {
+  height: 6px;
+  background: var(--bd);
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--ac);
+  transition: width .2s;
+}
+.note {
+  color: var(--mu);
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+.hide {
+  display: none;
+}
+
+/* ===== RESULT LIST: one row per short (thumbnail, score, tags) ===== */
+.clip {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--bd);
+}
+.clip:first-child {
+  border-top: 0;
+}
+.thumb {
+  width: 58px;
+  height: 102px;
+  border-radius: 8px;
+  background: #000;
+  object-fit: cover;
+  flex: none;
+}
+.info {
+  flex: 1;
+  min-width: 0;
+}
+.info b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.info span.t {
+  color: var(--mu);
+  font-size: 13px;
+}
+.score {
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--ac);
+  color: var(--acx);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.tag {
+  font-size: 11px;
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  padding: 1px 6px;
+  color: var(--mu);
+  font-weight: 400;
+}
+
+/* ===== HOME PAGE SECTIONS: "How it works", "Features" grids, FAQ ===== */
+h2 {
+  font-size: 22px;
+  margin: 40px 0 4px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(210px,1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.grid .card {
+  margin: 0;
+}
+.grid h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+.grid p {
+  margin: 0;
+  color: var(--mu);
+  font-size: 14px;
+}
+.num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ac);
+  color: var(--acx);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+details {
+  border-bottom: 1px solid var(--bd);
+  padding: 12px 0;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+details p {
+  color: var(--mu);
+  margin: 8px 0 0;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  margin-top: 56px;
+  background: var(--ft);
+  color: var(--ftx);
+  padding: 36px 0 calc(24px + env(safe-area-inset-bottom,0px));
+}
+.fg {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width:600px) {
+  .fg {
+    grid-template-columns: 1fr 1fr;
+  }
+  .fg>:first-child {
+    grid-column: 1/-1;
+  }
+}
+footer h4 {
+  margin: 0 0 10px;
+  color: #fff;
+  font-size: 14px;
+}
+footer a {
+  display: block;
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: var(--ftx);
+}
+footer a:hover {
+  color: #fff;
+}
+footer .brand {
+  color: #fff;
+}
+footer p {
+  font-size: 14px;
+  margin: 10px 0 0;
+  max-width: 320px;
+}
+.copy {
+  border-top: 1px solid #2c2a25;
+  margin-top: 26px;
+  padding-top: 16px;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ===== LIVE PREVIEW CANVAS (the small 9:16 preview) ===== */
+#cv {
+  display: block;
+  width: 120px;
+  height: auto;
+  border-radius: 10px;
+  background: #000;
+  margin-top: 6px;
+}
+
+/* ===== TOOL CARDS AND PER-TOOL VISIBILITY
+   Shows or hides parts of the page depending on the selected tool
+   (shorts / trailer / animator) using body[data-tool] and body.solo. ===== */
+.tools {
+  grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+}
+.toolcard {
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--tx);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--bd);
+}
+.toolcard:hover,
+.toolcard:focus-visible {
+  border-color: var(--ac);
+}
+.toolcard ul {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+  color: var(--mu);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ttag {
+  font-size: 12px;
+  color: var(--ac);
+  font-weight: 700;
+}
+.toolcard .go {
+  font-weight: 700;
+  margin-top: auto;
+}
+#tooltabs {
+  display: none;
+}
+.toolcard {
+  text-decoration: none;
+}
+.soloonly {
+  display: none;
+}
+.solo .soloonly {
+  display: inline-block;
+  margin: 6px 0 10px;
+  font-weight: 700;
+}
+body:not(.solo) #tool {
+  display: none;
+}
+.solo .hero,
+.solo #tools {
+  display: none;
+}
+body[data-tool=trailer] #soBox,
+body[data-tool=trailer] #res,
+body[data-tool=trailer] #capnote,
+body[data-tool=trailer] #pnote {
+  display: none!important;
+}
+body[data-tool=shorts] #trl,
+body[data-tool=shorts] .toBox {
+  display: none!important;
+}
+#iaTool {
+  display: none;
+}
+body.solo[data-tool=animator] #iaTool {
+  display: block;
+}
+body[data-tool=animator] #tool {
+  display: none!important;
+}
+
+/* ===== ADVANCED OPTIONS PANEL AND THE [hidden] ATTRIBUTE ===== */
+#adv {
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 12px 0;
+}
+#adv>summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#adv[open]>summary {
+  margin-bottom: 8px;
+}
+body[data-tool=shorts] #logoTrailer {
+  display: none;
+}
+[hidden] {
+  display: none!important;
+}
+/* ===== SAVED-PLAN NOTICE ===== */
+.restore {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+/* ===== VIDEO REVERSER: only visible for #reverse ===== */
+#rvTool {
+  display: none;
+}
+body.solo[data-tool=reverse] #rvTool {
+  display: block;
+}
+body[data-tool=reverse] #tool {
+  display: none!important;
+}
+</style>
+<!-- Fonts: Noto Naskh Arabic (Urdu / Arabic) and Noto Sans Devanagari (Hindi) for the captions -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@700&family=Noto+Sans+Devanagari:wght@700&display=swap" rel="stylesheet">
+</head>
+<body data-tool="shorts">
+<!-- ===== HTML: page structure ===== -->
+<!-- ===== SITE HEADER: logo, menu links, privacy badge, light/dark theme button ===== -->
+<header><div class="nav">
+ <a class="brand" href="#top"><svg width="26" height="26" viewBox="0 0 26 26"><rect x="7" y="1" width="12" height="24" rx="3" fill="var(--ac)"/><path d="M11 9l6 4-6 4z" fill="var(--acx)"/></svg>ClipForge Studio</a>
+ <nav><a href="#tools">Tools</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#faq">FAQ</a></nav>
+ <span class="pill">Videos stay on your device</span><button class="tbtn" id="theme" type="button" aria-label="Switch light or dark theme" title="Switch theme">◐</button></div></header>
+
+<!-- ===== PAGE WRAPPER: everything below until the footer sits in this centred column ===== -->
+<div class="wrap" id="top">
+<!-- ===== HERO: main heading and one-line description ===== -->
+<section class="hero"><h1>Shorts, trailers and picture videos.</h1>
+<p>Pick a tool. Everything runs in your browser and your video stays on your device.</p></section>
+<!-- ===== TOOL PICKER: four cards (Shorts, Trailer, Image Animator, Reverse Video) shown on the home view ===== -->
+<section id="tools"><div class="grid tools">
+ <a class="card toolcard" href="#shorts"><span class="ttag">9:16 · vertical</span><h3>Long Video → Shorts</h3><ul><li>Best moments spread across the whole video</li><li>Smart reframe that follows faces, steady per shot</li><li>Auto captions: English, Urdu, Hindi (Whisper, on device)</li><li>Dialogue-only trim: cuts the gaps between spoken lines</li><li>Skips scenes with logos and sponsor banners</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard" href="#trailer"><span class="ttag">16:9 · wide or 9:16</span><h3>Trailer / Promo</h3><ul><li>45, 60 or 90 second trailer from the strongest moments</li><li>Title, tagline and “Releasing on” end card (your text)</li><li>Built-in sound effects: whooshes, impacts, riser</li><li>Review and remove parts before exporting</li><li>Skips logo and banner scenes, avoids end spoilers</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard" href="#animator"><span class="ttag">9:16 · 16:9 · 1:1</span><h3>Image Animator</h3><ul><li>Add many pictures and describe the camera motion in a prompt</li><li>Crossfades between pictures, 2 minutes or any length you ask for</li><li>Built-in music and sound effects, chosen from your prompt</li><li>Record your voice or add a voiceover file</li><li>MP4 export (WebM if your browser cannot make MP4)</li><li>Camera motion only: people and objects in a picture do not move</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard" href="#reverse"><span class="ttag">Any size · MP4</span><h3>Reverse Video</h3><ul><li>Upload a video and get it back playing backwards</li><li>The sound can be reversed too, or removed</li><li>Pick the size: original, up to 1080p or up to 720p</li><li>Keeps your video's own frame rate</li><li>Everything stays on your device</li><li>Rebuilt frame by frame, so best for clips up to a few minutes</li></ul><span class="go">Open tool →</span></a>
+</div></section>
+
+<!-- ===== MAIN TOOL PANEL (Shorts and Trailer share this panel; the CSS shows or hides parts per tool) ===== -->
+<section id="tool">
+<a id="homeLink" href="#tools" class="soloonly">← All tools</a>
+<!-- Tool tabs (hidden by CSS; kept so the script can switch tools) -->
+<div class="row" id="tooltabs" role="tablist" aria-label="Tool"><button type="button" class="chip on" data-tool="shorts" role="tab">Long Video → Shorts</button><button type="button" class="chip" data-tool="trailer" role="tab">Trailer / Promo</button></div>
+<!-- Step 1: choose a video file (tap or drag and drop) -->
+<label class="drop" id="drop"><input type="file" id="file" accept="video/*"><b>Choose a video</b>tap here or drop a file</label>
+<!-- ...or paste a direct video link -->
+<div class="row" style="margin-top:10px"><input type="url" id="lnk" placeholder="…or paste a direct video link (.mp4)" style="flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit"><button class="sm" id="lgo">Load</button></div><p class="note" id="lmsg"></p>
+<!-- Work area: appears after a video is loaded -->
+<div id="work" class="hide">
+ <div class="card">
+  <video id="src" controls playsinline></video>
+<!-- Shorts options: how many, length, quality, captions -->
+<div id="soBox">
+  <div class="lbl">How many shorts do you want?</div>
+  <div class="row" id="counts"></div>
+  <div class="lbl">Length of each short</div><div class="row" id="lens"></div><input type="number" id="cl" class="hide" min="10" max="90" placeholder="Seconds (10–90)" style="width:150px;margin-top:8px">
+  <p class="note hide" id="fullnote"><b>Full video:</b> turns the whole video into one 9:16 file. Export runs in real time, so a 30-minute video takes about 30 minutes and this screen must stay on. Choose <b>Fit + blur</b> to keep the whole picture (center crop cuts the sides). Smart reframe, captions and dialogue-only trim scan the entire video, so turn them off for long videos. Very long videos can run out of browser memory; 720p and under 30 minutes is safest.</p>
+  
+  <div class="lbl">Export quality</div><div class="row"><button class="chip on" data-k="res" data-v="720">720p · faster</button><button class="chip" data-k="res" data-v="1080">1080p</button></div>
+  <div class="lbl">Add captions?</div>
+  <div class="row"><button class="chip on" data-k="cap" data-v="off">No captions</button><button class="chip" data-k="cap" data-v="auto">Auto-generate</button><button class="chip" data-k="cap" data-v="file">Subtitle file</button></div>
+  <div id="capbox" class="hide"><div class="row" style="margin-top:8px"><label class="chip" for="subf">Choose .srt / .vtt</label><input type="file" id="subf" accept=".srt,.vtt"></div></div>
+  <div id="autobox" class="hide"><div class="lbl">Speech language <small>(pick it for best accuracy)</small></div><div class="row"><button class="chip on" data-k="lang" data-v="auto">Auto</button><button class="chip" data-k="lang" data-v="english">English</button><button class="chip" data-k="lang" data-v="urdu">Urdu</button><button class="chip" data-k="lang" data-v="hindi">Hindi</button></div>
+  <button class="sm" id="capgo" hidden style="margin-top:10px">Generate captions for all shorts now</button></div>
+  <p class="note" id="capnote">Auto captions run Whisper on your device. Internet is needed once to download the model. For Urdu drama, choose Urdu and Better or Best.</p>
+<!-- More options. Only Framing, Crop position and Caption style are shown; the other settings keep their best default and are hidden (wrapped in hidden divs, so the script still finds them) -->
+<div id="adv">
+  <div hidden>
+  <div class="lbl">Clip selection</div>
+  <div class="row"><button class="chip on" data-k="mode" data-v="best">Best moments</button><button class="chip" data-k="mode" data-v="even">Split evenly</button></div>
+  <div id="depthbox">
+   <div class="lbl">Where to pick from</div>
+   <div class="row"><button class="chip on" data-k="vr" data-v="spread">Spread across video</button><button class="chip" data-k="vr" data-v="top">Highest scores only</button></div>
+   <div class="lbl">Skip intro &amp; end credits <small>(long videos)</small></div>
+   <div class="row"><button class="chip on" data-k="skip" data-v="on">Skip</button><button class="chip" data-k="skip" data-v="off">Use everything</button></div>
+   <div class="lbl">Analysis depth <small>(Deep also scans motion, slower)</small></div>
+   <div class="row"><button class="chip on" data-k="deep" data-v="0">Quick · speech &amp; audio</button><button class="chip" data-k="deep" data-v="1">Deep · + motion</button></div>
+   <p class="note">Speech-rich and emotional moments score higher than plain loud music. Very large files are scanned by sampling points across the video, which takes a few minutes. You can stop anytime.</p>
+  </div>
+  </div>
+  <div class="lbl">Framing</div>
+  <div class="row"><button class="chip on" data-k="fit" data-v="smart">Smart reframe</button><button class="chip" data-k="fit" data-v="crop">Center crop</button><button class="chip" data-k="fit" data-v="fit">Fit + blur</button></div>
+  <p class="note">Smart reframe first scans the short for faces and scene cuts, then keeps one steady crop per shot and hard-cuts to whoever is speaking, like an edited drama clip, instead of panning. The preview below stays centered. The scan adds a few seconds before recording.</p>
+  <div class="lbl">Trim silence <small>(skips quiet gaps while exporting)</small></div><div class="row"><button class="chip on" data-k="tr" data-v="off">Off</button><button class="chip" data-k="tr" data-v="gentle">Gentle</button><button class="chip" data-k="tr" data-v="normal">Normal</button><button class="chip" data-k="tr" data-v="strong">Aggressive</button><button class="chip" data-k="tr" data-v="speech">Dialogue only (speech AI)</button></div><p class="note">“Dialogue only” transcribes each short with Whisper and cuts the gaps between spoken lines, so it works even when music plays under the pauses. Pick the right speech language below for best results. First use downloads the speech model.</p>
+  <div id="posbox" class="hide"><div class="lbl">Crop position <small>(left ↔ right)</small></div><input type="range" id="pos" min="0" max="100" value="50"></div>
+  <div hidden><div class="lbl">Caption model <small>(bigger = more accurate, slower)</small></div><div class="row"><button class="chip" data-k="model" data-v="tiny">Fast ~40MB</button><button class="chip on" data-k="model" data-v="base">Better ~75MB</button><button class="chip" data-k="model" data-v="small">Best ~250MB</button></div></div>
+  <div id="stylebox" class="hide"><div class="lbl">Caption style</div><div class="row"><button class="chip on" data-k="cs" data-v="classic">Classic</button><button class="chip" data-k="cs" data-v="pop">Pop (yellow)</button><button class="chip" data-k="cs" data-v="box">Box</button><button class="chip" data-k="cs" data-v="karaoke">Karaoke</button><button class="chip" data-k="cs" data-v="hl">Highlight</button><button class="chip" data-k="cs" data-v="neon">Neon</button><button class="chip" data-k="cs" data-v="min">Minimal</button></div>
+  <p class="note">Karaoke: words turn yellow as they are spoken. Highlight: the spoken word sits on an orange box. Word timing is estimated from the length of each word.</p></div>
+  <div hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div></div>
+</div>
+<!-- Live preview of the 9:16 frame -->
+  <div class="lbl">Live preview <small>(9:16)</small></div><canvas id="cv" width="720" height="1280"></canvas><p class="note" id="pnote"></p>
+</div>
+<!-- Trailer only: short explanation of step 1 -->
+  <div class="toBox"><p class="note">Step 1: analysis scans the video for its strongest moments. Long episodes take a few minutes; you can stop anytime.</p></div>
+<!-- Trailer only: logo / banner scene option -->
+  <div id="logoTrailer" hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div>
+  <p class="note">Checks sample frames for static logos, sponsor banners and still title cards, and replaces those shorts with other picks. It cannot recognise a brand product that appears inside a normal scene.</p></div>
+<!-- Main button: analyze the video and create the plan, with progress bar and Stop button -->
+  <button class="main" id="go">Analyze &amp; create plan</button>
+  <div class="bar hide" id="pbar"><i></i></div><button class="sm hide" id="stop" style="margin-top:8px">Stop</button><button class="sm" id="skipAlign2" hidden style="margin-top:8px;margin-left:8px">Skip dialogue alignment</button><p class="note" id="msg"></p>
+ </div>
+<!-- Shorts result list (filled by JavaScript) -->
+ <div class="card hide" id="res"><div class="row" style="justify-content:space-between"><b id="rtitle">Your shorts</b><span class="row"><button class="sm hide" id="shuf">Different picks</button><button class="sm p" id="all">Export all</button></span></div><p class="note" id="sharenote">After exporting a short, use <b>Share…</b> (phone menu) or tap YouTube, Facebook, Instagram or TikTok. The file is saved first, then that site opens: choose the saved file there.</p><div id="list"></div></div>
+<!-- Trailer settings card: length, style, format, quality, texts, music (the plan is drawn into #trlbox) -->
+<div class="card hide" id="trl"><b>Trailer</b>
+ <p class="note">Builds a promo in three parts: scenes with dialogue, then a fast montage and a closing shot. The montage and closing shot use quiet moments and the original dialogue is muted there (add a music file below if you want sound under them). Scenes are chosen by sound, speech and motion, not by the story, so you can remove any part before exporting. The last 8% of the video is left out to avoid spoilers.</p>
+ <div class="row"><button class="chip" data-k="tl" data-v="45">45 s</button><button class="chip on" data-k="tl" data-v="60">60 s</button><button class="chip" data-k="tl" data-v="90">90 s</button><button class="sm p" id="trlgo">Make trailer</button><button class="sm" id="skipAlign" hidden>Skip dialogue alignment</button></div>
+ <div class="lbl">Style</div><div class="row"><button class="chip on" data-k="tstyle" data-v="clean">Clean promo</button><button class="chip" data-k="tstyle" data-v="cine">Cinematic</button></div>
+ <p class="note">Clean promo: straight cuts, the original sound only, no filters, effects or text unless you type text below. Cinematic: colour grade, effects, flashes and built-in music.</p>
+ <div class="lbl">Format</div><div class="row"><button class="chip on" data-k="tasp" data-v="wide">16:9 wide</button><button class="chip" data-k="tasp" data-v="tall">9:16 vertical</button></div>
+ <div class="lbl">Quality</div><div class="row"><button class="chip on" data-k="tres" data-v="720">720p · faster</button><button class="chip" data-k="tres" data-v="1080">1080p</button></div>
+ <label class="lbl" for="tWords">Montage words (optional, comma separated). They appear on short black cards between cuts. The app cannot match a word to what is on screen.</label><input id="tWords" maxlength="120" placeholder="e.g. LOVE, BETRAYAL, REVENGE" style="width:100%">
+ <div class="lbl">Dialogue language (for cutting at line ends)</div><div class="row"><button class="chip" data-k="lang" data-v="urdu">Urdu</button><button class="chip" data-k="lang" data-v="english">English</button><button class="chip" data-k="lang" data-v="hindi">Hindi</button><button class="chip on" data-k="lang" data-v="auto">Auto</button></div>
+ <div hidden>
+ <div class="lbl">Align dialogue cuts to full lines (Whisper: slow, can take several minutes on a phone, one-time ~75 MB download; off by default)</div><div class="row"><button class="chip" data-k="align" data-v="on">On</button><button class="chip on" data-k="align" data-v="off">Off</button></div>
+ <div class="lbl">Cinematic look <small>(color grade, vignette, slow push-in, flash cuts, 2.39:1 bars on wide)</small></div><div class="row"><button class="chip" data-k="cin" data-v="on">On</button><button class="chip on" data-k="cin" data-v="off">Off</button></div>
+ <div class="lbl">Sound effects &amp; score</div><div class="row"><button class="chip" data-k="sfx" data-v="on">On</button><button class="chip on" data-k="sfx" data-v="off">Off</button></div>
+ <div class="lbl">Text overlays</div><div class="row"><button class="chip on" data-k="ovl" data-v="on">On</button><button class="chip" data-k="ovl" data-v="off">Off</button></div>
+ </div>
+ <label class="lbl" for="tTag">Opening line (black card at the start)</label><input id="tTag" maxlength="80" placeholder="e.g. Some secrets burn forever" style="width:100%">
+ <label class="lbl" for="tCast">Middle card (before the fast montage)</label><input id="tCast" maxlength="80" placeholder="e.g. Muneeb Butt · Laiba Khan" style="width:100%">
+ <label class="lbl" for="tTitle">Title (final card)</label><input id="tTitle" maxlength="60" placeholder="e.g. Tapish" style="width:100%">
+ <label class="lbl" for="tRel">Release line (final card)</label><input id="tRel" maxlength="80" placeholder="e.g. Releasing 23rd June · 8 PM" style="width:100%">
+ <label class="lbl" for="tMusic">Your own music (optional)</label><input type="file" id="tMusic" accept="audio/*">
+ <p class="note">Without your own music the app plays a synthesized tension drone and heartbeat that speeds up. It is a simple built-in score, not a composed soundtrack, so a music file you have the rights to use will sound far better. Sound effects are simple sounds made inside the browser (a whoosh at each cut, an impact at the title and end card, a short riser before the end). They are mixed quietly under the dialogue. Text is typed by you; the app does not write it. Urdu text is supported.</p>
+ <div id="trlbox"></div></div>
+</div>
+</section>
+
+<!-- ===== IMAGE ANIMATOR: the iframe is created here by the second script ===== -->
+<section id="iaTool">
+<a id="iaBack" href="#tools" style="display:inline-block;margin:6px 0 10px;font-weight:700">← All tools</a>
+<p id="iaNote" role="status" style="margin:0 0 8px;font-size:14px"></p>
+<div id="iaBox"></div>
+</section>
+
+<!-- ===== VIDEO REVERSER: choose a video, get it back playing backwards (script: last block of this page) ===== -->
+<section id="rvTool">
+<a id="rvBack" href="#tools" style="display:inline-block;margin:6px 0 10px;font-weight:700">← All tools</a>
+<div class="card">
+<h3 style="margin-top:0">Reverse Video</h3>
+<label class="drop" id="rvDrop"><input type="file" id="rvFile" accept="video/*"><b>Choose a video</b>tap here or drop a file</label>
+<div id="rvWork" class="hide">
+<video id="rvSrc" controls playsinline preload="metadata" style="width:100%;max-height:50vh;border-radius:10px;background:#000;margin-top:12px"></video>
+<div class="lbl">Sound</div>
+<div class="row" id="rvSound"><button type="button" class="chip on" data-v="rev">Reverse the sound</button><button type="button" class="chip" data-v="off">No sound</button></div>
+<div class="lbl">Size</div>
+<div class="row" id="rvSize"><button type="button" class="chip" data-v="orig">Original</button><button type="button" class="chip on" data-v="1080">Up to 1080p</button><button type="button" class="chip" data-v="720">Up to 720p</button></div>
+<p class="note" id="rvEst"></p>
+<button class="main" id="rvGo">Reverse video</button>
+<div class="bar hide" id="rvBar"><i></i></div><button class="sm hide" id="rvStop" style="margin-top:8px">Stop</button>
+<p class="note" id="rvMsg" role="status"></p>
+<div id="rvOut" class="hide">
+<video id="rvRes" controls playsinline style="width:100%;max-height:50vh;border-radius:10px;background:#000"></video>
+<div class="row" style="margin-top:10px"><button class="main" id="rvSave">Save reversed video</button></div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how"><h2>How it works</h2>
+<div class="grid">
+<div class="card"><div class="num">1</div><h3>Pick a video</h3><p>Choose a file from your device. Nothing is uploaded anywhere.</p></div>
+<div class="card"><div class="num">2</div><h3>Analyze</h3><p>Speech activity, emotional peaks and strong openings are scored second by second.</p></div>
+<div class="card"><div class="num">3</div><h3>Export</h3><p>The top moments become 9:16 clips. Save each one to your device.</p></div></div></section>
+
+<!-- ===== FEATURES ===== -->
+<section id="features"><h2>Features</h2>
+<div class="grid">
+<div class="card"><h3>Engagement scoring</h3><p>Every short gets a score and tags like “Strong hook” or “Dialogue”.</p></div>
+<div class="card"><h3>Spread across the story</h3><p>Picks come from the whole video, and “Different picks” re-rolls them.</p></div>
+<div class="card"><h3>Face-aware framing</h3><p>The 9:16 window follows faces and snaps on scene cuts.</p></div>
+<div class="card"><h3>Private by design</h3><p>Your video never leaves the device. Only the optional AI models are downloaded.</p></div></div></section>
+
+<!-- ===== FAQ ===== -->
+<section id="faq"><h2>FAQ</h2>
+<details><summary>Why does export take as long as the clip?</summary><p>Clips are recorded in real time from the player, so a 30 second short takes about 30 seconds. Keep the page open and the screen on while exporting.</p></details>
+<details><summary>Why did it pick the same moments before?</summary><p>Older versions ranked by raw loudness, which favors theme music and intros. Now speech activity and peaks relative to the scene around them are used, intro and credits are skipped, and picks are spread across the video. Tap “Different picks” for a new set.</p></details>
+<details><summary>Is the analysis AI?</summary><p>It is signal analysis: speech activity, loudness peaks, motion and opening strength. It finds energetic moments, not meaning, so review the plan before exporting.</p></details>
+<details><summary>How does Smart reframe work?</summary><p>Before a short is recorded, a small face detector (downloaded once) scans it for faces and scene cuts. Each shot then gets one steady 9:16 crop that follows the speaker only when they really move, and it jumps exactly on cuts. If the detector cannot load, it falls back to motion.</p></details>
+<details><summary>Can I load a YouTube link?</summary><p>No. Browsers cannot download YouTube videos, and its terms do not allow it. Download your own video from YouTube Studio and choose the file. Direct .mp4 links work if the site allows it.</p></details>
+<details><summary>How do auto captions work?</summary><p>A Whisper speech model runs inside your browser, only on the shorts you pick. The first run downloads the model. Urdu accuracy is much better with the Better or Best model. For large files, the short's audio is captured while the clip plays once, so it adds the clip length to prep time. In Export all, the next short's captions are prepared while the current one records.</p></details>
+<details><summary>What does Trim silence do?</summary><p>While a short is recorded, ClipForge jumps over quiet stretches, so the result is tighter than the chosen length. Aggressive removes shorter pauses.</p></details>
+<details><summary>Which browser works best?</summary><p>Latest Chrome or Edge (v126 or newer) on Android and desktop, or Safari. Shorts are always saved as MP4. Firefox cannot record MP4, so it is not supported.</p></details>
+</section></div>
+
+<!-- ===== FOOTER ===== -->
+<footer><div class="wrap"><div class="fg">
+<div><a class="brand" href="#top"><svg width="24" height="24" viewBox="0 0 26 26"><rect x="7" y="1" width="12" height="24" rx="3" fill="#ff7a3d"/><path d="M11 9l6 4-6 4z" fill="#141413"/></svg>ClipForge</a><p>Find the best moments in long videos and export them as vertical shorts, privately on your device.</p></div>
+<div><h4>Product</h4><a href="#tool">Create shorts</a><a href="#features">Features</a><a href="#how">How it works</a></div>
+<div><h4>Help</h4><a href="#faq">FAQ</a><a href="#faq">Browser support</a><a href="#top">Back to top</a></div></div>
+<div class="copy"><span>© <span id="yr">2026</span> ClipForge Studio. All rights reserved.</span><span>Your videos never leave your device.</span></div></div></footer>
+
+<!-- Error message box (red toast); shown by the err() function in the script -->
+<div id="toast" style="position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:#b42318;color:#fff;padding:12px 14px;border-radius:12px;z-index:50;display:none;font-size:14px"></div>
+<!-- ===== JAVASCRIPT: main application ===== -->
+<script>
+/* ===========================================================================
+   MAIN APPLICATION SCRIPT  (ClipForge Studio)
+   All the logic of the page. Sections, in order:
+     1. Basic helpers (toast, $ selectors, theme button)
+     2. Scoring maths (pure functions: features, windows, camera plan, caption trim)
+     3. App state, browser support checks, stop / abort handling
+     4. Option chips, file loading, seeking, audio graph helpers
+     5. Video analysis (audio features, motion probe, planning, logo finder)
+     6. Tool switching (Shorts / Trailer / Image Animator)
+     7. Trailer: plan, sound effects, music, text overlays, recording engine
+     8. Shorts: analyze button, result list, drawing on the canvas
+     9. Captions (Whisper), silence trim, helper media elements
+    10. Smart reframe (face detection and camera plan)
+    11. Load from link, MP4 fallback recorder (WebCodecs), export and save
+    13. Project save and preview (at the end of this script)
+   (The Image Animator has its own script block after this one.)
+   =========================================================================== */
+/* ===== 1. BASIC HELPERS ===== */
+// Show a message in the red box at the bottom of the screen (it hides itself after 15 seconds).
+const err=t=>{const e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(err.t);err.t=setTimeout(()=>e.style.display='none',15000)};
+// Short selectors: $(css) = first matching element, $$(css) = all matching elements.
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+// Footer: show the current year.
+$('#yr').textContent=new Date().getFullYear();
+
+// Restore the saved light/dark theme (storage can be blocked, so errors are ignored).
+try{const t=localStorage.getItem('cf-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}
+// Theme button: switch between light and dark, apply it and remember the choice.
+$('#theme').onclick=()=>{const r=document.documentElement,cur=r.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'),nx=cur==='dark'?'light':'dark';r.dataset.theme=nx;try{localStorage.setItem('cf-theme',nx)}catch(e){}};
+// Any async error that nobody caught is shown in the red box instead of being lost.
+window.addEventListener('unhandledrejection',e=>{err('Something went wrong: '+((e.reason&&e.reason.message)||e.reason||'unknown error'))});
+// If the "Fast" caption model is chosen together with Urdu or Hindi, show a tip that a bigger model is more accurate.
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-k=lang]');if(b&&/urdu|hindi/.test(b.dataset.v)&&S.model==='tiny'){const n=$('#capnote');if(n)n.textContent='Tip: for Urdu/Hindi the Fast model is often inaccurate. Choose Better or Best.'}});
+/* ===== 2. SCORING MATHS =====
+   Pure functions: they only work on numbers and never touch the page.
+   They turn per-second audio / motion measurements into an "interest" score
+   and then pick the best windows for shorts and trailers. */
+// PURE-START
+// Limit a number to the range 0..1.
+const clamp01=x=>x>1?1:(x>0?x:0);
+// Loudness (l) and speech-likeness (c = how much the loudness varies) of one audio slice, measured in 20 ms blocks.
+function featOf(arr,sr,a,n){
+ const fl=Math.max(8,Math.round(sr*.02)),m=Math.floor(n/fl);if(m<4)return{l:0,c:0};
+ let sum=0,sq=0;
+ for(let k=0;k<m;k++){let s=0,q=0;const o=a+k*fl;for(let i=0;i<fl;i+=2){const x=arr[o+i]||0;s+=x*x;q++}const r=Math.sqrt(s/Math.max(1,q));sum+=r;sq+=r*r}
+ const mean=sum/m,vr=Math.max(0,sq/m-mean*mean);
+ return{l:mean,c:mean>1e-5?Math.sqrt(vr)/mean:0}}
+// Fill gaps (NaN = seconds that were not scanned) by copying / interpolating the neighbouring values.
+function fillNaN(a){const n=a.length;let first=-1;for(let i=0;i<n;i++)if(a[i]===a[i]){first=i;break}if(first<0)return null;
+ for(let i=0;i<first;i++)a[i]=a[first];let p=first;
+ for(let i=first+1;i<n;i++){if(a[i]===a[i]){if(i-p>1){const x0=a[p],x1=a[i];for(let k=p+1;k<i;k++)a[k]=x0+(x1-x0)*(k-p)/(i-p)}p=i}}
+ for(let i=p+1;i<n;i++)a[i]=a[p];return a}
+// Percentile: the value below which the fraction q of the numbers fall.
+function pct(a,q){const s=Array.from(a).sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(s.length*q))]||0}
+// Rolling median over +-h samples (used as a local loudness baseline).
+function rollMed(a,h){const n=a.length,o=new Float32Array(n);for(let i=0;i<n;i++){const s=Array.prototype.slice.call(a,Math.max(0,i-h),Math.min(n,i+h+1)).sort((x,y)=>x-y);o[i]=s[s.length>>1]}return o}
+// Scale an array so its 95th percentile becomes 1 (values are capped at 1).
+function norm(a){const m=pct(a,.95)||1e-9;return a.map(x=>Math.min(1,x/m))}
+// Combine audio and motion into per-second scores: sp = speech, pk = peak above the local level, ac = activity, mo = motion, sc = final score (smoothed).
+function comps(A,M,D){
+ const sp=new Float32Array(D),pk=new Float32Array(D),ac=new Float32Array(D),mo=new Float32Array(D);
+ if(A){const db=Float32Array.from(A.lvl,x=>20*Math.log10(x+1e-5)),fl=pct(db,.1),md=rollMed(db,45);
+  for(let i=0;i<D;i++){ac[i]=clamp01((db[i]-fl-6)/22);pk[i]=clamp01((db[i]-md[i])/12);sp[i]=clamp01((A.cv[i]-.35)/.9)*ac[i]}}
+ if(M){const m=norm(M);for(let i=0;i<D;i++)mo[i]=m[i]}
+ const sc=new Float32Array(D);
+ for(let i=0;i<D;i++)sc[i]=A&&M?.4*sp[i]+.28*pk[i]+.12*ac[i]+.2*mo[i]:A?.45*sp[i]+.33*pk[i]+.22*ac[i]:mo[i];
+ for(let r=0;r<2;r++){const t=sc.slice();for(let i=0;i<D;i++)sc[i]=((t[i-1]??t[i])+t[i]*2+(t[i+1]??t[i]))/4}
+ return{sp,pk,ac,mo,sc}}
+// Pick the best non-overlapping windows of o.L seconds from the score array (options: count, spread over the video, random variety, range, windows already used, speech limits).
+function pickWindows(C,o){
+ const sc=C.sc,D=sc.length,dur=o.dur,L=Math.max(5,Math.min(o.L,Math.floor(dur)));
+ const P=new Float64Array(D+1);for(let i=0;i<D;i++)P[i+1]=P[i]+sc[i];
+ const lo=Math.max(0,Math.min(o.lo,D-L)),hi=Math.min(D,Math.max(o.hi,lo+L));
+ const ab=(a,x,y)=>{x=Math.max(0,x);y=Math.min(D,y);let t=0;for(let i=x;i<y;i++)t+=a[i];return y>x?t/(y-x):0};
+ const msp=o.minSp||0,W=[];for(let s=lo;s+L<=hi;s++){if(msp&&ab(C.sp,s,s+L)<msp)continue;if(o.maxSp!=null&&ab(C.sp,s,s+L)>o.maxSp)continue;const hk=Math.min(D,s+3),h3=(P[hk]-P[s])/Math.max(1,hk-s),on=Math.max(0,ab(C.sp,s,s+3)-ab(C.sp,s-2,s));
+  W.push({s,w:(P[s+L]-P[s])/L+.3*h3+.25*on})}
+ if(!W.length)W.push({s:lo,w:0});
+ W.forEach(x=>x.k=o.rnd?x.w*(.75+.5*Math.random()):x.w);
+ if(o.seen&&o.seen.length)W.forEach(x=>{for(const q of o.seen)if(Math.abs(q-x.s)<L*1.2){x.k*=.45;break}});
+ const n=o.n==='auto'?0:o.n;let pk=[];
+ if(n&&o.spread&&hi-lo>=n*L){const bw=(hi-lo)/n;
+  for(let i=0;i<n;i++){const b0=lo+i*bw,b1=b0+bw;let b=null;for(const x of W)if(x.s>=b0-.001&&x.s+L<=b1+1&&(!b||x.k>b.k))b=x;if(b)pk.push(b)}}
+ else{const gap=n?L:Math.max(L,(hi-lo)/16),lim=n||10,srt=[...W].sort((a,b)=>b.k-a.k);
+  for(const x of srt){if(pk.length>=lim)break;if(!n&&pk.length&&x.k<pk[0].k*.7)break;if(pk.every(p=>Math.abs(p.s-x.s)>=gap))pk.push(x)}}
+ pk.sort((a,b)=>a.s-b.s);
+ const ws=W.map(x=>x.w).sort((a,b)=>a-b);
+ const rank=w=>{let a=0,b=ws.length;while(a<b){const m=(a+b)>>1;if(ws[m]<=w)a=m+1;else b=m}return a};
+ const av=(arr,s0,e0)=>{let t=0;for(let i=s0;i<Math.min(D,e0);i++)t+=arr[i];return t/Math.max(1,Math.min(D,e0)-s0)};
+ return pk.map(x=>{const tags=[];
+  if(av(C.sp,x.s,x.s+3)>.5)tags.push('Strong hook');if(av(C.sp,x.s,x.s+L)>.5)tags.push('Dialogue');
+  if(av(C.pk,x.s,x.s+L)>.3)tags.push('Emotional peak');if(av(C.mo,x.s,x.s+L)>.5)tags.push('Lots of motion');
+  return{s:x.s,e:Math.min(dur,x.s+L),w:x.w,score:Math.round(100*rank(x.w)/ws.length),tags,blob:null,pcm:null}})}
+// "Split evenly" mode: cut the video into equal pieces instead of choosing by score.
+function evenPlan(dur,L,n){L=Math.max(5,Math.min(L,dur));const tot=Math.max(1,Math.floor(dur/L)),cnt=n==='auto'?tot:Math.min(n,tot),out=[];
+ for(let i=0;i<cnt;i++){const s=cnt===tot?i*L:Math.round((dur-L)*i/Math.max(1,cnt-1));out.push({s,e:Math.min(dur,s+L)})}
+ if(cnt===tot&&out.length&&dur-out[cnt-1].e<5)out[cnt-1].e=dur;return out}
+
+/* Camera plan. S = frame samples [{t,cut,faces:[{l,r,c,w,m}],mc:[16 column motion]}], ww = crop width (0-1).
+   Returns keys [{t,t0,x,cut}]: one static crop per shot, moved only when the subject really moves. */
+function planFrames(S,ww,t0){
+ const lo=ww/2,hi=1-ww/2,cl=x=>Math.max(lo,Math.min(hi,x));
+ if(!S.length)return[{t:t0,t0:t0,x:.5,cut:true}];
+ const shots=[];let cur={a:0,e:t0,l:t0};
+ for(let k=1;k<S.length;k++)if(S[k].cut){cur.b=k;shots.push(cur);cur={a:k,e:S[k-1].t,l:S[k].t}}
+ cur.b=S.length;shots.push(cur);const keys=[];
+ shots.forEach((sh,si)=>{
+  const n=sh.b-sh.a,tg=new Array(n).fill(null);let prev=null,lastSw=-9,tk=[];
+  for(let i=0;i<n;i++){const s=S[sh.a+i],F=s.faces||[];if(!F.length)continue;
+   const mw=Math.max(...F.map(f=>f.w)),G=F.filter(f=>f.w>=mw*.45);let l=1,r=0;G.forEach(f=>{l=Math.min(l,f.l);r=Math.max(r,f.r)});let x;
+   if(r-l<=ww*.88)x=(l+r)/2;
+   else{G.forEach(f=>{let q=null,bd=.15;tk.forEach(t=>{const d=Math.abs(t.c-f.c);if(d<bd){bd=d;q=t}});if(!q){q={c:f.c,e:0};tk.push(q)}q.c=f.c;q.e=q.e*.75+(f.m||0)*.25;f.q=q});
+    const cur=prev===null?null:G.find(f=>Math.abs(f.c-prev)<ww*.25),top=G.reduce((a,b)=>b.q.e+b.w*.01>a.q.e+a.w*.01?b:a);
+    x=(cur&&!(top!==cur&&top.q.e>cur.q.e*1.6+.003&&s.t-lastSw>=1.5))?cur.c:top.c}
+   if(prev!==null&&Math.abs(x-prev)>ww*.25)lastSw=s.t;prev=x;tg[i]=x}
+  if(tg.some(v=>v!==null)){for(let i=0;i<n;i++)if(tg[i]===null){let d=1,f=null;while(f===null&&(i-d>=0||i+d<n)){if(i-d>=0&&tg[i-d]!==null)f=tg[i-d];else if(i+d<n&&tg[i+d]!==null)f=tg[i+d];d++}tg[i]=f}}
+  else{const col=new Float32Array(16);for(let i=0;i<n;i++){const m=S[sh.a+i].mc;if(m)for(let j=0;j<16;j++)col[j]+=m[j]}
+   const Wc=Math.max(1,Math.round(ww*16));let bj=-1,bs=0;for(let j=0;j+Wc<=16;j++){let s=0;for(let q=j;q<j+Wc;q++)s+=col[q];if(s>bs){bs=s;bj=j}}
+   const all=col.reduce((a,b)=>a+b,0),x=bj>=0&&bs>=all*.5?(bj+Wc/2)/16:.5;tg.fill(x)}
+  const sm=tg.map((_,i)=>{const w=tg.slice(Math.max(0,i-2),Math.min(n,i+3)).sort((a,b)=>a-b);return w[w.length>>1]});
+  let curx=cl(sm[0]);keys.push({t:si?sh.l:t0,t0:si?sh.e:t0,x:curx,cut:true});
+  let streak=0;const dead=ww*.14;
+  for(let i=1;i<n;i++){const x=cl(sm[i]),tt=S[sh.a+i].t,lk=keys[keys.length-1],dx=Math.abs(x-curx);
+   if(dx>ww*.3){if(++streak>=2&&tt-lk.t>1.2){curx=x;const ct=Math.max(lk.t+.05,tt-.5);keys.push({t:ct,t0:ct,x:curx,cut:true});streak=0}}
+   else if(dx>ww*.2){if(++streak>=4){curx=x;keys.push({t:tt,t0:tt,x:curx,cut:false});streak=0}}
+   else streak=0}
+ });
+ return keys}
+/* tighten a caption segment [t0,t1] (seconds, relative to pcm) to the voiced part of the audio */
+function snapSeg(pcm,t0,t1){
+ const fl=800,n=Math.floor(pcm.length/fl);if(n<4)return[t0,t1];const e=new Float32Array(n);
+ for(let i=0;i<n;i++){let s=0;for(let j=0;j<fl;j+=4){const x=pcm[i*fl+j]||0;s+=x*x}e[i]=Math.sqrt(s/(fl/4))}
+ const so=Array.from(e).sort((a,b)=>a-b),thr=Math.max(.004,so[Math.floor(n*.9)]*.12);
+ const a=Math.round(t0*20),b=Math.round(t1*20);let s=t0,f=t1;
+ for(let i=Math.max(0,a-8);i<=Math.min(n-1,a+12);i++)if(e[i]>thr){s=i/20;break}
+ for(let i=Math.min(n-1,b+8);i>=Math.max(0,b-12);i--)if(e[i]>thr){f=(i+1)/20+.12;break}
+ if(f<s+.3)f=s+.3;return[s,f]}
+// PURE-END
+
+/* ===== 3. APP STATE AND BROWSER SUPPORT ===== */
+// Main elements: v = the video player, cv = preview / recording canvas, ctx = its 2D drawing context.
+const v=$('#src'),cv=$('#cv'),ctx=cv.getContext('2d');
+// S = every user setting (count, length, framing, captions, trailer options...). Option buttons write into it through their data-k / data-v attributes.
+let S={n:3,len:30,mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
+// Runtime state: clips (the plan), busy flag, RUN token (changing it cancels running work), loaded file info, and audio analysis data (ENV = loudness every 0.1 s).
+let clips=[],busy=false,RUN=0,url=null,fname='video',file=null,PL=30,cues=[],capOn=false,AUD=null,ENV=null,LAST=null,REC=null,ALL=false,RECING=false;
+// Web Audio objects: actx = audio context, src = video as audio source, adest = stream that is recorded, outG = speaker volume, recG = recording volume.
+let actx=null,src=null,adest=null,outG=null,recG=null,EL={v2:null,a:null};
+// Format seconds as m:ss.
+const fmt=t=>{t=Math.round(t);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
+// MP4 formats to try with the browser's built-in recorder (best first).
+const mimes=['video/mp4;codecs=avc1.640028,mp4a.40.2','video/mp4;codecs=avc1.4d4028,mp4a.40.2','video/mp4;codecs=avc1.42E01F,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4;codecs=h264,aac','video/mp4'];
+// The first MP4 format this browser can record natively (null if none).
+const mime=window.MediaRecorder?mimes.find(m=>MediaRecorder.isTypeSupported(m)):null;
+// WC = true when there is no native MP4 recorder but WebCodecs is available (fallback recorder, see makeWC).
+const WC=!mime&&!!(window.VideoEncoder&&window.AudioEncoder&&window.MediaStreamTrackProcessor);
+// WCok = the WebCodecs recorder can be used (also as an automatic second attempt when the native recorder makes an unusable file).
+const WCok=!!(window.VideoEncoder&&window.AudioEncoder&&window.MediaStreamTrackProcessor);
+// Output file extension.
+const ext='mp4';
+// Show a status line under the buttons.
+const say=t=>$('#msg').textContent=t;
+// Small async helpers: tick = give the browser a moment, sleep = wait.
+const tick=()=>new Promise(r=>setTimeout(r,0));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+// Warn at start-up if this browser cannot record MP4 in any way.
+if(!mime&&!WC)setTimeout(()=>say('This browser cannot record MP4. Use the latest Chrome or Edge (v126+), or Safari.'),0);
+
+/* ---------- stop / abort ---------- */
+// Abort handlers registered by running tasks; doStop() calls all of them.
+const ABORT=new Set();
+// Throw "Stopped" if the task was cancelled (RUN changed after it started).
+const alive=tok=>{if(tok!==RUN)throw new Error('Stopped')};
+// Wrap a promise with a time limit and make it cancellable; rejects with a readable message when it takes too long.
+function guard(p,ms,label){const tok=RUN;return new Promise((res,rej)=>{
+ if(tok!==RUN)return rej(new Error('Stopped'));
+ let tm=null;const fin=()=>{ABORT.delete(h);clearTimeout(tm)},h=()=>{fin();rej(new Error('Stopped'))};
+ ABORT.add(h);if(ms)tm=setTimeout(()=>{fin();rej(new Error((label||'Step')+' timed out'))},ms);
+ Promise.resolve(p).then(x=>{fin();tok!==RUN?rej(new Error('Stopped')):res(x)},e=>{fin();rej(e)})})}
+// Stop button logic: invalidate the running task and cancel anything it is waiting for.
+function doStop(){RUN++;ABORT.forEach(h=>h());ABORT.clear();
+ try{v.pause()}catch(e){}try{EL.v2&&EL.v2.pause()}catch(e){}try{EL.a&&EL.a.el.pause()}catch(e){}
+ try{REC&&REC.state!=='inactive'&&REC.stop()}catch(e){}
+ if(outG)outG.gain.value=1;if(recG)recG.gain.value=0;busy=false;ALL=false;RECING=false;lock(false);
+ Object.keys(ST).forEach(k=>delete ST[k]);$('#pbar').classList.add('hide');say('Stopped.');if(clips.length)render();if(v.videoWidth)draw()}
+// Stop button.
+$('#stop').onclick=doStop;
+// Status texts from several parallel jobs (analysis, captions...) that are shown together in one line.
+const ST={};
+// Update one job's status text and refresh the combined status line.
+function stat(k,t){ST[k]=t;const s=Object.values(ST).filter(Boolean).join(' · ');if(!RECING)say(s?'Preparing: '+s:'');if(k==='cap'&&t)$('#capnote').textContent=t}
+
+/* ===== 4. OPTION CHIPS, FILE LOADING, SEEKING AND AUDIO HELPERS ===== */
+// Build a row of option chips (buttons) for one setting; clicking a chip selects it in S.
+function chips(box,vals,key,fmtL){vals.forEach(n=>{const b=document.createElement('button');b.className='chip'+(S[key]===n?' on':'');b.textContent=fmtL(n);
+ b.onclick=()=>{S[key]=n;box.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c===b));if(key==='n')$('#custom').value=''};box.append(b)})}
+// "How many shorts" chips.
+chips($('#counts'),[1,3,5,8,10,'auto'],'n',n=>n==='auto'?'Auto':n);
+// Custom count box (1-50).
+const ci=document.createElement('input');ci.type='number';ci.id='custom';ci.min=1;ci.max=50;ci.placeholder='Other';
+ci.oninput=()=>{const n=Math.max(1,Math.min(50,+ci.value||0));if(n){S.n=n;$$('#counts .chip').forEach(c=>c.classList.remove('on'))}};$('#counts').append(ci);
+// "Length of each short" chips (15/30/45/60/90 s, custom, auto, full video).
+chips($('#lens'),[15,30,45,60,90,'custom','auto','full'],'len',n=>n==='custom'?'Custom':n==='auto'?'Auto':n==='full'?'Full video':n+'s');
+// Chosen clip length in seconds (null = auto).
+const lenVal=()=>S.len==='custom'?Math.max(10,Math.min(90,+$('#cl').value||30)):(S.len==='auto'?null:+S.len);
+// Show the custom-seconds box only when "Custom" is selected.
+$$('#lens .chip').forEach(b=>b.addEventListener('click',()=>{$('#cl').classList.toggle('hide',S.len!=='custom');$('#fullnote').classList.toggle('hide',S.len!=='full')}));
+// Generic option buttons: a button with data-k / data-v sets S[data-k] = data-v and highlights itself.
+$$('[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;S[k]=b.dataset.v;$$('[data-k="'+k+'"]').forEach(c=>c.classList.toggle('on',c===b));
+ $('#posbox').classList.toggle('hide',S.fit!=='crop');$('#depthbox').classList.toggle('hide',S.mode!=='best');
+ capOn=S.cap!=='off';$('#capbox').classList.toggle('hide',S.cap!=='file');$('#autobox').classList.toggle('hide',!(S.cap==='auto'||S.tr==='speech'));$('#stylebox').classList.toggle('hide',!capOn);
+ if(k==='fit'||k==='cap'||k==='cs'){$('#pnote').textContent=S.fit==='smart'?'Preview is centered. Faces are tracked per shot while exporting.':'';if(v.videoWidth)draw()}});
+// The crop-position slider redraws the preview.
+$('#pos').oninput=draw;
+
+// Load a chosen video: reset everything from the previous video, show the player and the options.
+function load(f){if(!f)return;doStop();TRAILER=null;$('#trl').classList.add('hide');file=f;AUD=null;ENV=null;cues=[];LAST=null;clips=[];
+ try{EL.v2&&EL.v2.remove()}catch(e){}EL={v2:null,a:null};
+ if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);fname=f.name.replace(/\.[^.]+$/,'');v.src=url;say('');
+ v.onloadedmetadata=()=>{$('#work').classList.remove('hide');$('#res').classList.add('hide');say(fmt(v.duration)+' video loaded.');projOffer()};
+ v.onerror=()=>err('This browser cannot play that video format. Convert it to H.264 MP4 and try again.')}
+// File picker.
+$('#file').onchange=e=>load(e.target.files[0]);
+// Drag-and-drop onto the upload box.
+const dr=$('#drop');dr.ondragover=e=>e.preventDefault();dr.ondrop=e=>{e.preventDefault();load(e.dataTransfer.files[0])};
+
+// Update the progress bar (p = 0..1).
+function prog(p){const b=$('#pbar');b.classList.remove('hide');const i=b.querySelector('i');if(i)i.style.width=Math.round(Math.max(0,Math.min(1,p))*100)+'%'}
+// How many bytes of audio this device can safely decode in memory; bigger files are scanned by sampling instead.
+const decodeLimit=()=>navigator.deviceMemory?Math.min(600e6,navigator.deviceMemory*60e6):250e6;
+
+// Seek the video to time t and wait until it has really arrived (with a time limit).
+function seek(el,t){return guard(new Promise(r=>{let d=0,to;const f=()=>{if(d)return;d=1;el.removeEventListener('seeked',f);clearTimeout(to);r()};
+ to=setTimeout(f,5000);el.addEventListener('seeked',f);if(Math.abs(el.currentTime-t)<.01){setTimeout(f,0);return}el.currentTime=t}))}
+
+// Wait until the video has a fresh frame to draw after a seek (at most 0.5 s).
+function frameReady(el){return new Promise(res=>{let d=0;const fin=()=>{if(!d){d=1;res()}};setTimeout(fin,500);
+ if(el.requestVideoFrameCallback)el.requestVideoFrameCallback(()=>fin());else{let n=0;const t=()=>{if(++n>=3&&el.readyState>=2)fin();else requestAnimationFrame(t)};requestAnimationFrame(t)}})}
+
+/* ---------- audio graph ---------- */
+// Create the Web Audio graph once (video source, speaker output and the stream that gets recorded).
+function setupAudio(){if(actx)return;actx=new(window.AudioContext||window.webkitAudioContext)();src=actx.createMediaElementSource(v);adest=actx.createMediaStreamDestination();
+ outG=actx.createGain();recG=actx.createGain();recG.gain.value=0;src.connect(outG);outG.connect(actx.destination);src.connect(recG);recG.connect(adest)}
+// Make sure the audio graph exists and is running (browsers keep audio suspended until the user taps something).
+async function audioReady(){setupAudio();if(actx.state==='suspended')await guard(actx.resume(),8000,'Audio start')}
+// Capture raw audio samples from an audio node (silent tap) and hand them to a callback.
+function startTap(node,cb){const p=actx.createScriptProcessor(4096,1,1),z=actx.createGain();z.gain.value=0;node.connect(p);p.connect(z);z.connect(actx.destination);
+ p.onaudioprocess=e=>cb(new Float32Array(e.inputBuffer.getChannelData(0)));
+ return{stop(){try{p.onaudioprocess=null;node.disconnect(p);p.disconnect();z.disconnect()}catch(_){}}}}
+// Join several Float32 arrays into one.
+const cat=bufs=>{let n=0;bufs.forEach(b=>n+=b.length);const o=new Float32Array(n);let k=0;bufs.forEach(b=>{o.set(b,k);k+=b.length});return o};
+// Resample audio to 16 kHz (scoring and the speech model use 16 kHz).
+function to16k(a,sr){if(sr===16000)return a;const r=sr/16000,n=Math.floor(a.length/r),o=new Float32Array(n);
+ for(let i=0;i<n;i++){const s=Math.floor(i*r),e=Math.max(s+1,Math.floor((i+1)*r));let t=0;for(let j=s;j<e;j++)t+=a[j];o[i]=t/(e-s)}return o}
+
+/* ===== 5. VIDEO ANALYSIS (audio features, motion probe, planning, logo finder) ===== */
+/* ---------- analysis ---------- */
+// Decode the file's audio (when small enough) and measure loudness / speech-likeness per second; also fills ENV (loudness every 0.1 s).
+async function audioFeats(D,tok){
+ const AC=window.OfflineAudioContext||window.webkitOfflineAudioContext,oc=new AC(1,1,16000);
+ const buf=await guard(oc.decodeAudioData(await file.arrayBuffer()),300000,'Audio decode');alive(tok);const d=buf.getChannelData(0),sr=buf.sampleRate;AUD=d;
+ const lvl=new Float32Array(D),cvv=new Float32Array(D);let mx=0;
+ for(let t=0;t<D;t++){const a=t*sr,n=Math.min(sr,d.length-a);
+  if(n<sr*.3){lvl[t]=lvl[t-1]||0;cvv[t]=cvv[t-1]||0;continue}
+  const f=featOf(d,sr,a,n);lvl[t]=f.l;cvv[t]=f.c;if(f.l>mx)mx=f.l;if(t%200===0){alive(tok);prog(.1+.2*t/D);await tick()}}
+ const m=Math.floor(d.length/(sr/10));ENV=new Float32Array(m);
+ for(let k=0;k<m;k++){let s=0,q=0;const o=k*sr/10;for(let i=0;i<sr/10;i+=2){const x=d[Math.floor(o+i)]||0;s+=x*x;q++}ENV[k]=Math.sqrt(s/Math.max(1,q))}
+ return mx>1e-4?{lvl,cv:cvv}:null}
+
+// For long videos: instead of decoding everything, play short samples (step seconds apart) and measure audio / motion from them.
+async function probeScan(D,lo,hi,step,wantAudio,wantMotion,tok){
+ await audioReady();v.pause();v.muted=false;outG.gain.value=0;recG.gain.value=0;
+ const lvl=new Float32Array(D).fill(NaN),cvv=new Float32Array(D).fill(NaN),mot=new Float32Array(D).fill(NaN);
+ const tc=document.createElement('canvas');tc.width=32;tc.height=18;const tx=tc.getContext('2d',{willReadFrequently:true});
+ const times=[];for(let t=lo;t<hi-1;t+=step)times.push(t);const dwell=1.0,sr=actx.sampleRate;
+ try{
+ for(let k=0;k<times.length;k++){
+  alive(tok);const t=times[k];await seek(v,t);
+  const bufs=[];let got=0;const tap=wantAudio?startTap(src,b=>{bufs.push(b);got+=b.length}):null;
+  let prev=null,ms=0,mn=0,last=0;
+  try{await guard(v.play(),15000,'Video play')}catch(e){tap&&tap.stop();throw e.message==='Stopped'?e:new Error('Video could not play: '+(e.message||e))}
+  const t1=performance.now();
+  await guard(new Promise(res=>{const f=()=>{const now=performance.now();
+   if(wantMotion&&now-last>=125){last=now;tx.drawImage(v,0,0,32,18);const d=tx.getImageData(0,0,32,18).data;if(prev){let s=0;for(let i=0;i<d.length;i+=4)s+=Math.abs(d[i]-prev[i]);ms+=s;mn++}prev=d}
+   if((wantAudio?got>=sr*(dwell+.2):now-t1>=dwell*1000)||now-t1>3500||tok!==RUN)res();else setTimeout(f,40)};f()}));
+  v.pause();tap&&tap.stop();const sec=Math.min(D-1,Math.floor(t));
+  if(wantAudio&&got>=sr*.7){const arr=cat(bufs),a0=Math.floor(sr*.2),f=featOf(arr,sr,a0,arr.length-a0);lvl[sec]=f.l;cvv[sec]=f.c}
+  if(wantMotion&&mn>2)mot[sec]=ms/mn;
+  prog(.05+.9*(k+1)/times.length);say('Scanning '+(k+1)+'/'+times.length+' · about '+Math.max(1,Math.ceil((times.length-k-1)*1.5/60))+' min left');
+ }}finally{v.pause();if(outG)outG.gain.value=1}
+ let A=null;if(wantAudio){const l=fillNaN(lvl),c=fillNaN(cvv);if(l&&c&&Math.max(...l)>1e-4)A={lvl:l,cv:c}}
+ return{A,M:wantMotion?fillNaN(mot):null}}
+
+/* full spoken lines (start and end on a pause) found from the loudness envelope; null when there is no usable audio */
+function dlgLines(C,lo,hi,dur){
+ if(!ENV||ENV.length<100)return null;
+ const n=ENV.length,sm=new Float32Array(n);for(let i=0;i<n;i++)sm[i]=(ENV[Math.max(0,i-1)]+ENV[i]*2+ENV[Math.min(n-1,i+1)])/4;
+ const so=Float32Array.from(sm).sort(),q=p=>so[Math.min(n-1,Math.floor(p*n))],b=q(.3),tp=q(.92),thr=b+.28*(tp-b);
+ if(!(tp>b*1.6))return null;
+ const raw=[];let st=-1,en=-1,gap=0;const i0=Math.max(0,Math.round(lo*10)),i1=Math.min(n,Math.round(hi*10));
+ for(let i=i0;i<i1;i++){if(sm[i]>thr){if(st<0)st=i;en=i;gap=0}else if(st>=0&&++gap>4){raw.push([st,en]);st=-1}}
+ if(st>=0)raw.push([st,en]);
+ const out=[],av=(a,x,y)=>{let t=0,k=0;for(let i=Math.floor(x);i<Math.min(a.length,Math.ceil(y));i++){t+=a[i];k++}return k?t/k:0};
+ for(const[a,z]of raw){if(z-a<6)continue;let s0=Math.max(0,a/10-.15);const e0=Math.min(dur,(z+1)/10+.25);
+  while(e0-s0>7.2){let bi=-1,bv=1e9;for(let i=Math.round((s0+3)*10);i<=Math.round((s0+7)*10)&&i<n;i++)if(sm[i]<bv){bv=sm[i];bi=i}if(bi<0)break;out.push([s0,bi/10]);s0=bi/10}
+  out.push([s0,e0])}
+ return out.filter(x=>x[1]-x[0]>=1.4).map(x=>({s:x[0],e:x[1],w:av(C.sc,x[0],x[1])*(.6+.4*av(C.sp,x[0],x[1]))}))}
+function pickLines(L,k,minGap,ex){const r=[];for(const x of [...L].sort((a,b)=>b.w-a.w)){if(r.length>=k)break;if(x.e-x.s<1.6||x.e-x.s>7.2)continue;
+  if(ex.concat(r).some(p=>x.s<p.e+.4&&x.e>p.s-.4))continue;if(r.every(p=>Math.abs(p.s-x.s)>=minGap))r.push(x)}return r}
+// Move time t to the quietest point within +-r seconds so cuts land on pauses.
+function snapT(t,r){if(!ENV)return t;const i0=Math.max(1,Math.round((t-r)*10)),i1=Math.min(ENV.length-2,Math.round((t+r)*10));if(i1<=i0)return t;
+ let bi=-1,bv=1e9;for(let i=i0;i<=i1;i++){const x=(ENV[i-1]+ENV[i]*2+ENV[i+1])/4+.0015*Math.abs(i/10-t);if(x<bv){bv=x;bi=i}}return bi<0?t:bi/10}
+
+// For "auto" length: find a pause 22-58 s after s to end the clip (falls back to 40 s).
+function endPause(s,dur){const a=Math.min(dur,s+22),b=Math.min(dur,s+58);if(!ENV||b-a<4)return Math.min(dur,s+40);let bi=-1,bv=1e9;
+ for(let i=Math.round(a*10);i<=Math.round(b*10)&&i<ENV.length-1;i++){const x=(ENV[i-1]+ENV[i]*2+ENV[i+1])/4+.0008*Math.abs(i/10-(s+38));if(x<bv){bv=x;bi=i}}
+ return bi<0?Math.min(dur,s+40):Math.min(dur,bi/10+.15)}
+// Make a short start at the beginning of a spoken line and end at the end of one, so no sentence is cut in half.
+// The length may change a little: up to 30% shorter, or longer by at most 25% / 6 s. prev / next = neighbouring shorts (never overlapped).
+function fitLines(c,LN,prev,next,dur){
+ const L0=c.e-c.s,lim=next?next.s-.5:dur,fl=prev?prev.e:0;
+ let s=c.s;
+ const a=LN.find(x=>x.s<s&&x.e>s+.3);
+ if(a&&s-a.s<=4&&a.s>=fl)s=a.s;
+ const t=s+L0,mx=Math.min(lim,t+Math.min(.25*L0,6)),mn=s+.7*L0;
+ const b=LN.find(x=>x.s<t-.2&&x.e>t+.2);
+ let e=t;
+ if(b){let dn=-1;for(const x of LN)if(x.e<=t+.2&&x.e>dn)dn=x.e;
+  const cu=b.e<=mx?b.e-t:1e9,cd=(dn>=mn&&dn>s)?t-dn:1e9;
+  if(cu<1e9||cd<1e9)e=cu<=cd?b.e:dn}
+ c.s=s;c.e=Math.min(dur,e)}
+// Build the plan: choose clips from the scores (with random variety when rnd = true) and tidy their start / end times.
+function doPlan(rnd){
+ const{D,lo,hi,dur,C}=LAST,auto=S.len==='auto',L=auto?40:PL,base={n:S.n,spread:S.vr==='spread',rnd,lo,hi,dur,seen:LAST.seen};
+ let r=pickWindows(C,{...base,L});
+ r.forEach(c=>{if(ENV){const s=Math.max(0,snapT(c.s,2.5));c.s=s;c.e=auto?endPause(s,dur):Math.min(dur,Math.max(s+L*.8,snapT(s+L,2)))}else if(auto)c.e=Math.min(dur,c.s+40)});
+ r.sort((a,b)=>a.s-b.s);r=r.filter((c,i)=>i===0||c.s>=r[i-1].e-.5);
+ // Fit every short to whole spoken lines (only when the audio loudness data is available).
+ {const LN=ENV?dlgLines(C,lo,hi,dur):null;if(LN&&LN.length)r.forEach((c,i)=>fitLines(c,LN,r[i-1],r[i+1],dur))}
+ r.forEach(c=>LAST.seen.push(c.s));return r}
+
+// Score how strongly a set of sample frames contains a static overlay (logo, banner or title card).
+function overlayScore(F,w,h){const n=w*h,m=new Float32Array(n),st=new Uint8Array(n);
+ for(let i=0;i<n;i++){let a=255,b=0,s=0;for(const f of F){const x=f[i];if(x<a)a=x;if(x>b)b=x;s+=x}m[i]=s/F.length;st[i]=(b-a)<=12?1:0}
+ let sc=0;for(let i=0;i<n;i++)sc+=st[i];
+ const se=new Uint8Array(n);for(let y=0;y<h-1;y++)for(let x=0;x<w-1;x++){const i=y*w+x;if(st[i]&&Math.abs(m[i+1]-m[i])+Math.abs(m[i+w]-m[i])>40)se[i]=1}
+ const R=[[0,0,.3,.22],[.7,0,.3,.22],[0,.78,.3,.22],[.7,.78,.3,.22],[0,0,1,.14],[0,.86,1,.14]];
+ const reg=R.map(([a,b,c,d])=>{let t=0,k=0;for(let y=Math.floor(b*h);y<Math.floor((b+d)*h);y++)for(let x=Math.floor(a*w);x<Math.floor((a+c)*w);x++){t+=se[y*w+x];k++}return t/k});
+ return{reg,frozen:sc/n>.97}}
+
+// Fraction of the frame edge kept as margin by the logo check.
+const LOGOMARGIN=.03;
+// Grab k small greyscale frames between t0 and t1 for the overlay check.
+async function frameSet(t0,t1,k,tok){const tc=document.createElement('canvas');tc.width=160;tc.height=90;const x=tc.getContext('2d',{willReadFrequently:true}),F=[];v.pause();
+ for(let i=0;i<k;i++){alive(tok);await seek(v,Math.min(v.duration-.2,t0+(t1-t0)*(i+.5)/k));x.drawImage(v,0,0,160,90);const d=x.getImageData(0,0,160,90).data,g=new Uint8Array(14400);for(let j=0;j<14400;j++)g[j]=(d[j*4]*.3+d[j*4+1]*.59+d[j*4+2]*.11)|0;F.push(g)}
+ return F}
+/* ---------- logo finder (learns a repeating logo, then checks every pick) ---------- */
+// Logo finder settings: working size and the zones (corners / edges) where logos usually sit.
+const LG={W:320,H:180,ZN:[['top-left',0,0,.34,.26],['top-right',.66,0,.34,.26],['bottom-left',0,.74,.34,.26],['bottom-right',.66,.74,.34,.26]]};
+// Seek to time t and return one greyscale frame at the logo-finder size.
+async function grabLuma(t,tok){alive(tok);v.pause();await seek(v,Math.max(0,Math.min(v.duration-.2,t)));
+ if(!LG.x){LG.c=document.createElement('canvas');LG.c.width=LG.W;LG.c.height=LG.H;LG.x=LG.c.getContext('2d',{willReadFrequently:true})}
+ LG.x.drawImage(v,0,0,LG.W,LG.H);const d=LG.x.getImageData(0,0,LG.W,LG.H).data,g=new Uint8Array(LG.W*LG.H);for(let j=0;j<g.length;j++)g[j]=(d[j*4]*.3+d[j*4+1]*.59+d[j*4+2]*.11)|0;return g}
+// Grab k evenly spread frames between t0 and t1.
+async function frameSetN(t0,t1,k,tok){const F=[];for(let i=0;i<k;i++)F.push(await grabLuma(t0+(t1-t0)*(i+.5)/k,tok));return F}
+// True if pixel i of frame f lies on an edge.
+function lgEdge(f,i){const W=LG.W;return i%W<W-1&&i+W<f.length&&Math.abs(f[i+1]-f[i])+Math.abs(f[i+W]-f[i])>40}
+// True if a frame matches the learned logo template in zone z (85% of the edge points agree).
+function matchZone(f,z){let ok=0;const n=z.idx.length;for(let k=0;k<n;k++)if(Math.abs(f[z.idx[k]]-z.tm[k])<=14)ok++;return ok>=.85*n}
+// Learn a repeating logo: sample many frames and find edges that stay in the same place in one zone.
+async function learnLogo(tok,lo,hi){const P=28,T=[],F=[],W=LG.W,H=LG.H;
+ for(let i=0;i<P;i++){const t=lo+(hi-lo-1)*(i+.5)/P;T.push(t);F.push(await grabLuma(t,tok))}
+ const gap=Math.max(20,(hi-lo)/10),out={zones:[],persist:[],pairs:0};
+ for(const[name,x0,y0,zw,zh]of LG.ZN){const px=[];for(let y=Math.floor(y0*H);y<Math.floor((y0+zh)*H);y++)for(let x=Math.floor(x0*W);x<Math.floor((x0+zw)*W);x++)px.push(y*W+x);
+  const cnt=new Uint16Array(px.length);let pairs=0;
+  for(let i=0;i<P;i++)for(let j=i+1;j<P;j++)if(T[j]-T[i]>=gap){pairs++;const a=F[i],b=F[j];for(let k=0;k<px.length;k++){const q=px[k];if(lgEdge(a,q)&&Math.abs(a[q]-b[q])<=6)cnt[k]++}}
+  out.pairs=Math.max(out.pairs,pairs);if(pairs<6)continue;
+  const lowT=Math.max(4,Math.round(.04*pairs)),hiT=Math.round(.55*pairs),idx=[],per=[];
+  for(let k=0;k<px.length;k++){if(cnt[k]>=hiT)per.push(px[k]);else if(cnt[k]>=lowT)idx.push(px[k])}
+  if(per.length>=20){out.persist.push(name);continue}
+  if(idx.length>=25&&idx.length<=.14*px.length){const tm=new Uint8Array(idx.length);
+   for(let k=0;k<idx.length;k++){const vals=[];for(const f of F)if(lgEdge(f,idx[k]))vals.push(f[idx[k]]);vals.sort((p,q)=>p-q);tm[k]=vals.length?vals[vals.length>>1]:128}
+   out.zones.push({name,idx,tm})}}
+ return out}
+// Check every chosen clip for the learned logo and swap out clips that show it.
+async function logoFilter(tok){const{lo,hi}=LAST;say('Looking for logos and banners…');
+ if(!LAST.logoL)LAST.logoL=await learnLogo(tok,lo,hi);const L=LAST.logoL;LAST.logoNote='';
+ if(L.persist.length)LAST.logoNote='A logo shows on almost every frame ('+L.persist.join(', ')+'). It cannot be avoided by choosing other scenes; Smart reframe or center crop often removes a corner logo.';
+ if(!L.zones.length){if(!L.persist.length)LAST.logoNote='No repeating logo was found in this video, so nothing was skipped.';return 0}
+ if(S.tool==='trailer')return 0;
+ const orig=clips.slice();
+ const bad=async c=>{const k=Math.max(2,Math.min(14,Math.round((c.e-c.s)/.8)));return(await frameSetN(c.s,c.e,k,tok)).some(f=>L.zones.some(z=>matchZone(f,z)))};
+ let dropped=0;
+ for(let round=0;round<4;round++){let flagged=0;
+  for(const c of clips){if(c._ok)continue;if(await bad(c)){c._bad=1;flagged++}else c._ok=1}
+  if(!flagged)break;dropped+=flagged;clips=clips.filter(c=>!c._bad);
+  const extra=doPlan(true).filter(n=>!clips.some(c=>Math.abs(c.s-n.s)<PL));clips=clips.concat(extra).slice(0,S.n==='auto'?99:S.n);clips.sort((a,b)=>a.s-b.s)}
+ for(const c of clips.filter(c=>!c._ok)){if(await bad(c))c._bad=1;else c._ok=1}clips=clips.filter(c=>!c._bad);
+ if(!clips.length){clips=orig;clips.forEach(c=>{c._bad=0;c._ok=0;c.tags.push('Logo may be visible')});LAST.logoNote='Every pick in this video shows the logo, so the best picks were kept anyway. Try another part of the video.';return 0}
+ clips.forEach(c=>{if(c._ok)c.tags.push('Logo check passed')});
+ return dropped}
+
+
+/* ---------- tools (shorts / trailer) ---------- */
+/* ===== 6. TOOL SWITCHING (Shorts / Trailer / Image Animator) ===== */
+// ZOOM, SHX, SHY = trailer punch-in zoom and camera shake; WIDEREC = recording 16:9; _langSave / _modeSave = settings remembered while a tool is open.
+let _langSave=null,ZOOM=1,SHX=0,SHY=0,WIDEREC=false,_modeSave=null;
+// Switch between tools (shorts / trailer / animator): updates the page, the tabs and the options for the selected tool.
+function setTool(t,scroll){S.tool=t;document.body.dataset.tool=t;
+ $$('#tooltabs [data-tool]').forEach(b=>{const on=b.dataset.tool===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
+ if(t==='trailer'){if(S.lang==='auto'){_langSave='auto';S.lang='urdu';$$('[data-k=lang]').forEach(c=>c.classList.toggle('on',c.dataset.v==='urdu'))}if(S.mode!=='best'){_modeSave=S.mode;S.mode='best'}$('#go').textContent='Analyze video'}
+ else{if(_langSave){S.lang=_langSave;_langSave=null;$$('[data-k=lang]').forEach(c=>c.classList.toggle('on',c.dataset.v===S.lang))}if(_modeSave){S.mode=_modeSave;_modeSave=null}$('#go').textContent='Analyze & create plan'}
+ if(scroll)$('#tool').scrollIntoView({behavior:'smooth'})}
+// Address-hash routing: #shorts, #trailer, #animator and #tools decide which tool is shown.
+function route(){const h=location.hash.replace('#','');
+ if(h==='shorts'||h==='trailer'){document.body.classList.add('solo');setTool(h);document.title=(h==='trailer'?'Trailer / Promo':'Long Video → Shorts')+' – ClipForge Studio';window.scrollTo(0,0)}
+ else if(h===''||h==='tools'){document.body.classList.remove('solo');document.title='ClipForge Studio'}}
+// Re-route whenever the address hash changes, and once at start-up (see route() below).
+addEventListener('hashchange',route);
+// Trailer style buttons (Clean / Cinematic): update the options that depend on the style.
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-k=tstyle]');if(b){const cl=b.dataset.v==='clean';S.cin=cl?'off':'on';S.sfx=cl?'off':'on';[['cin',S.cin],['sfx',S.sfx]].forEach(([k,v])=>$$('[data-k='+k+']').forEach(c=>c.classList.toggle('on',c.dataset.v===v)))}});
+// Clicking a tool card or the home link opens that tool / goes back to the tool list.
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.toolcard,#homeLink');if(a&&busy){e.preventDefault();say('Stop the current job first, then go back.')}});
+route();
+/* ---------- trailer ---------- */
+/* ===== 7. TRAILER ===== */
+// The current trailer plan (parts, texts, music) or null.
+let TRAILER=null;
+// Real running time of a trailer plan in seconds (montage parts play faster in Cinematic style).
+function realLen(T){const CL=S.tstyle==='clean',m=T.segs.filter(g=>g.a3).length;let t=T.segs.reduce((a,g)=>a+((g.a3&&!CL)?(g.e-g.s)/1.5:(g.e-g.s)),0);
+ if(S.ovl==='on'){if(T.tag)t+=2.6;if(T.cast&&m)t+=2.2;if(T.rel)t+=4.2;if(T.words&&T.words.length)t+=Math.ceil(m/3)*.6}return t}
+// Show the trailer plan (parts and length) with its Export / Save buttons.
+function renderTrailer(){const b=$('#trlbox');b.innerHTML='';if(!TRAILER)return;const T=TRAILER,tot=T.segs.reduce((a,g)=>a+g.e-g.s,0),w=document.createElement('div');
+ w.innerHTML='<p class="note"><b>'+T.segs.length+' parts · about '+Math.round(realLen(T))+' s</b>'+(T.note?' · '+T.note:'')+'</p><video class="thumb'+(T.blob?'':' hide')+'" playsinline controls></video><div class="bar"><i></i></div><div class="parts"></div>';
+ const th=w.querySelector('video');if(T.blob){th.src=URL.createObjectURL(T.blob);w.querySelector('.bar i').style.width='100%'}
+ const P=w.querySelector('.parts');T.segs.forEach((g,k)=>{const r=document.createElement('div');r.className='row';r.style.cssText='justify-content:space-between;font-size:13px;margin-top:4px';
+  r.innerHTML='<span>'+(k+1)+'. '+fmt(g.s)+' – '+fmt(g.e)+(g.a3?' · montage':g.a4?' · closing':'')+'</span>';const x=document.createElement('button');x.className='sm';x.textContent='✕';x.setAttribute('aria-label','Remove part '+(k+1));
+  x.onclick=()=>{if(busy||T.segs.length<2)return;T.segs.splice(k,1);T.s=T.segs[0].s;T.e=Math.max(...T.segs.map(g=>g.e));T.blob=null;renderTrailer()};
+  // Extra part controls: move up / down (only inside the same group: dialogue, montage or closing) and replace with another part.
+  const bx=document.createElement('span');bx.style.cssText='display:flex;gap:4px';
+  const mkb=(txt,lab,fn)=>{const y=document.createElement('button');y.className='sm';y.textContent=txt;y.setAttribute('aria-label',lab);y.onclick=()=>{if(!busy)fn()};return y};
+  const same=(a,b)=>!!b&&!!a.a3===!!b.a3&&!!a.a4===!!b.a4,upd=()=>{T.s=T.segs[0].s;T.e=Math.max(...T.segs.map(q=>q.e));T.blob=null;renderTrailer()};
+  const mv=d=>{const o=T.segs[k+d];if(!same(g,o))return;T.segs[k]=o;T.segs[k+d]=g;upd()};
+  bx.append(mkb('▶','Preview part '+(k+1),()=>previewSeg(g.s,g.e)));
+  if(same(g,T.segs[k-1]))bx.append(mkb('▲','Move part '+(k+1)+' up',()=>mv(-1)));
+  if(same(g,T.segs[k+1]))bx.append(mkb('▼','Move part '+(k+1)+' down',()=>mv(1)));
+  if(!g.a3&&!g.a4&&LAST)bx.append(mkb('↻','Replace part '+(k+1)+' with another',()=>{
+   // Find the best unused spoken line (or window) and put it in the same place; parts already replaced are not offered again.
+   const{C,lo,hi,dur}=LAST,len=g.e-g.s,rej=T.rej||(T.rej=[]),ex=T.segs.concat(rej);let n=null;const LN=ENV?dlgLines(C,lo,hi,dur):null;
+   if(LN&&LN.length){const r2=pickLines(LN,1,0,ex);if(r2[0])n={s:r2[0].s,e:r2[0].e}}
+   else{const w2=pickWindows(C,{n:1,L:len,spread:true,rnd:true,lo,hi,dur,seen:ex.map(q=>q.s)});if(w2[0])n={s:w2[0].s,e:Math.min(dur,w2[0].s+len)}}
+   if(!n)return err('No other part found.');rej.push(g);T.segs[k]=g.h?{...n,h:1}:n;upd()}));
+  bx.append(x);r.append(bx);P.append(r)});
+ const eb=document.createElement('button');eb.className='sm exp'+(T.blob?' p':'');eb.textContent=T.blob?'Save trailer':'Export trailer';eb.style.marginTop='8px';eb.onclick=()=>{if(T.blob)save(T,'T');else exportClip('T')};w.append(eb);
+ if(T.blob)w.append(shareRow(T,'T'));
+ T._el=w;b.append(w);projSave()}
+
+/* ---------- trailer sound effects and text ---------- */
+// Sound-effect state: output gain node and a noise buffer.
+let sfxG=null,noiseBuf=null;
+// Create the sound-effects output once.
+function sfxInit(){if(sfxG)return;sfxG=actx.createGain();sfxG.gain.value=.55;sfxG.connect(adest);
+ noiseBuf=actx.createBuffer(1,actx.sampleRate*2,actx.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}
+// Play a synthesized sound effect (hit, boom, riser...).
+function sfx(kind){try{sfxInit();const t=actx.currentTime,mk=(dur,type,f0,f1,q,g0,g1)=>{const n=actx.createBufferSource();n.buffer=noiseBuf;const f=actx.createBiquadFilter(),g=actx.createGain();f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(f1,t+dur);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(g0,t+dur*.45);g.gain.exponentialRampToValueAtTime(g1,t+dur);n.connect(f);f.connect(g);g.connect(sfxG);n.start(t);n.stop(t+dur+.05)};
+ if(kind==='whoosh')mk(.45,'bandpass',350,3500,1.2,.9,.001);
+ else if(kind==='riser')mk(2.4,'bandpass',200,5000,2,.7,.001);
+ else{const o=actx.createOscillator(),g=actx.createGain(),big=kind==='boom';o.type='sine';o.frequency.setValueAtTime(big?110:90,t);o.frequency.exponentialRampToValueAtTime(30,t+(big?1.4:.9));
+  g.gain.setValueAtTime(big?1.1:.8,t);g.gain.exponentialRampToValueAtTime(.001,t+(big?1.5:1));o.connect(g);g.connect(sfxG);o.start(t);o.stop(t+1.6);mk(.5,'lowpass',2500,120,.7,.8,.001)}}catch(e){}}
+// Convert a source time t into trailer time (time elapsed through the chosen parts).
+function ttOf(segs,t){let a=0;for(const g of segs){if(t<g.s)return a;if(t<=g.e)return a+(t-g.s);a+=g.e-g.s}return a}
+// Draw one block of overlay text on the canvas (handles right-to-left text such as Urdu).
+function ovBlock(txt,y,px,al,wt){if(!txt||al<=0)return;const rtl=/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(txt),W=cv.width,k=WIDEREC?cv.height/900:W/720;
+ ctx.save();ctx.globalAlpha=Math.min(1,al);ctx.font=(wt||800)+' '+Math.round(px*k)+'px '+(rtl?FONT_RTL:FONT_LATIN);ctx.textAlign='center';ctx.textBaseline='middle';try{ctx.direction=rtl?'rtl':'ltr'}catch(e){}
+ const words=txt.split(/\s+/),lines=[];let ln='';for(const w of words){const t=ln?ln+' '+w:w;if(ctx.measureText(t).width>W*.84&&ln){lines.push(ln);ln=w}else ln=t}if(ln)lines.push(ln);
+ const lh=px*k*1.3;let yy=y*cv.height-(lines.length-1)*lh/2;ctx.lineJoin='round';ctx.lineWidth=7*k;ctx.strokeStyle='rgba(0,0,0,.85)';ctx.fillStyle='#fff';
+ for(const l of lines){ctx.strokeText(l,W/2,yy);ctx.fillText(l,W/2,yy);yy+=lh}ctx.restore()}
+// Draw the trailer text overlays for the current moment.
+function trlOverlay(T,tt,holdT,held){if(S.ovl!=='on')return;const W=cv.width,H=cv.height;
+ if(held){const a=Math.min(1,holdT/.4);ctx.save();ctx.globalAlpha=a*.8;ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);ctx.restore();ovBlock(T.title,.36,40,a,700);ovBlock(T.rel,.5,54,a);return}
+ if(tt<3.4){const a=Math.min(1,tt/.5,(3.4-tt)/.7);ctx.save();ctx.globalAlpha=Math.max(0,a)*.45;ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);ctx.restore();ovBlock(T.title,.45,62,a);ovBlock(T.tag,.56,34,a,600)}}
+
+/* ---------- cinematic trailer engine ---------- */
+// Start the trailer music: your own file if given, otherwise a synthesized drone. Returns an object with stop().
+async function startMusic(c,TOT){const nodes=[],t0=actx.currentTime,end=t0+TOT+8;let buf=null;
+ if(c.music){try{buf=await actx.decodeAudioData(await c.music.arrayBuffer())}catch(e){$('#capnote').textContent='Music file could not be read, using the built-in score.'}}
+ sfxInit();const g=actx.createGain();g.gain.setValueAtTime(.0001,t0);g.connect(adest);
+ if(buf){const o=actx.createBufferSource();o.buffer=buf;o.loop=true;o.connect(g);o.start(t0);g.gain.linearRampToValueAtTime(.32,t0+2);nodes.push(o)}
+ else{const f=actx.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(180,t0);f.frequency.exponentialRampToValueAtTime(1200,t0+TOT);f.connect(g);
+  [[55,'sawtooth'],[55.5,'sawtooth'],[110.4,'triangle']].forEach(([fr,ty])=>{const o=actx.createOscillator();o.type=ty;o.frequency.setValueAtTime(fr,t0);o.frequency.exponentialRampToValueAtTime(fr*1.5,t0+TOT);o.connect(f);o.start(t0);nodes.push(o)});
+  g.gain.linearRampToValueAtTime(.22,t0+TOT*.9)}
+ return{stop(){const t=actx.currentTime;try{g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(Math.max(.0001,g.gain.value),t);g.gain.linearRampToValueAtTime(.0001,t+.8)}catch(e){}
+  setTimeout(()=>nodes.forEach(o=>{try{o.stop()}catch(e){}}),900)},synth:!buf}}
+// One synthesized heartbeat thump.
+function thump(vol){try{sfxInit();const t=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.setValueAtTime(70,t);o.frequency.exponentialRampToValueAtTime(32,t+.22);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(g);g.connect(sfxG);o.start(t);o.stop(t+.35)}catch(e){}}
+// Apply the cinematic look to the frame just drawn: colour grade, vignette, flash, fade to black, 2.39:1 bars.
+function gradeFrame(a){const W=cv.width,H=cv.height;ctx.save();
+ if(S.cin==='on'){ctx.globalCompositeOperation='overlay';let gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'rgba(0,90,120,.42)');gr.addColorStop(1,'rgba(150,70,0,.34)');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='source-over';gr=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.72);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.6)');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+  if(WIDEREC){const bh=Math.max(0,(H-W/2.39)/2);ctx.fillStyle='#000';ctx.fillRect(0,0,W,bh);ctx.fillRect(0,H-bh,W,bh)}}
+ if(a.flash>0){ctx.globalAlpha=Math.min(.6,a.flash*.6);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H)}
+ if(a.black>0){ctx.globalAlpha=Math.min(1,a.black);ctx.fillStyle='#000';ctx.fillRect(0,0,W,H)}
+ ctx.restore()}
+// Draw a black text card (opening line, middle card or final title).
+function cardFrame(cd){const W=cv.width,H=cv.height;ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);const al=cd.fast?Math.max(0,Math.min(1,cd.el/.08,(cd.dur-cd.el)/.1)):Math.max(0,Math.min(1,cd.el/.5,(cd.dur-cd.el)/.5));
+ cd.lines.forEach(([t,y,px,wt])=>{if(t)ovBlock(/[\u0590-\u08FF]/.test(t)?t:t.toUpperCase(),y,px,al,wt)})}
+// Play and record the trailer: walks through the planned parts, seeks between them, draws cards and overlays, and drives the recorder (it is paused while the video seeks).
+async function runTrailer(c,tok,rec,bar){
+// The parts, the total length and the running start time of each part.
+ const segs=c.segs,n=segs.length,TOT=segs.reduce((a,g)=>a+g.e-g.s,0),cum=[];let acc=0;segs.forEach(g=>{cum.push(acc);acc+=g.e-g.s});
+// Settings read once: where the montage starts (act3), overlays on, sound effects on, cinematic on, clean style.
+ const act3=segs.findIndex(g=>g.a3),on=S.ovl==='on',fx=S.sfx==='on',cin=S.cin==='on',clean=S.tstyle==='clean';
+// Start the music (when sound effects are on or your own music file was chosen).
+ const music=(fx||c.music)?await startMusic(c,TOT):null;alive(tok);
+ return new Promise(res=>{recG.gain.value=1;let fIdx=-1,pendR=false,ci=0,pun=0,wp=0,word='',wi=0,idx=0,sk=false,card=null,last=performance.now(),flash=0,rised=false,nextP=actx.currentTime+.4,done=false;
+// finish(): reset zoom and volume, stop the music and end.
+  const finish=()=>{if(done)return;done=true;ZOOM=1;SHX=SHY=0;v.playbackRate=1;recG.gain.value=1;music&&music.stop();res()};
+// mk(): show a black text card for dur seconds (the video pauses meanwhile).
+  const mk=(lines,dur,final,fast)=>{card={lines,dur,el:0,final,fast};v.pause();if(fx)sfx(final?'boom':'hit')};
+// Opening line card.
+  if(on&&c.tag)mk([[c.tag,.5,44,600]],2.6,false);
+// Main loop, runs on every animation frame.
+  const loop=()=>{
+   if(tok!==RUN){finish();return}
+   const now=performance.now(),dt=Math.min(.1,(now-last)/1000);last=now;
+// While a card is showing: draw it, resume the recorder, and carry on when it ends.
+   if(card){if(!v.paused)v.pause();card.el+=dt;cardFrame(card);if(pendR){pendR=false;try{rec.resume()}catch(e){}}
+    if(card.el>=card.dur){const f=card.final;card=null;if(f){finish();return}v.play().catch(()=>{})}
+    requestAnimationFrame(loop);return}
+// Current part g, current video time and trailer time.
+   const g=segs[idx],cur=v.currentTime,tt=cum[idx]+Math.max(0,cur-g.s);
+// Fade the sound out during the last 0.1 s of a part so cuts do not click.
+   if(!sk&&fIdx!==idx&&g.e-cur<.1){fIdx=idx;try{const tn=actx.currentTime;recG.gain.cancelScheduledValues(tn);recG.gain.setValueAtTime(recG.gain.value,tn);recG.gain.linearRampToValueAtTime(.0001,tn+.08)}catch(e){}}
+// The part has finished: go to the next one (or show the title card / finish after the last part).
+   if(!sk&&cur>=g.e-.04){idx++;
+    if(idx>=n){v.pause();if(on&&(c.title||c.rel))mk([[c.title,.42,70,800],[c.rel,.58,38,600]],4.2,true);else{finish();return}requestAnimationFrame(loop);return}
+// Pause the recorder, jump to the next part, then un-mute and carry on.
+    sk=true;try{rec.pause()}catch(e){}
+    seek(v,segs[idx].s).then(()=>frameReady(v)).then(()=>{const m3=!!segs[idx].a3,fast=m3&&!clean,mute=!!(segs[idx].a3||segs[idx].a4);recG.gain.cancelScheduledValues(actx.currentTime);recG.gain.setValueAtTime(mute?0:.0001,actx.currentTime);if(!mute)recG.gain.linearRampToValueAtTime(1,actx.currentTime+.07);v.playbackRate=fast?1.5:1;pendR=true;if(fx){sfx('whoosh');if(m3)sfx('hit')}flash=clean?0:(m3?1:.5);sk=false;if(m3){ci++;pun=1;if(on&&c.words&&c.words.length&&ci%3===1)mk([[c.words[wi++%c.words.length],.5,96,900]],.6,false,true)}
+     if(idx===act3&&on&&c.cast)mk([[c.cast,.5,40,600]],2.2,false)},()=>{sk=false})}
+// Cinematic extras: punch-in zoom, shake, flashes and montage words (not used in Clean style).
+   const pr=Math.min(1,Math.max(0,(cur-g.s)/Math.max(.5,g.e-g.s)));if(cin){if(g.a3){const ty=ci%3;ZOOM=ty===0?1+.22*pun:ty===1?1.08:1+.07*pr+.1*pun;const k2=cv.width/1280;SHX=ty===1?(Math.random()-.5)*44*pun*k2:0;SHY=ty===1?(Math.random()-.5)*30*pun*k2:0}else{ZOOM=1+.07*pr;SHX=SHY=0}}else{ZOOM=1;SHX=SHY=0}pun=Math.max(0,pun-dt*5);
+// Draw this frame on the canvas.
+   draw();
+// Fade in from black at the start and out at the end (Cinematic only).
+   const left=g.e-cur,black=clean?0:Math.max(tt<.8?1-tt/.8:0,idx===n-1&&left<.6?1-left/.6:0);
+// Apply the look and draw the montage word while one is showing.
+   gradeFrame({flash,black});flash=Math.max(0,flash-dt*5);if(wp>0&&word){ovBlock(/[\u0590-\u08FF]/.test(word)?word:word.toUpperCase(),.5,92*(1+.7*wp),Math.min(1,(1-wp)*4+.4),900);wp=Math.max(0,wp-dt*1.6)}
+// Riser sound shortly before the end.
+   if(fx&&!rised&&tt>TOT-2.6){rised=true;sfx('riser')}
+// Heartbeat thumps that speed up towards the end (built-in score only).
+   if(fx&&music&&music.synth&&tt>TOT*.2&&actx.currentTime>=nextP){thump(.7);nextP=actx.currentTime+Math.max(.3,1.1-.8*tt/TOT)}
+// Update the progress bar and resume the recorder after a seek.
+   bar.style.width=Math.min(100,tt/TOT*100)+'%';if(pendR){pendR=false;try{rec.resume()}catch(e){}}
+   requestAnimationFrame(loop)};
+  loop()})}
+// "Make trailer" button: choose the parts, build the plan (TRAILER) and show it.
+$('#trlgo').onclick=async()=>{if(busy)return;if(!LAST)return err('Run "Find shorts" on the video first (Best-moments mode), then make the trailer.');
+ const tok=RUN;busy=true;lock(true);
+// Read the analysis result and work out the trailer sizes.
+ try{const{lo,hi,dur,C}=LAST,len=5,n=Math.max(4,Math.round(+S.tl/len)),hi2=Math.round(hi-(hi-lo)*.08);
+  say('Choosing trailer parts…');const Tc=Math.max(20,+S.tl-6),n1=Math.max(3,Math.round(Tc*.62/5.5)),n3=Math.max(4,Math.round(Tc*.38/2));
+// segs = the parts [{s, e}] (a3 = montage hit, a4 = ending, h = opening dialogue line).
+  let segs,note='';
+// CLEAN style: dialogue scenes first, then a fast montage, then a closing shot.
+  if(S.tstyle==='clean'){const T0=+S.tl,actT=T0*.74,monT=T0*.12,pat=[3,2,4.5,2.4,2.2,2,3.2,1.6,1.2,1.5,1.8,1.6,2.5],lens=[];
+// Build the list of part lengths for the dialogue section.
+   for(let tt=0,i=0;tt<actT-1;i++){lens.push(pat[i%pat.length]);tt+=pat[i%pat.length]}
+   const nA=lens.length,nM=Math.max(6,Math.round(monT/.4));
+// Choose scene windows by score, spread over the video.
+   let r=[];for(const ms of [.5,.35,0]){r=pickWindows(C,{n:nA,spread:true,rnd:false,lo,hi:hi2,dur,seen:[],L:5,minSp:ms});if(r.length>=Math.ceil(nA*.7))break}
+// Sort them by time.
+   const aW=r.sort((a,b)=>a.s-b.s);
+// Move each start to a quiet point (a pause).
+   if(ENV)aW.forEach(c=>{c.s=Math.max(0,snapT(c.s,2))});
+// Default parts: a fixed length from each window start.
+   let A=aW.map((c,i)=>({s:c.s,e:Math.min(dur,c.s+lens[i%lens.length])}));
+// If the audio allows it, replace them with whole spoken lines: the best 4-5 open the trailer, then more full lines follow.
+   {const LN=dlgLines(C,lo,hi2,dur);if(LN){const H=pickLines(LN,5,8,[]);
+     if(H.length>=3){let tot=H.reduce((a,x)=>a+x.e-x.s,0);const R=[];for(const x of pickLines(LN.filter(z=>!H.includes(z)),14,3.5,H)){if(tot>=actT)break;R.push(x);tot+=x.e-x.s}
+      A=H.sort((a,b)=>a.s-b.s).map(x=>({s:x.s,e:x.e,h:1})).concat(R.sort((a,b)=>a.s-b.s).map(x=>({s:x.s,e:x.e})));note=H.length+' full dialogue lines open the trailer'}}}
+// quiet(): find calmer windows (little speech) for the montage and the ending.
+   const quiet=(n,L)=>{let q=[];for(const mx of [.25,.4,1]){q=pickWindows(C,{n,spread:true,rnd:false,lo,hi:hi2,dur,seen:[],L,maxSp:mx});if(q.length>=Math.ceil(n*.6))break}return q};
+// free(): true if a window does not overlap the dialogue parts.
+   const free=x=>!A.some(p=>x.s<p.e+1&&x.e>p.s-1);
+// Pick the closing shot(s).
+   let endW=quiet(6,5).filter(x=>free({s:x.s,e:x.s+4.5})).sort((a,b)=>(b.w||0)-(a.w||0)).slice(0,2);
+   const used=A.concat(endW.map(c=>({s:c.s,e:c.s+4.5})));
+// Montage clips: short hits taken from the quieter windows.
+   let m=quiet(nM+4,5);
+   m=m.flatMap(x=>{const sc=[];for(let t=x.s;t<=x.s+3;t++)sc.push([((C.sc[t]||0)+(C.sc[t+1]||0))*(1-Math.min(1,(C.sp[t]||0))),t]);sc.sort((a,b)=>b[0]-a[0]);const out=[{s:sc[0][1],e:Math.min(dur,sc[0][1]+.45),w:x.w}],o=sc.find(q=>Math.abs(q[1]-sc[0][1])>=2);if(o)out.push({s:o[1],e:Math.min(dur,o[1]+.45),w:x.w*.99});return out}).filter(x=>!used.some(p=>x.s<p.e+1&&x.e>p.s-1)).slice(0,nM);
+   m.sort((a,b)=>(a.w||0)-(b.w||0));
+// Ending parts.
+   const E=[];if(endW[0])E.push({s:endW[0].s,e:Math.min(dur,endW[0].s+4.5),a4:1});if(endW[1])E.push({s:endW[1].s,e:Math.min(dur,endW[1].s+.6),a4:1});
+// Join: dialogue + montage + ending.
+   segs=A.concat(m.map(x=>({s:x.s,e:x.e,a3:1}))).concat(E)}
+// CINEMATIC style: longer scenes, then fast 1.5 s montage hits.
+  else{
+  let r=[];for(const ms of [.5,.35,0]){r=pickWindows(C,{n:n1,spread:true,rnd:false,lo,hi:hi2,dur,seen:[],L:5.5,minSp:ms});if(r.length>=Math.ceil(n1*.7))break}
+  r.forEach(c=>{if(ENV){c.s=Math.max(0,snapT(c.s,2.5));c.e=Math.min(dur,Math.max(c.s+4.5,snapT(c.s+5.5,2)))}});
+  r.sort((a,b)=>a.s-b.s);r=r.filter((c,i)=>i===0||c.s>=r[i-1].e);
+  let m=[];for(const ms of [.35,0]){m=pickWindows(C,{n:Math.max(6,Math.round(Tc*.38/1.0)),spread:true,rnd:false,lo,hi:hi2,dur,seen:[],L:5,minSp:ms});if(m.length>=4)break}
+  m=m.map(x=>{let bt=x.s,bv=-1;for(let t=x.s;t<=x.s+3;t++){const q=(C.sc[t]||0)+(C.sc[t+1]||0);if(q>bv){bv=q;bt=t}}return{s:bt,e:Math.min(dur,bt+1.5),w:x.w,a3:1}}).filter(x=>!r.some(p=>x.s<p.e+1&&x.e>p.s-1));
+  m.sort((a,b)=>(a.w||0)-(b.w||0));
+  segs=r.map(c=>({s:c.s,e:c.e})).concat(m.map(x=>({s:x.s,e:x.e,a3:1})));}
+// Optional: align the cut points to full spoken lines with Whisper (slow; can be skipped).
+  if(S.align==='on'){const _m=S.model;try{if(S.model==='tiny')S.model='base';const ns=segs.filter(g=>!g.a3&&!g.a4);
+   let skipped=false;const tStart=Date.now(),sp=new Promise(r=>{['#skipAlign','#skipAlign2'].forEach(id=>{const bt=$(id);bt.hidden=false;bt.onclick=()=>{skipped=true;r()}})});
+   for(let i=0;i<ns.length;i++){if(skipped||Date.now()-tStart>150000){note=skipped?'dialogue alignment skipped':'dialogue alignment took too long and was skipped';break}const g=ns[i];stat('al','dialogue '+(i+1)+' of '+ns.length+(AUD?'':' (real time, keep this screen on)'));alive(tok);
+    const t0=Math.max(0,g.s-2),t1=Math.min(dur,g.e+4),got=await Promise.race([sp,new Promise(r=>setTimeout(()=>r('SLOW'),60000)),(async()=>{const pcm=await clipPCM({s:t0,e:t1,pcm:null},tok);alive(tok);return buildCues(await transcribe(pcm),t0,pcm)})()]);if(skipped){note='dialogue alignment skipped';break}if(got==='SLOW'){note='dialogue alignment was too slow on this device and was skipped';break}const q=got;
+    const a=q.find(x=>x.s<=g.s+.3&&x.e>g.s+.3),b=q.find(x=>x.s<g.e-.3&&x.e>=g.e-.3);let s2=a?Math.max(t0,a.s-.1):g.s,e2=b?Math.min(t1,b.e+.2):g.e;if(e2-s2<=10){g.s=s2;g.e=e2}}}
+   catch(e){if(e.message==='Stopped')throw e;note=/dynamically imported|Failed to fetch|NetworkError|network/i.test(e.message||'')?'speech model could not be downloaded (check your internet), so cuts were not aligned to dialogue':'dialogue alignment failed ('+(e.message||e)+')'}finally{S.model=_m;stat('al','');stat('cap','');['#skipAlign','#skipAlign2'].forEach(id=>$(id).hidden=true)}}
+// Keep the opening dialogues first, sort the other parts by time and remove overlaps.
+  {const H=segs.filter(g=>g.h),A=segs.filter(g=>!g.a3&&!g.a4&&!g.h).sort((a,b)=>a.s-b.s),M=segs.filter(g=>g.a3),E=segs.filter(g=>g.a4);segs=H.concat(A.filter((g,i)=>(i===0||g.s>=A[i-1].e)&&!H.some(p=>g.s<p.e&&g.e>p.s))).concat(M).concat(E)}
+// Logo check: drop parts that show a logo or banner.
+  if(S.logo==='on'&&LAST.logoL&&LAST.logoL.zones.length&&v.videoWidth){const L=LAST.logoL,keep=[];for(const g of segs){alive(tok);const k=Math.max(2,Math.min(8,Math.round((g.e-g.s)/.6)));if((await frameSetN(g.s,g.e,k,tok)).some(f=>L.zones.some(z=>matchZone(f,z))))continue;keep.push(g)}
+   if(keep.length&&keep.length<segs.length)note=(note?note+' · ':'')+'dropped '+(segs.length-keep.length)+' part(s) showing a logo';if(keep.length)segs=keep}
+  else if(S.logo==='on'&&LAST.logoL&&!LAST.logoL.zones.length)note=(note?note+' · ':'')+(LAST.logoNote||'no repeating logo found');
+  else if(S.logo==='on')note=(note?note+' · ':'')+'logo check not run (needs the logo option on during Analyze)';
+// At least 2 parts are needed.
+  if(segs.length<2)throw new Error('Could not find enough parts. Try a longer video.');
+// Store the plan with the typed texts (words, cast, title, release line) and your music file, then show it.
+  TRAILER={words:($('#tWords').value||'').split(/[,،]/).map(x=>x.trim()).filter(Boolean),cast:$('#tCast').value.trim(),music:$('#tMusic').files[0]||null,title:$('#tTitle').value.trim(),tag:$('#tTag').value.trim(),rel:$('#tRel').value.trim(),trailer:1,s:segs[0].s,e:segs[segs.length-1].e,segs,note,blob:null,tags:[],pcm:null};renderTrailer();say('Trailer parts ready. Remove any you do not want, then Export trailer.')
+// Report a failure to the user.
+ }catch(e){if(e.message!=='Stopped'){say('Trailer failed: '+(e.message||e));err('Trailer failed: '+(e.message||e))}}
+// Always unlock the interface at the end.
+ if(tok===RUN){busy=false;lock(false)}};
+/* ===== 8. SHORTS: ANALYZE BUTTON, RESULT LIST, DRAWING ===== */
+// "Analyze & create plan" button (Shorts and Trailer): scans the video, scores every second, then builds the plan.
+$('#go').onclick=async()=>{
+ if(busy)return;const tok=RUN;busy=true;lock(true);$('#res').classList.add('hide');PL=lenVal()||45;prog(.01);
+ try{
+  const dur=v.duration,D=Math.ceil(dur);LAST=null;
+  if(S.len==='full'){clips=[{s:0,e:dur,score:null,tags:['Full video'],full:1,blob:null,pcm:null}];const mb=Math.round((S.res==='1080'?8:4)/8*dur);say('Full video: '+Math.round(dur/60)+' min of real-time export, roughly '+mb+' MB. Keep this screen on.')}
+  else if(S.mode==='even'){clips=evenPlan(dur,PL,S.n).map(x=>({...x,score:null,tags:[],blob:null,pcm:null}));say('Split into '+clips.length+' shorts.')}
+  else{
+   let lo=0,hi=D;if(S.skip==='on'&&D>300){lo=Math.min(90,Math.round(D*.04));hi=D-Math.min(120,Math.round(D*.05))}
+   let A=null,M=null;
+   if(file.size<=decodeLimit()){say('Reading audio…');try{A=await audioFeats(D,tok)}catch(e){if(e.message==='Stopped')throw e;A=null;AUD=null;ENV=null}}
+   if(!A){const step=S.deep==='1'?6:12,n=Math.ceil((hi-lo)/step);
+    say('Scanning '+n+' points across the video (about '+Math.max(1,Math.ceil(n*1.5/60))+' min). Keep this screen on.');
+    const P=await probeScan(D,lo,hi,step,true,true,tok);A=P.A;M=P.M}
+   else if(S.deep==='1'){say('Scanning motion…');M=(await probeScan(D,lo,hi,8,false,true,tok)).M}
+   alive(tok);
+   if(!A&&!M)throw new Error('Could not read audio or video frames from this file.');
+   LAST={D,lo,hi,dur,seen:[],C:comps(A,M,D)};clips=doPlan(false);
+   if(S.logo==='on'&&v.videoWidth){try{const dn=await logoFilter(tok);$('#capnote').textContent=(dn?'Replaced '+dn+' short(s) that showed a logo. ':'')+(LAST.logoNote||'')}catch(e){if(e.message==='Stopped')throw e;$('#capnote').textContent='Logo check skipped: '+(e.message||e)}}
+   if(!clips.length)throw new Error('No moments found. Try a shorter length.');
+   say(clips.length<S.n?'Only '+clips.length+' non-overlapping shorts fit. Try a shorter length.':'Found '+clips.length+' moments spread across the video. Tap "Different picks" for another set.')}
+  prog(1);render();if(S.tool==='trailer')say('Analysis done. Choose the length and format below, then make your trailer.');$('#res').classList.remove('hide');$('#trl').classList.remove('hide');TRAILER=null;renderTrailer();$('#res').scrollIntoView({behavior:'smooth'})
+ }catch(e){if(e.message!=='Stopped'){say('Analysis failed: '+(e.message||e));err('Analysis failed: '+(e.message||e))}}
+ if(tok===RUN){setTimeout(()=>$('#pbar').classList.add('hide'),600);busy=false;lock(false)}};
+// "Different picks" button: build a new plan with some random variety.
+$('#shuf').onclick=()=>{if(busy||!LAST)return;clips=doPlan(true);render();say('New set of picks.')};
+
+// Draw the list of shorts (thumbnail, score, tags, Export / Save buttons).
+function render(){
+ const L=$('#list');L.innerHTML='';$('#rtitle').textContent=clips.length+' shorts';$('#shuf').classList.toggle('hide',!LAST);
+ clips.forEach((c,i)=>{const r=document.createElement('div');r.className='clip';
+  r.innerHTML='<video class="thumb" muted playsinline preload="metadata"></video><div class="info"><b>'+(c.full?'Full video':'Short '+(i+1))+(c.score!=null?' <span class="score">'+c.score+'</span>':'')+c.tags.map(t=>'<span class="tag">'+t+'</span>').join('')+'</b><span class="t">'+fmt(c.s)+' – '+fmt(c.e)+' ('+Math.round(c.e-c.s)+'s)</span><div class="bar"><i></i></div></div>';
+  const th=r.querySelector('.thumb');
+  if(c.blob){th.src=URL.createObjectURL(c.blob);th.onclick=()=>th.paused?th.play():th.pause();r.querySelector('.bar i').style.width='100%'}else th.src=url+'#t='+(c.s+.1);
+  const tr=document.createElement('div');tr.className='row';tr.style.marginTop='6px';
+  [['◂ start','s',-1],['start ▸','s',1],['◂ end','e',-1],['end ▸','e',1]].forEach(([t,k2,d])=>{const x=document.createElement('button');x.className='sm';x.style.cssText='padding:3px 7px;font-size:12px';x.textContent=t;
+   x.onclick=()=>{if(busy)return;const o={s:c.s,e:c.e};o[k2]+=d;if(o.s<0||o.e>v.duration||o.e-o.s<3)return;c.s=o.s;c.e=o.e;c.blob=null;c.pcm=null;c.plan=null;c.cap=S.cap==='file';render()};tr.append(x)});
+  // Preview: plays this short in the player above, from its start to its end.
+  {const pv=document.createElement('button');pv.className='sm';pv.style.cssText='padding:3px 7px;font-size:12px';pv.textContent='▶ preview';pv.onclick=()=>previewSeg(c.s,c.e);tr.append(pv)}
+  r.querySelector('.info').append(tr);
+  // After export: share buttons.
+  if(c.blob)r.querySelector('.info').append(shareRow(c,i));
+  const b=document.createElement('button');b.className='sm exp'+(c.blob?' p':'');b.textContent=c.blob?'Save':'Export';b.onclick=()=>{if(c.blob)save(c,i);else exportClip(i)};
+  r.append(b);c._el=r;L.append(r)});
+ // Automatic save of the plan.
+ projSave()}
+
+/* ---------- drawing ---------- */
+// Smart-reframe camera: x = current position, tx = target, keys = camera keyframes, ww = crop width as a fraction of the video width.
+const cam={x:.5,tx:.5,k:0,keys:[{t:0,t0:0,x:.5,cut:true}],ww:.316,pg:null,lc:null};
+// Left pixel of the crop for a camera centre, kept inside the video.
+const srcX=(cx,ww,vw)=>Math.max(0,Math.min(vw-ww,cx*vw-ww/2));
+// Draw the current video frame on the canvas with the chosen framing (smart reframe or centre crop), then the captions.
+function draw(){const w=cv.width,h=cv.height,vw=v.videoWidth,vh=v.videoHeight;if(!vw)return;
+ if(WIDEREC){ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);const sc=Math.min(w/vw,h/vh)*ZOOM,dw=vw*sc,dh=vh*sc;ctx.drawImage(v,(w-dw)/2+SHX,(h-dh)/2+SHY,dw,dh);return}
+ if(S.fit==='crop'){const sc=Math.max(w/vw,h/vh),dw=vw*sc,dh=vh*sc,p=$('#pos').value/100;ctx.drawImage(v,-(dw-w)*p,-(dh-h)/2,dw,dh)}
+ else if(S.fit==='smart'){const ww=Math.min(vw,vh*w/h),wh=ww*h/w;ctx.drawImage(v,srcX(RECING?cam.x:.5,ww,vw),(vh-wh)/2,ww,wh,0,0,w,h)}
+ else{const sc=Math.max(w/vw,h/vh),dw=vw*sc,dh=vh*sc,t=draw.t||(draw.t=document.createElement('canvas'));t.width=24;t.height=42;
+  t.getContext('2d').drawImage(v,-(dw/30-24)/2,-(dh/30-42)/2,dw/30,dh/30);ctx.drawImage(t,0,0,w,h);ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(0,0,w,h);
+  const fh=vh*w/vw;ctx.drawImage(v,0,(h-fh)/2,w,fh)}
+ drawCap()}
+// Fonts for the captions (Latin, Arabic / Urdu, Devanagari).
+const FONT_LATIN='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',
+ FONT_RTL='"Noto Naskh Arabic","Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Segoe UI",Tahoma,"Geeza Pro","Arial Unicode MS",Arial,sans-serif',
+ FONT_DEV='"Noto Sans Devanagari","Nirmala UI","Kohinoor Devanagari",Mangal,"Arial Unicode MS",sans-serif';
+// Ask the browser to load the caption fonts once.
+let fontsAsked=false;function loadCapFonts(){if(fontsAsked||!document.fonts)return;fontsAsked=true;
+ ['700 40px "Noto Naskh Arabic"','700 40px "Noto Sans Devanagari"'].forEach((f,i)=>document.fonts.load(f,i?'हिन्दी':'اردو کیپشن').catch(()=>{}))}
+loadCapFonts();
+// Word-by-word caption styles. Whisper gives times per phrase, so the time of each word is estimated from its length.
+// "karaoke": words already spoken turn yellow. "hl" (highlight): the spoken word sits on an orange box.
+function drawCapWords(c,t){
+ const w=cv.width,k=w/720,rtl=/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(c.text),dev=/[\u0900-\u097F]/.test(c.text),hl=S.cs==='hl';
+ const words=c.text.split(/\s+/).filter(Boolean).map(x=>(hl&&!rtl&&!dev)?x.toUpperCase():x);if(!words.length)return;
+ const tot=words.reduce((a,x)=>a+x.length+1,0);let a0=c.s;
+ const tm=words.map(x=>{const d=(c.e-c.s)*(x.length+1)/tot,r=[a0,a0+d];a0+=d;return r});
+ let cur=tm.findIndex(r=>t>=r[0]&&t<r[1]);if(cur<0)cur=t>=c.e?words.length-1:0;
+ const size=Math.round(50*k);
+ ctx.font=(rtl||dev?'700 ':'800 ')+size+'px '+(rtl?FONT_RTL:dev?FONT_DEV:FONT_LATIN);ctx.textAlign='left';ctx.lineJoin='round';
+ try{ctx.direction=rtl?'rtl':'ltr'}catch(e){}
+ const sp=ctx.measureText(' ').width,ww=words.map(x=>ctx.measureText(x).width);
+ const lines=[];let ln=[],lw=0;
+ words.forEach((x,i)=>{const add=(ln.length?sp:0)+ww[i];if(ln.length&&lw+add>w-90*k){lines.push(ln);ln=[];lw=0}lw+=(ln.length?sp:0)+ww[i];ln.push(i)});
+ if(ln.length)lines.push(ln);
+ const lh=(hl?72:62)*k*(rtl?1.3:1);let y=cv.height*.72-(lines.length-1)*lh/2;
+ for(const L of lines){
+  const W=L.reduce((s0,i,j)=>s0+ww[i]+(j?sp:0),0);
+  let x=rtl?w/2+W/2:w/2-W/2;                    // left-to-right starts at the left end of the centred line, right-to-left at the right end
+  for(const i of L){
+   const x0=rtl?x-ww[i]:x,on=(i===cur);
+   if(hl&&on){const px=14*k;ctx.fillStyle='#ff5a1f';ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(x0-px,y-size*.95,ww[i]+2*px,size*1.25,16*k);else ctx.rect(x0-px,y-size*.95,ww[i]+2*px,size*1.25);ctx.fill()}
+   if(!(hl&&on)){ctx.lineWidth=(rtl||dev?7:11)*k;ctx.strokeStyle='#000';ctx.strokeText(words[i],x0,y)}
+   ctx.fillStyle=(!hl&&i<=cur)?'#ffe14d':'#fff';ctx.fillText(words[i],x0,y);
+   x+=rtl?-(ww[i]+sp):(ww[i]+sp)}
+  y+=lh}
+ try{ctx.direction='ltr'}catch(e){}ctx.textAlign='center'}
+// Draw the caption text for the current time (Classic, Pop, Box, Neon, Minimal here; Karaoke and Highlight in drawCapWords).
+function drawCap(){if(!capOn||!cues.length)return;const t=v.currentTime,c=cues.find(q=>t>=q.s&&t<=q.e);if(!c)return;
+ if(S.cs==='karaoke'||S.cs==='hl')return drawCapWords(c,t);
+ const w=cv.width,k=w/720,pop=S.cs==='pop',rtl=/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(c.text),dev=/[\u0900-\u097F]/.test(c.text),txt=(pop&&!rtl&&!dev)?c.text.toUpperCase():c.text;
+ ctx.font=(rtl||dev?'700 ':'800 ')+Math.round(pop?54*k:S.cs==='min'?38*k:46*k)+'px '+(rtl?FONT_RTL:dev?FONT_DEV:FONT_LATIN);ctx.textAlign='center';ctx.lineJoin='round';
+ try{ctx.direction=rtl?'rtl':'ltr'}catch(e){}
+ const lines=[];let l='';for(const x of txt.split(/\s+/)){const tt=l?l+' '+x:x;if(ctx.measureText(tt).width>w-90*k&&l){lines.push(l);l=x}else l=tt}lines.push(l);
+ const lh=(pop?64:56)*k*(rtl?1.3:1);let y=cv.height*.72-(lines.length-1)*lh/2;ctx.lineWidth=(rtl||dev?7:11)*k;ctx.strokeStyle='#000';ctx.fillStyle=pop?'#ffe14d':S.cs==='neon'?'#7df9ff':'#fff';
+ if(S.cs==='box'){const mw=Math.max(...lines.map(x=>ctx.measureText(x).width))+40*k,top=y-lh*.8,bh=lh*lines.length+16*k;ctx.fillStyle='rgba(0,0,0,.72)';ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(w/2-mw/2,top,mw,bh,22*k);else ctx.rect(w/2-mw/2,top,mw,bh);ctx.fill();ctx.fillStyle='#fff'}
+ // Neon: glowing cyan text. Minimal: smaller white text with a soft shadow and no outline.
+ if(S.cs==='neon'){ctx.shadowColor='#00e5ff';ctx.shadowBlur=26*k;ctx.lineWidth=5*k;ctx.strokeStyle='#022'}
+ if(S.cs==='min'){ctx.shadowColor='rgba(0,0,0,.85)';ctx.shadowBlur=10*k;ctx.shadowOffsetY=2*k}
+ for(const ln of lines){if(S.cs!=='box'&&S.cs!=='min')ctx.strokeText(ln,w/2,y);ctx.fillText(ln,w/2,y);y+=lh}
+ ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.shadowOffsetY=0;
+ try{ctx.direction='ltr'}catch(e){}}
+
+/* ===== 9. HELPER MEDIA, CLIP AUDIO, CAPTIONS (Whisper), SILENCE TRIM ===== */
+/* ---------- helper media elements (so the main player is never disturbed) ---------- */
+// A second hidden video player used for scanning, so the main player is never disturbed.
+function getV2(){if(!EL.v2){const e=document.createElement('video');e.muted=true;e.playsInline=true;e.preload='auto';e.src=url;
+ e.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.02;pointer-events:none';document.body.append(e);EL.v2=e}return EL.v2}
+// A helper media element for audio, created once.
+async function getAV(){if(EL.a)return EL.a;await audioReady();
+ const mk=k=>{const e=document.createElement(k);e.preload='auto';e.src=url;if(k==='video'){e.playsInline=true;e.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.02;pointer-events:none';document.body.append(e)}e.load();return e};
+ const ready=e=>guard(new Promise(r=>{if(e.readyState>=1)return r(true);e.addEventListener('loadedmetadata',()=>r(true),{once:true});e.addEventListener('error',()=>r(false),{once:true})}),20000,'Audio load').catch(x=>{if(x.message==='Stopped')throw x;return false});
+ let el=mk('audio');if(!await ready(el)){el=mk('video');if(!await ready(el))throw new Error('Could not read this video’s audio')}
+ EL.a={el,node:actx.createMediaElementSource(el)};return EL.a}
+
+/* ---------- clip audio (for captions and silence trim) ---------- */
+// Play a clip silently and capture its audio samples.
+async function captureClip(c,tok){
+ const a=await getAV();alive(tok);const sr=actx.sampleRate;a.el.pause();await seek(a.el,c.s);
+ const bufs=[],tap=startTap(a.node,b=>bufs.push(b));
+ try{await guard(a.el.play(),15000,'Audio play');
+  await guard(new Promise(res=>{const f=()=>{if(tok!==RUN||a.el.currentTime>=c.e||a.el.ended||a.el.paused)res();else{stat('aud','reading audio '+Math.round((a.el.currentTime-c.s)/(c.e-c.s)*100)+'%');setTimeout(f,200)}};f()}))
+ }finally{a.el.pause();tap.stop();stat('aud','')}
+ alive(tok);return to16k(cat(bufs),sr)}
+// Get the clip's 16 kHz audio (cached).
+function clipPCM(c,tok){if(c.pcm)return Promise.resolve(c.pcm);
+ if(AUD){c.pcm=AUD.slice(Math.floor(c.s*16000),Math.floor(c.e*16000));return Promise.resolve(c.pcm)}
+ if(!c._pp)c._pp=captureClip(c,tok).then(p=>{c.pcm=p;return p}).finally(()=>{c._pp=null});
+ return c._pp}
+// Loudness (RMS) of a range of audio.
+const rmsRange=(a,s,e)=>{const i=Math.max(0,Math.floor(s*16000)),j=Math.min(a.length,Math.floor(e*16000));let t=0,n=0;for(let k=i;k<j;k+=4){t+=a[k]*a[k];n++}return Math.sqrt(t/Math.max(1,n))};
+// "Speech" silence trim: find the quiet gaps between speech so they can be skipped.
+async function speechSkip(c,tok){const pcm=await clipPCM(c,tok);alive(tok);
+ if(rmsRange(pcm,0,pcm.length/16000)<.003)return[];
+ let q;if(S.cap==='auto'){await ensureCaps(c,tok);q=cues.filter(x=>x.e>c.s&&x.s<c.e)}
+ else{stat('cap','finding dialogue…');q=buildCues(await transcribe(pcm),c.s,pcm);stat('cap','')}
+ alive(tok);q.sort((x,y)=>x.s-y.s);
+ if(!q.length){$('#capnote').textContent='Dialogue trim: no speech found in this short, so nothing was cut.';return[]}
+ const out=[],pad=.1,add=(x,y)=>{if(y-x>.3)out.push([x,y])};
+ add(c.s,q[0].s-pad);for(let i=0;i<q.length-1;i++)add(q[i].e+pad,q[i+1].s-pad);add(q[q.length-1].e+pad,c.e);
+ return out}
+// Work out which time ranges to skip while exporting (the Trim silence option).
+async function skipMap(c,tok){if(S.tr==='off')return[];if(S.tr==='speech')return speechSkip(c,tok);const a=await clipPCM(c,tok),st=1600,n=Math.floor(a.length/st),r=[];
+ for(let i=0;i<n;i++){let q=0;for(let j=0;j<st;j+=4){const x=a[i*st+j]||0;q+=x*x}r.push(Math.sqrt(q/(st/4)))}
+ const so=[...r].sort((x,y)=>x-y),thr=Math.max(.008,so[Math.floor(n*.95)]*.12),ml={gentle:9,normal:6,strong:4}[S.tr],out=[];
+ for(let i=0;i<n;){if(r[i]<thr){let j=i;while(j<n&&r[j]<thr)j++;if(j-i>=ml){const x=c.s+(i+1)/10,y=c.s+(j-1)/10;if(y-x>.2)out.push([x,y])}i=j}else i++}
+ return out}
+
+/* ---------- captions ---------- */
+// Cache of loaded Whisper models.
+const ASRP={};
+// Load the Whisper speech model in the browser (downloaded once).
+function loadASR(){const m=S.model;if(ASRP[m])return ASRP[m];
+ ASRP[m]=(async()=>{const mb={tiny:'~40',base:'~75',small:'~250'}[m];stat('cap','loading speech library…');
+  const T=await guard(import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2'),120000,'Speech library download');
+  try{T.env.backends.onnx.wasm.proxy=true}catch(e){}
+  stat('cap','loading speech model (first time '+mb+'MB)…');
+  let lastEv=Date.now(),wd=null,wdRej;const stuck=new Promise((_,r)=>{wdRej=r});
+  wd=setInterval(()=>{if(Date.now()-lastEv>90000){clearInterval(wd);wdRej(new Error('The speech model did not start on this browser (it stopped after downloading). Reload the page, try Chrome, or choose the Fast model.'))}},3000);
+  const cb=x=>{lastEv=Date.now();if(x.status==='progress'&&/onnx/.test(x.file||'')){const pc=Math.round(x.progress);stat('cap',pc>=100?'starting speech model (can take up to a minute)…':'downloading speech model '+pc+'%')}else if(x.status==='ready'){stat('cap','')}};
+  try{return await Promise.race([guard(T.pipeline('automatic-speech-recognition','Xenova/whisper-'+m,{progress_callback:cb}),900000,'Speech model download'),stuck])}finally{clearInterval(wd)}})();
+ ASRP[m].catch(()=>{delete ASRP[m]});return ASRP[m]}
+// Transcribe audio with Whisper and return the text chunks.
+async function transcribe(pcm){const p=await loadASR(),o={task:'transcribe',chunk_length_s:30,stride_length_s:5,return_timestamps:true};if(S.lang!=='auto')o.language=S.lang;
+ const secs=pcm.length/16000;stat('cap','transcribing…');
+ const r=await guard(p(pcm,o),120000+secs*10000,'Transcription');return r.chunks||[]}
+// Phrases Whisper invents on silence (like "thanks for watching"); they are removed.
+const JUNK=/^(thanks? for watching|thank you( so much)?( for watching)?|please subscribe|subscribe|bye|you|\.+|music|\[.*\]|\(.*\)|♪.*)[.!\s]*$/i;
+// Turn Whisper chunks into timed caption cues (words and short lines).
+function buildCues(ch,off,pcm){let out=[];
+ ch.forEach(h=>{const w=(h.text||'').trim().split(/\s+/).filter(Boolean);if(!w.length)return;
+  const a0=h.timestamp[0]||0,b0=h.timestamp[1]??(pcm.length/16000),[a,b]=snapSeg(pcm,a0,b0),t0=off+a,t1=off+b;
+  const m=Math.max(1,Math.ceil(w.length/5)),g=Math.ceil(w.length/m),parts=[];for(let i=0;i<m;i++)parts.push(w.slice(i*g,(i+1)*g).join(' '));
+  const tot=parts.reduce((s,p)=>s+p.length+3,0);let t=t0;parts.forEach(p=>{const d=(t1-t0)*(p.length+3)/tot;out.push({s:t,e:t+d,text:p});t+=d})});
+ out=out.filter(q=>!JUNK.test(q.text)&&rmsRange(pcm,q.s-off,q.e-off)>.004);
+ out=out.filter((q,i)=>!(i>1&&q.text===out[i-1].text&&q.text===out[i-2].text));
+ for(let i=0;i<out.length;i++){const nx=out[i+1];if(nx&&out[i].e>nx.s)out[i].e=nx.s;else if(nx)out[i].e=Math.min(nx.s,out[i].e+.25)}
+ return out}
+// Make sure captions exist for a clip (generated only once).
+function ensureCaps(c,tok){if(c.cap||S.cap!=='auto')return Promise.resolve();
+ if(!c._cp)c._cp=(async()=>{const pcm=await clipPCM(c,tok);alive(tok);
+  if(rmsRange(pcm,0,pcm.length/16000)<.003){c.cap=true;stat('cap','');$('#capnote').textContent='No speech detected in this short.';return}
+  const ch=await transcribe(pcm);alive(tok);
+  cues=cues.filter(q=>q.e<=c.s||q.s>=c.e).concat(buildCues(ch,c.s,pcm)).sort((a,b)=>a.s-b.s);c.cap=true;stat('cap','');$('#capnote').textContent='Captions ready. '+cues.length+' lines.'})().finally(()=>{c._cp=null});
+ return c._cp}
+// "Generate captions for all shorts" button.
+$('#capgo').onclick=async()=>{if(busy)return;if(!clips.length){$('#capnote').textContent='Create the plan first, then generate captions.';return}
+ if(S.cap!=='auto')return;const tok=RUN;busy=true;lock(true);
+ try{for(const c of clips){alive(tok);await ensureCaps(c,tok)}}catch(e){if(e.message!=='Stopped')$('#capnote').textContent='Captions failed: '+(e.message||e)}
+ if(tok===RUN){busy=false;lock(false);say('');draw()}};
+// Read .srt / .vtt subtitle text into caption cues.
+function parseSub(txt){const ts=x=>{const m=x.trim().replace(',','.').split(':').map(parseFloat);return m.length===3?m[0]*3600+m[1]*60+m[2]:m[0]*60+m[1]},out=[];
+ txt.replace(/\r/g,'').split(/\n\n+/).forEach(b=>{const L=b.split('\n'),i=L.findIndex(x=>x.includes('-->'));if(i<0)return;const[a,e]=L[i].split('-->');
+  out.push({s:ts(a),e:ts(e.trim().split(' ')[0]),text:L.slice(i+1).join(' ').replace(/<[^>]+>/g,'').trim()})});return out.filter(c=>c.text)}
+// Subtitle file picker.
+$('#subf').onchange=async e=>{const f=e.target.files[0];if(!f)return;cues=parseSub(await f.text());$('#capnote').textContent=cues.length?cues.length+' captions loaded.':'No captions found in that file.';clips.forEach(c=>c.cap=true);draw()};
+
+/* ===== 10. SMART REFRAME (face detection and camera plan) ===== */
+/* ---------- smart reframe: pre-pass finds faces and shots, then one steady crop per shot ---------- */
+// The face detector (MediaPipe), loaded on first use.
+let FDP=null;
+// Load the face detector (downloaded once).
+function getFD(){if(FDP)return FDP;
+ FDP=(async()=>{let fd=null;
+  try{let m=null;for(const u of['https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs','https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14']){try{m=await import(u);if(m&&m.FaceDetector)break}catch(e){}}
+   if(!m||!m.FaceDetector)throw 0;
+   const vs=await m.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+   const mk=d=>m.FaceDetector.createFromOptions(vs,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',delegate:d},runningMode:'IMAGE',minDetectionConfidence:.5});
+   let d;try{d=await mk('GPU')}catch(e){d=await mk('CPU')}fd={k:'mp',d}
+  }catch(e){if(window.FaceDetector){try{fd={k:'native',d:new FaceDetector({fastMode:true,maxDetectedFaces:6})}}catch(_){}}}
+  return fd})();return FDP}
+// Run the face detector on one crop of a frame.
+async function detectIn(fd,el,sx,sy,sw,sh,out,vw,vh){const N=384,c=detectIn.c||(detectIn.c=document.createElement('canvas'));c.width=c.height=N;
+ const x=c.getContext('2d');x.drawImage(el,sx,sy,sw,sh,0,0,N,N);let boxes=[];
+ try{if(fd.k==='mp')boxes=fd.d.detect(c).detections.map(d=>({x:d.boundingBox.originX,y:d.boundingBox.originY,w:d.boundingBox.width,h:d.boundingBox.height}));
+  else boxes=(await fd.d.detect(c)).map(d=>({x:d.boundingBox.x,y:d.boundingBox.y,w:d.boundingBox.width,h:d.boundingBox.height}))}catch(e){return}
+ boxes.forEach(q=>{const l=(sx+q.x/N*sw)/vw,r=(sx+(q.x+q.w)/N*sw)/vw,t=(sy+q.y/N*sh)/vh,b=(sy+(q.y+q.h)/N*sh)/vh;if(r-l>.02)out.push({l,r,t,b,c:(l+r)/2,w:r-l,m:0})})}
+let missRun=0;
+// Find faces in a frame (checks left, centre and right squares of wide frames).
+async function detectFaces(fd,el){const vw=el.videoWidth,vh=el.videoHeight,F=[];if(!fd||!vw)return F;const side=Math.min(vw,vh);
+ const xs=vw>side*1.05?[0,(vw-side)/2,vw-side]:[0];
+ for(const sx of xs)await detectIn(fd,el,sx,0,side,side,F,vw,vh);
+ if(!F.length&&(missRun++%4===0)){const s2=side*.5;for(const sy of[side*.08,side*.4])for(let sx=0;sx+s2<=vw+1;sx+=s2*.8)await detectIn(fd,el,Math.min(sx,vw-s2),sy,s2,s2,F,vw,vh)}
+ else if(F.length)missRun=0;
+ F.sort((p,q)=>q.w-p.w);const out=[];for(const f of F)if(!out.some(g=>Math.abs(g.c-f.c)<.6*Math.max(g.w,f.w)&&Math.abs((g.t+g.b)/2-(f.t+f.b)/2)<.5*Math.max(g.b-g.t,f.b-f.t)))out.push(f);return out}
+// 16-bin brightness histogram (used to detect scene cuts).
+const hist16=g=>{const h=new Float32Array(16);for(let i=0;i<g.length;i++)h[g[i]>>4]++;for(let i=0;i<16;i++)h[i]/=g.length;return h};
+// Scan a clip: sample frames, detect faces and shot changes.
+async function frameScan(c,fd,tok){
+ const v2=getV2();v2.pause();await seek(v2,c.s);alive(tok);
+ const g=document.createElement('canvas');g.width=160;g.height=90;const gx=g.getContext('2d',{willReadFrequently:true});
+ const out=[],mads=[];let pg=null,ph=null,nextT=c.s,rate=3;
+ try{v2.playbackRate=rate}catch(e){}
+ await guard(v2.play(),15000,'Video play');
+ try{
+  while(true){alive(tok);const t=v2.currentTime;
+   if(t>=c.e-.05||v2.ended||(v2.paused&&t>c.s+.2))break;
+   if(t>=nextT){const t1=performance.now(),smp={t,faces:[],cut:false,mc:null};
+    gx.drawImage(v2,0,0,160,90);const d=gx.getImageData(0,0,160,90).data,gray=new Uint8Array(14400);
+    for(let i=0,j=0;i<d.length;i+=4,j++)gray[j]=(d[i]*3+d[i+1]*6+d[i+2])/10|0;
+    const h=hist16(gray);
+    if(pg){let s=0;const col=new Float32Array(16);for(let y=0;y<90;y++)for(let u=0;u<160;u++){const k=y*160+u,df=Math.abs(gray[k]-pg[k]);s+=df;col[u/10|0]+=df}
+     const mad=s/14400/255;let hd=0;for(let i=0;i<16;i++)hd+=Math.abs(h[i]-ph[i]);hd/=2;
+     const rec=mads.slice(-12).sort((a,b)=>a-b),med=rec.length?rec[rec.length>>1]:0;
+     smp.cut=(mad>Math.max(.09,med*3.2))||(hd>.5&&mad>.05);mads.push(smp.cut?med:mad);if(!smp.cut)smp.mc=col}
+    smp.faces=await detectFaces(fd,v2);
+    if(pg&&!smp.cut)smp.faces.forEach(f=>{const x0=Math.max(0,Math.floor(f.l*160)),x1=Math.min(160,Math.ceil(f.r*160)),y0=Math.max(0,Math.floor(f.t*90)),y1=Math.min(90,Math.ceil(f.b*90));let s=0,q=0;
+     for(let y=y0;y<y1;y++)for(let u=x0;u<x1;u++){s+=Math.abs(gray[y*160+u]-pg[y*160+u]);q++}f.m=q?s/q/255:0});
+    out.push(smp);pg=gray;ph=h;nextT=t+.25;
+    stat('fr','framing '+Math.round((t-c.s)/(c.e-c.s)*100)+'%');
+    if(performance.now()-t1>160&&rate>1){rate=Math.max(1,rate/1.5);try{v2.playbackRate=rate}catch(e){}}}
+   await sleep(10)}
+ }finally{v2.pause()}
+ return out}
+// Build the camera plan for a clip before it is recorded (only once per clip).
+async function prepFrame(c,tok){if(c.plan)return;
+ const vw=v.videoWidth,vh=v.videoHeight,ww=Math.min(1,vh*9/16/vw);
+ if(ww>=.98){c.plan=[{t:c.s,t0:c.s,x:.5,cut:true}];return}
+ stat('fr','framing 0%');
+ const fd=await guard(getFD(),120000,'Face detector download').catch(e=>{if(e.message==='Stopped')throw e;return null});alive(tok);
+ const smp=await frameScan(c,fd,tok);alive(tok);
+ c.plan=planFrames(smp,ww,c.s);c.planInfo={faces:smp.filter(s=>s.faces.length).length,n:smp.length,cuts:smp.filter(s=>s.cut).length,fd:!!fd};stat('fr','')}
+// Put the camera at the start of a clip.
+function camInit(c){cam.ww=Math.min(1,v.videoHeight*9/16/v.videoWidth);cam.keys=c.plan&&c.plan.length?c.plan:[{t:c.s,t0:c.s,x:.5,cut:true}];cam.k=0;cam.x=cam.tx=cam.keys[0].x;cam.pg=null}
+// A tiny canvas used to detect scene cuts live while recording.
+const lcv=document.createElement('canvas');lcv.width=32;lcv.height=18;const lcx=lcv.getContext('2d',{willReadFrequently:true});
+// Detect a scene cut live while recording.
+function liveCut(){lcx.drawImage(v,0,0,32,18);const d=lcx.getImageData(0,0,32,18).data;let r=false;
+ if(cam.pg){let s=0;for(let i=0;i<d.length;i+=4)s+=Math.abs(d[i]-cam.pg[i])+Math.abs(d[i+1]-cam.pg[i+1])+Math.abs(d[i+2]-cam.pg[i+2]);r=s/(576*3*255)>.1}
+ cam.pg=d.slice();return r}
+// Move the camera towards its target every frame (hard cut on scene changes, smooth otherwise).
+function camUpdate(t,dt,lc){const K=cam.keys;
+ while(cam.k+1<K.length){const n=K[cam.k+1],due=n.cut?(t>=n.t||(lc&&t>=n.t0-.05)):(t>=n.t-.25);if(!due)break;cam.k++;cam.tx=n.x;if(n.cut)cam.x=n.x}
+ const d=(cam.tx-cam.x)*(1-Math.exp(-dt*5)),m=.45*dt;cam.x+=Math.max(-m,Math.min(m,d))}
+// Redraw the preview when the player seeks or its time changes (not while recording).
+v.addEventListener('seeked',()=>{if(!busy)draw()});v.addEventListener('timeupdate',()=>{if(!busy)draw()});v.addEventListener('loadeddata',()=>draw());
+
+/* ===== 11. LOAD FROM LINK, RECORDER, EXPORT ===== */
+// "Load" button for a pasted direct video link: fetch it into the player.
+$('#lgo').onclick=async()=>{const u=$('#lnk').value.trim(),m=t=>$('#lmsg').textContent=t;if(!u)return;
+ let pu;try{pu=new URL(u)}catch(e){return m('That does not look like a web address. It must start with https://')}
+ if(!/^https?:$/.test(pu.protocol))return m('Only http or https links can be loaded.');
+ if(/youtu\.?be|youtube\.com/i.test(u))return m('YouTube links cannot be downloaded in a browser app: YouTube blocks it and its terms do not allow it. Download your own video from YouTube Studio and choose the file.');
+ try{m('Loading…');const r=await fetch(u);if(!r.ok)throw 0;const b=await r.blob();if(!b.type.startsWith('video'))throw 0;
+  load(new File([b],(u.split('?')[0].split('/').pop()||'video'),{type:b.type}));m('')}catch(e){m('Could not load that link. The site must allow direct downloads (CORS), and large videos should be chosen as a file instead.')}};
+
+/* ---------- MP4 fallback recorder (WebCodecs + mp4-muxer) for browsers without native MP4 MediaRecorder ---------- */
+async function makeWC(aTrack,br){
+// Load the MP4 muxer library (needed to build the file).
+ const M=await guard(import('https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.mjs'),60000,'MP4 library download');
+ const W=cv.width,H=cv.height,sr=actx.sampleRate;
+// Probe which video codec / hardware setting really works on this device.
+ let vc=null,vm='avc',vhw='no-preference';
+ const probe=async cfg=>{try{if(!(await VideoEncoder.isConfigSupported(cfg)).supported)return false;let got=0,bad=false;const e=new VideoEncoder({output:()=>{got++},error:()=>{bad=true}});e.configure(cfg);
+  const pc=document.createElement('canvas');pc.width=cfg.width;pc.height=cfg.height;const px=pc.getContext('2d');
+  for(let i=0;i<4;i++){px.fillStyle=i%2?'#445':'#a63';px.fillRect(0,0,pc.width,pc.height);const f=new VideoFrame(pc,{timestamp:i*33333});e.encode(f,{keyFrame:i===0});f.close()}
+  try{await Promise.race([e.flush(),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))])}catch(x){bad=true}
+  try{e.close()}catch(x){}return got>0&&!bad}catch(x){return false}};
+ const lv=W*H>1280*720?'28':'1f';
+ find:for(const pr of ['64','4d','42'])for(const hw of ['no-preference','prefer-software','prefer-hardware']){const cfg={codec:'avc1.'+pr+'00'+lv,width:W,height:H,bitrate:br,framerate:30,hardwareAcceleration:hw};if(await probe(cfg)){vc=cfg.codec;vhw=hw;break find}}
+ if(!vc){const cfg={codec:'vp09.00.40.08',width:W,height:H,bitrate:br,framerate:30};if(await probe(cfg)){vc=cfg.codec;vm='vp9'}}
+ if(!vc)throw new Error('This device could not start a video encoder at '+W+'×'+H+'. Choose 720p, or use Chrome or Edge on a computer.');
+// Audio: AAC if supported, otherwise Opus.
+ let ac='mp4a.40.2',am='aac';
+ if(!(await AudioEncoder.isConfigSupported({codec:ac,sampleRate:sr,numberOfChannels:2,bitrate:128000})).supported){ac='opus';am='opus'}
+// Create the MP4 muxer (builds the file in memory).
+ const tg=new M.ArrayBufferTarget(),mux=new M.Muxer({target:tg,video:{codec:vm,width:W,height:H,frameRate:30},audio:{codec:am,numberOfChannels:2,sampleRate:sr},fastStart:'in-memory'});
+// R imitates the MediaRecorder interface (start, pause, resume, stop).
+ const R={state:'inactive',out:null,err:null,onstop:null};
+// Timing state: pt = total paused time, aAcc = running position of the audio track.
+ let kfNext=false,nV=0,t0=0,pt=0,ps=0,lastV=-1,n=0,timer=null,stopping=false,aFirst=null,lastA=-1,aAcc=0,rd=null;
+// Video encoder: collects the encoded picture chunks.
+ const ve=new VideoEncoder({output:(c,m)=>{nV++;mux.addVideoChunk(c,m)},error:e=>{R.err=e}});
+ ve.configure({codec:vc,width:W,height:H,bitrate:br,framerate:30,hardwareAcceleration:vhw});
+// Audio encoder: chunk times come from the running audio duration, so pauses cannot break the file.
+ const ae=new AudioEncoder({output:(c,m)=>{const du=c.duration||Math.round((am==='aac'?1024:960)*1e6/sr);let ts=Math.max(aAcc,lastA+1);lastA=ts;aAcc=ts+du;mux.addAudioChunk(c,m,ts)},error:e=>{R.err=e}});
+ ae.configure({codec:ac,sampleRate:sr,numberOfChannels:2,bitrate:128000});
+// 30 times a second: copy the canvas into the video encoder (only while recording).
+ const tickV=()=>{if(ve.state==='closed'&&!R.err)R.err=new Error('The video encoder stopped on this device.');if(R.state==='recording'&&ve.state!=='closed'&&ve.encodeQueueSize<10){const ts=Math.round((performance.now()-t0-pt)*1000);
+   if(ts>lastV){const f=new VideoFrame(cv,{timestamp:ts});ve.encode(f,{keyFrame:(n++%60===0)||kfNext});kfNext=false;f.close();lastV=ts}}
+  if(!stopping)timer=setTimeout(tickV,1000/30)};
+// Read raw audio from the recording stream and encode it (only while recording).
+ const pump=async()=>{rd=new MediaStreamTrackProcessor({track:aTrack}).readable.getReader();
+  while(true){const{value:d,done}=await rd.read();if(done)break;
+   if(R.state==='recording'){if(aFirst===null)aFirst=d.timestamp;if(ae.encodeQueueSize<60)ae.encode(d)}d.close()}};
+// start / pause / resume / stop of the fallback recorder.
+ R.start=()=>{t0=performance.now();R.state='recording';tickV();pump().catch(()=>{})};
+ R.pause=()=>{if(R.state==='recording'){ps=performance.now();R.state='paused'}};
+ R.resume=()=>{if(R.state==='paused'){kfNext=true;pt+=performance.now()-ps;R.state='recording'}};
+ R.stop=async()=>{if(stopping)return;stopping=true;R.state='inactive';clearTimeout(timer);try{rd&&rd.cancel()}catch(e){}
+  try{await ve.flush();if(nV===0)throw R.err||new Error('The video encoder produced no picture on this device. Choose 720p and try again.');if(aFirst!==null)await ae.flush();mux.finalize();R.out=new Blob([tg.buffer],{type:'video/mp4'})}catch(e){R.err=R.err||e}
+  R.onstop&&R.onstop()};
+ return R}
+
+/* ---------- export ---------- */
+// Record one clip (or the trailer when i is "T") in real time and put the finished file in the list.
+async function exportClip(i,forceWC){
+ if(!mime&&!WC)return err('This browser cannot record MP4. Use the latest Chrome or Edge (v126+), or Safari.');if(busy)return err('Please wait, another task is still running.');
+// Keep the screen awake while recording.
+ const tok=RUN;let retry=false;busy=true;lock(true);Object.keys(ST).forEach(k=>delete ST[k]);let wl=null;try{wl=navigator.wakeLock?await navigator.wakeLock.request('screen'):null}catch(e){}
+// c = the clip or trailer being exported, TRL = true for the trailer.
+ const c=i==='T'?TRAILER:clips[i],TRL=!!c.trailer,_fit=S.fit;if(TRL&&S.fit==='smart')S.fit='crop';const bar=c._el.querySelector('.bar i'),btn=c._el.querySelector('button.exp');btn.textContent='Preparing…';say('Preparing…');
+ try{
+// Prepare in parallel: captions, smart-reframe plan and silence-trim ranges.
+  let skip=[];const soft=(n,p)=>p.catch(e=>{if(e.message==='Stopped')throw e;$('#capnote').textContent=n+' skipped: '+(e.message||e)});
+  const jobs=[];
+  if(S.cap==='auto'&&!TRL)jobs.push(soft('Captions',ensureCaps(c,tok)));
+  if(S.fit==='smart'&&!TRL)jobs.push(soft('Smart reframe',prepFrame(c,tok)));
+  if(S.tr!=='off'&&!TRL)jobs.push(soft('Silence trim',skipMap(c,tok).then(s=>{skip=s})));
+// Trailer: the "skip" ranges are the gaps between its parts.
+  await Promise.all(jobs);alive(tok);if(TRL)skip=c.segs.slice(1).map((g,k)=>[c.segs[k].e,g.s]);
+  btn.textContent='Recording…';say('Recording… keep this tab open and the screen on.');
+// Canvas size for the chosen format and quality.
+  const WIDE=TRL&&S.tasp==='wide',hq=(TRL?S.tres:S.res)==='1080',cw=WIDE?(hq?1920:1280):(hq?1080:720),ch=WIDE?cw*9/16:cw*16/9;if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch}WIDEREC=WIDE;
+// Switch audio on and move the video to the start of the clip.
+  await audioReady();outG.gain.value=0;recG.gain.value=1;v.muted=false;v.pause();await seek(v,c.s);alive(tok);
+  camInit(c);RECING=true;
+// Record the canvas and the audio stream together.
+  if(!cv.captureStream)throw new Error('This browser cannot record the canvas. Open the page in Chrome.');
+  const st=cv.captureStream(30);adest.stream.getAudioTracks().forEach(t=>st.addTrack(t));
+// Create the recorder: the browser's MP4 MediaRecorder, or the WebCodecs fallback.
+  const rbr=cv.width>720?8e6:4e6,rec=(mime&&!forceWC)?new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:rbr,bitrateMode:'constant'}):await makeWC(adest.stream.getAudioTracks()[0],rbr);REC=rec;const parts=[];rec.ondataavailable=e=>e.data.size&&parts.push(e.data);
+// Start recording and play the video.
+  const done=new Promise(r=>rec.onstop=r);if(TRL){ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height)}else draw();rec.start(500);
+  try{await guard(v.play(),15000,'Video play')}catch(e){throw e.message==='Stopped'?e:new Error('Video could not play: '+(e.message||e))}
+  if(ALL&&S.cap==='auto'&&clips[i+1])ensureCaps(clips[i+1],tok).catch(()=>{});
+// Loop state.
+  let sk=false,pend=false,last=performance.now(),held=false,hold=0,rised=false;const TOT=TRL?c.segs.reduce((a,g)=>a+g.e-g.s,0):0;
+// Trailer: run the trailer engine. Other clips: draw every frame until the clip ends, skipping silent ranges.
+  if(TRL)await runTrailer(c,tok,rec,bar);else await new Promise(res=>{const loop=()=>{
+   if(tok!==RUN){res();return}
+   const now=performance.now(),dt=Math.min(.1,(now-last)/1000);last=now;
+// Jump over silent ranges (the recorder pauses while the video seeks).
+   if(!sk){const q=skip.find(x=>v.currentTime>=x[0]&&v.currentTime<x[1]);
+    if(q){sk=true;try{rec.pause()}catch(e){}seek(v,q[1]).then(()=>frameReady(v)).then(()=>{pend=true;sk=false},()=>{sk=false})}}
+// Update the smart-reframe camera.
+   if(S.fit==='smart')camUpdate(v.currentTime,dt,liveCut());
+// Draw the frame (and trailer text) and update the progress bar.
+   draw();if(TRL){const tt=ttOf(c.segs,v.currentTime);if(!rised&&S.sfx==='on'&&tt>TOT-2.4){rised=true;sfx('riser')}if(held)hold+=dt;trlOverlay(c,tt,hold,held)}bar.style.width=Math.min(100,(v.currentTime-c.s)/(c.e-c.s)*100)+'%';if(pend){pend=false;try{rec.resume()}catch(e){}}
+// Detect the end of the clip.
+   const endHit=v.currentTime>=c.e-.05||v.ended||(v.paused&&!sk&&!held&&v.currentTime>c.s);
+// Trailer: hold the last frame while the release line is shown.
+   if(endHit&&TRL&&S.ovl==='on'&&c.rel&&!held){held=true;v.pause();if(S.sfx==='on')sfx('boom')}
+   if(held){if(hold>=3.2)res();else requestAnimationFrame(loop)}else if(endHit)res();else requestAnimationFrame(loop)};loop()});
+// Stop recording and wait for the file.
+  alive(tok);v.pause();if(rec.state!=='inactive')rec.stop();await done;alive(tok);
+// Check that the finished file really plays, then store it.
+  if(rec.err)throw rec.err;const bl=rec.out||new Blob(parts,{type:'video/mp4'});say('Checking the finished file…');const vr=await verifyVideo(bl);if(!vr.ok)throw new Error('The finished file is not usable ('+(vr.why||'unknown problem')+'), so it was not saved. Choose 720p and try again, or use Chrome or Edge on a computer.');c.blob=bl;const chk=' File check: '+(vr.dur?vr.dur.toFixed(1)+' s, ':'length not readable, ')+vr.w+'×'+vr.h+(vr.seek?', plays to the end.':'.');say((c.planInfo&&c.planInfo.n?'Done. Faces found in '+c.planInfo.faces+' of '+c.planInfo.n+' frames, '+c.planInfo.cuts+' scene cuts.':'Done.')+chk)
+// Report a failure.
+ }catch(e){if(e.message!=='Stopped'){try{REC&&REC.state!=='inactive'&&REC.stop()}catch(_){}v.pause();
+  // Native recorder gave an unusable file: try again once with the WebCodecs recorder.
+  if(!forceWC&&mime&&WCok&&/not usable/.test(e.message||'')){retry=true;say('The file was not usable. Trying the other recorder…')}else{say('Export failed: '+(e.message||e));err('Export failed: '+(e.message||e))}}}
+ try{wl&&wl.release()}catch(e){}
+// Always restore the settings and unlock the interface.
+ S.fit=_fit;WIDEREC=false;ZOOM=1;SHX=SHY=0;v.playbackRate=1;if(tok===RUN){if(cv.width!==720||cv.height!==1280){cv.width=720;cv.height=1280}RECING=false;if(outG)outG.gain.value=1;if(recG)recG.gain.value=0;busy=false;lock(false);render();renderTrailer()}
+ if(retry&&tok===RUN)return exportClip(i,true)}
+// Open the finished file in a hidden video to prove that it is playable.
+function verifyVideo(b){return new Promise(res=>{const u=URL.createObjectURL(b),x=document.createElement('video');x.muted=true;x.preload='auto';x.playsInline=true;let done=false,tm=null;
+ const fin=o=>{if(done)return;done=true;clearTimeout(tm);x.onerror=x.onloadeddata=x.ondurationchange=x.onseeked=null;x.removeAttribute('src');try{x.load()}catch(e){}URL.revokeObjectURL(u);res(o)};
+ tm=setTimeout(()=>fin({ok:false,why:'the check timed out'}),20000);x.onerror=()=>fin({ok:false,why:'the file cannot be read'});
+ x.onloadeddata=()=>{if(!(x.videoWidth>0&&x.videoHeight>0))return fin({ok:false,why:'the file has no picture'});const w=x.videoWidth,h=x.videoHeight;
+  const seekEnd=()=>{const d=x.duration;if(!isFinite(d)||d<=.5)return fin({ok:true,dur:null,w,h,seek:false});x.onseeked=()=>fin({ok:x.videoWidth>0,why:'the end of the file cannot be reached',dur:d,w,h,seek:true});x.currentTime=Math.max(0,d-.3)};
+  if(x.duration===Infinity){x.ondurationchange=()=>{if(isFinite(x.duration)){x.ondurationchange=null;seekEnd()}};x.currentTime=1e7;setTimeout(()=>{if(!done&&!isFinite(x.duration))fin({ok:true,dur:null,w,h,seek:false})},6000)}else seekEnd()};
+ x.src=u})}
+// Download a finished clip.
+function save(c,i){const a=document.createElement('a');a.href=URL.createObjectURL(c.blob);a.download=fname+(c.trailer?'-trailer':c.full?'-full-9x16':'-short-'+(i+1))+'.'+ext;document.body.append(a);a.click();a.remove()}
+// Share a finished file. "Share…" opens the phone's own share menu (YouTube, Instagram, Facebook, WhatsApp...) with the video attached.
+// The site buttons save the file first, then open that site's upload page in a new tab (a web page cannot upload to your account by itself: you pick the saved file there).
+const SHARE_SITES=[['YouTube','https://www.youtube.com/upload'],['Facebook','https://www.facebook.com/reels/create'],['Instagram','https://www.instagram.com/'],['TikTok','https://www.tiktok.com/upload']];
+function shareRow(c,i){const d=document.createElement('div');d.className='row';d.style.marginTop='6px';
+ const mk=(txt,fn)=>{const x=document.createElement('button');x.className='sm';x.style.cssText='padding:3px 8px;font-size:12px';x.textContent=txt;x.onclick=fn;d.append(x)};
+ const nm=()=>fname+(c.trailer?'-trailer':c.full?'-full-9x16':'-short-'+(i+1))+'.'+ext;
+ const fl=()=>new File([c.blob],nm(),{type:(c.blob.type||'video/mp4').split(';')[0]});
+ try{if(navigator.share&&navigator.canShare&&navigator.canShare({files:[fl()]}))mk('Share…',()=>{navigator.share({files:[fl()],title:fname}).catch(e=>{if(e&&e.name!=='AbortError')err('Sharing failed: '+(e.message||e))})})}catch(e){}
+ SHARE_SITES.forEach(([n,u])=>mk(n,()=>{save(c,i);window.open(u,'_blank','noopener');say('Saved. On '+n+' tap upload and choose the file you just saved.')}));
+ return d}
+// Disable / enable the buttons while work is running (the Stop button stays active).
+function lock(b){$$('button.sm,button.main,#all,button.chip').forEach(x=>{if(x.id!=='stop'&&x.id!=='skipAlign'&&x.id!=='skipAlign2')x.disabled=b});$('#stop').classList.toggle('hide',!b)}
+// "Export all" button: export every clip that has no file yet.
+$('#all').onclick=async()=>{if(busy)return;const tok=RUN;ALL=true;
+ try{for(let i=0;i<clips.length;i++){if(tok!==RUN)break;if(!clips[i].blob)await exportClip(i)}}finally{if(tok===RUN)ALL=false}
+ if(tok===RUN)say('Done. Tap Save on each short.')};
+// Warn if the tab is hidden while recording or scanning.
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&busy)err('Keep this tab open and the screen on while it works, otherwise recording and scanning can break.')});
+/* ===== 13. PROJECT SAVE AND PREVIEW ===== */
+// Saved plans live in this browser only (localStorage). The video itself is NOT saved: open the same file again and tap "Restore".
+var PRV=null;
+// Key of the current video: file name and size.
+function projKey(){return file?file.name+'|'+file.size:null}
+// Save the current shorts plan and trailer plan (times, tags, texts). Keeps the 8 most recent videos.
+function projSave(){try{const k=projKey();if(!k||(!clips.length&&!TRAILER))return;
+ const all=JSON.parse(localStorage.getItem('cf_projects')||'{}');
+ all[k]={t:Date.now(),clips:clips.map(c=>({s:c.s,e:c.e,score:c.score,tags:c.tags||[],full:c.full||0})),
+  trailer:TRAILER?{words:TRAILER.words,cast:TRAILER.cast,title:TRAILER.title,tag:TRAILER.tag,rel:TRAILER.rel,note:TRAILER.note,segs:TRAILER.segs.map(g=>({s:g.s,e:g.e,a3:g.a3,a4:g.a4,h:g.h}))}:null};
+ Object.keys(all).sort((a,b)=>all[b].t-all[a].t).slice(8).forEach(x=>delete all[x]);
+ localStorage.setItem('cf_projects',JSON.stringify(all))}catch(e){}}
+// Read the saved plan of the current video (or null).
+function projGet(){try{const k=projKey();if(!k)return null;const p=(JSON.parse(localStorage.getItem('cf_projects')||'{}'))[k];return p&&((p.clips&&p.clips.length)||p.trailer)?p:null}catch(e){return null}}
+// After a video loads: if a saved plan exists for it, show a "Restore" notice at the top of the work area.
+function projOffer(){try{const old=$('#restoreBox');if(old)old.remove();const p=projGet();if(!p)return;
+ const n=p.clips.length,box=document.createElement('div');box.id='restoreBox';box.className='note restore';
+ box.innerHTML='<span>Saved plan found for this video: '+(n?n+' short'+(n>1?'s':''):'')+(n&&p.trailer?' and ':'')+(p.trailer?'a trailer':'')+'.</span>';
+ const b=document.createElement('button');b.className='sm';b.textContent='Restore';b.onclick=()=>{projRestore(p);box.remove()};box.append(b);$('#work').prepend(box)}catch(e){}}
+// Put the saved shorts and trailer back. "Different picks" and the replace button need a fresh analysis, so they stay hidden until you analyze again.
+function projRestore(p){if(busy)return;
+ if(p.clips.length){clips=p.clips.map(c=>({...c,blob:null,pcm:null}));$('#res').classList.remove('hide');render()}
+ if(p.trailer){const t=p.trailer,sg=t.segs;
+  TRAILER={words:t.words||[],cast:t.cast||'',music:null,title:t.title||'',tag:t.tag||'',rel:t.rel||'',trailer:1,s:sg[0].s,e:Math.max(...sg.map(g=>g.e)),segs:sg,note:t.note||'',blob:null,tags:[],pcm:null};
+  const set=(id,val)=>{const el=$(id);if(el)el.value=val};set('#tWords',TRAILER.words.join(', '));set('#tCast',TRAILER.cast);set('#tTitle',TRAILER.title);set('#tTag',TRAILER.tag);set('#tRel',TRAILER.rel);
+  $('#trl').classList.remove('hide');renderTrailer()}
+ say('Saved plan restored. Analyze again if you want new picks.')}
+// Preview: play the main player from s to e and stop. Starting another preview, or pausing, cancels the previous one.
+function previewSeg(s,e){if(busy)return;if(PRV)PRV();
+ const chk=()=>{if(v.currentTime>=e-.05){v.pause();off()}},off=()=>{v.removeEventListener('timeupdate',chk);v.removeEventListener('pause',off);PRV=null};
+ PRV=off;v.addEventListener('timeupdate',chk);
+ seek(v,s).then(()=>{v.play().catch(()=>{});v.addEventListener('pause',off,{once:true})}).catch(()=>off());
+ try{v.scrollIntoView({behavior:'smooth',block:'center'})}catch(e2){}}
+</script>
+<!-- ===== JAVASCRIPT: Image Animator ===== -->
+<script>
+/* ===== 12. IMAGE ANIMATOR (separate small tool) =====
+   The Image Animator is a complete mini-page stored as one long escaped
+   string (IA_HTML below). It is shown inside an iframe so it stays separate
+   from the rest of the app. The code here only mounts it and keeps it in sync. */
+(function(){
+// The embedded Image Animator page (one long escaped string; do not edit by hand).
+const IA_HTML=JSON.parse("\"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width,initial-scale=1\\\">\\n<title>Image Animator \u2013 ClipForge<\\/title>\\n<style>\\n:root{--bg:#fafaf7;--pn:#fff;--ln:#e4e1d8;--tx:#1c1b18;--mu:#6b675e;--ac:#d9480f;--acx:#fff}\\n@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121211;--pn:#1d1c1a;--ln:#33312d;--tx:#f1efe8;--mu:#a09b8f;--ac:#ff7a3d;--acx:#141413}}\\n:root[data-theme=dark]{--bg:#121211;--pn:#1d1c1a;--ln:#33312d;--tx:#f1efe8;--mu:#a09b8f;--ac:#ff7a3d;--acx:#141413}\\n:root[data-theme=light]{--bg:#fafaf7;--pn:#fff;--ln:#e4e1d8;--tx:#1c1b18;--mu:#6b675e;--ac:#d9480f;--acx:#fff}\\n*{box-sizing:border-box}\\nbody{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,\\\"Segoe UI\\\",Roboto,sans-serif}\\nmain{max-width:980px;margin:0 auto;padding:20px 16px 48px;display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}\\n@media(min-width:860px){main{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}header,.wide{grid-column:1/-1}}\\nh1{margin:0;font-size:26px;letter-spacing:-.01em}h2{margin:0;font-size:16px}\\nheader p{margin:4px 0 0;color:var(--mu);max-width:62ch}\\n.stage{background:#000;border-radius:14px;overflow:hidden;display:grid;place-items:center;min-height:220px;border:1px solid var(--ln);position:sticky;top:8px}\\ncanvas{max-width:100%;max-height:62vh;display:block}\\n.panel{background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:16px;display:grid;gap:12px}\\ntextarea,input[type=text],input[type=number]{width:100%;font:inherit;color:var(--tx);background:transparent;border:1px solid var(--ln);border-radius:8px;padding:9px 10px}\\ntextarea{min-height:84px;resize:vertical}\\n.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}\\n.chip,button.alt{font:inherit;font-size:13px;color:var(--tx);background:transparent;border:1px solid var(--ln);border-radius:999px;padding:6px 12px;cursor:pointer}\\nbutton.main{font:inherit;font-weight:600;background:var(--ac);color:var(--acx);border:0;border-radius:12px;padding:12px 16px;cursor:pointer;flex:1}\\nbutton:disabled{opacity:.45;cursor:not-allowed}\\n:focus-visible{outline:2px solid var(--ac);outline-offset:2px}\\n.hint{font-size:13px;color:var(--mu);margin:0}\\n.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}\\n.it{border:1px solid var(--ln);border-radius:10px;padding:6px;display:grid;gap:5px;font-size:12px}\\n.it canvas{width:100%;height:84px;object-fit:cover;border-radius:6px;max-height:none}\\n.it input{padding:5px 7px;font-size:12px}\\n.it .row{gap:4px}.it button{font:inherit;font-size:12px;padding:2px 8px;border:1px solid var(--ln);background:transparent;color:var(--tx);border-radius:6px;cursor:pointer}\\n.bar{height:8px;background:var(--ln);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--ac)}\\n#msg{font-size:14px;min-height:20px}.err{color:#c0392b}\\n#plan{font-size:14px;margin:0;padding:10px 12px;border-radius:8px;background:rgba(127,127,127,.12)}\\na.dl{display:inline-block;font-weight:700;color:var(--acx);background:var(--ac);padding:11px 16px;border-radius:10px;text-decoration:none}\\n.aud{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:14px;border:1px solid var(--ln);border-radius:8px;padding:8px 10px}\\n.aud span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mu)}\\n.chip[aria-pressed=true]{background:var(--ac);border-color:var(--ac);color:var(--acx);font-weight:600}\\ndetails{border:1px solid var(--ln);border-radius:10px;padding:10px 12px}summary{cursor:pointer;font-weight:600}details[open]>summary{margin-bottom:10px}\\ndetails details{border:0;padding:6px 0 0}.vbox{display:grid;gap:10px}.vbox>*{margin:0}.aud audio{width:100%;margin-top:6px}.aud{flex-wrap:wrap}\\n[hidden]{display:none!important}\\n<\\/style>\\n<\\/head>\\n<body>\\n<main>\\n<header>\\n <h1>Image Animator<\\/h1>\\n <p>Add several pictures, choose an animation, optionally add music and a voiceover, and get one video. Everything runs in your browser and nothing is uploaded.<\\/p>\\n<\\/header>\\n\\n<section><div class=\\\"stage\\\"><canvas id=\\\"cv\\\" width=\\\"1280\\\" height=\\\"720\\\" aria-label=\\\"Preview\\\"><\\/canvas><\\/div><\\/section>\\n\\n<section class=\\\"panel\\\">\\n <div class=\\\"row\\\"><h2>1. Pictures<\\/h2><span class=\\\"hint\\\" id=\\\"cnt\\\">none yet<\\/span><\\/div>\\n <div class=\\\"row\\\"><button class=\\\"alt\\\" id=\\\"addp\\\">Add pictures<\\/button><button class=\\\"alt\\\" id=\\\"addv2\\\">Add pictures from a video<\\/button><button class=\\\"alt\\\" id=\\\"clr\\\" disabled>Remove all<\\/button><\\/div>\\n <input type=\\\"file\\\" id=\\\"file\\\" accept=\\\"image/*\\\" multiple hidden><input type=\\\"file\\\" id=\\\"vfile\\\" accept=\\\"video/*\\\" hidden>\\n <div id=\\\"vpanel\\\" class=\\\"panel\\\" hidden style=\\\"padding:10px\\\"><div class=\\\"hint\\\" id=\\\"vinfo\\\"><\\/div>\\n  <div class=\\\"row\\\"><label for=\\\"vn\\\" style=\\\"margin:0\\\">How many pictures do you want?<\\/label><input type=\\\"number\\\" id=\\\"vn\\\" min=\\\"1\\\" max=\\\"40\\\" step=\\\"1\\\" placeholder=\\\"Type a number\\\" inputmode=\\\"numeric\\\" style=\\\"width:140px\\\"><button class=\\\"alt\\\" id=\\\"vgo\\\">Take pictures<\\/button><\\/div>\\n  <p class=\\\"hint\\\">Pictures are taken at the video's full quality (up to 1920 px), from the sharpest frames spread across the video. The first and last 5% and near-duplicates are skipped. Remove any you do not want with \u2715 below.<\\/p><\\/div>\\n <div class=\\\"grid\\\" id=\\\"grid\\\"><\\/div>\\n \\n\\n <h2>2. Animation<\\/h2>\\n <div class=\\\"row\\\" id=\\\"anims\\\"><\\/div>\\n <p class=\\\"hint\\\" id=\\\"animdesc\\\"><\\/p>\\n <div class=\\\"row\\\"><label for=\\\"sec\\\" style=\\\"margin:0\\\">Seconds per picture<\\/label><input type=\\\"number\\\" id=\\\"sec\\\" min=\\\"0.5\\\" max=\\\"30\\\" step=\\\"0.5\\\" value=\\\"3\\\" inputmode=\\\"decimal\\\" style=\\\"width:90px\\\"><span class=\\\"hint\\\" id=\\\"tot\\\"><\\/span><\\/div>\\n <div class=\\\"row\\\"><span class=\\\"hint\\\">Shape<\\/span><span id=\\\"shp\\\" class=\\\"row\\\"><\\/span><\\/div>\\n <div class=\\\"row\\\"><span class=\\\"hint\\\">Music<\\/span><span id=\\\"mus\\\" class=\\\"row\\\"><\\/span><\\/div>\\n <details><summary>More options<\\/summary><div class=\\\"vbox\\\">\\n  <div class=\\\"row\\\"><span class=\\\"hint\\\">Picture fit<\\/span><span id=\\\"fit\\\" class=\\\"row\\\"><\\/span><\\/div>\\n  <div class=\\\"row\\\"><span class=\\\"hint\\\">Look<\\/span><span id=\\\"lk\\\" class=\\\"row\\\"><\\/span><\\/div>\\n  <div class=\\\"row\\\"><span class=\\\"hint\\\">Sound effects<\\/span><span id=\\\"sfxo\\\" class=\\\"row\\\"><\\/span><\\/div>\\n  <div class=\\\"row\\\"><span class=\\\"hint\\\">Fade in and out<\\/span><span id=\\\"fdo\\\" class=\\\"row\\\"><\\/span><\\/div>\\n <\\/div><\\/details>\\n <p id=\\\"plan\\\">Add pictures to begin.<\\/p>\\n<\\/section>\\n\\n<section class=\\\"panel wide\\\">\\n <h2>3. Sound (optional)<\\/h2>\\n <div class=\\\"row\\\"><button class=\\\"alt\\\" id=\\\"addm\\\">Use my own music<\\/button><button class=\\\"alt\\\" id=\\\"addv\\\">Add voiceover file<\\/button><button class=\\\"alt\\\" id=\\\"prev\\\">Preview built-in sound<\\/button><button class=\\\"alt\\\" id=\\\"rec\\\">Record my voice<\\/button><\\/div>\\n <input type=\\\"file\\\" id=\\\"mf\\\" accept=\\\"audio/*\\\" hidden><input type=\\\"file\\\" id=\\\"vf\\\" accept=\\\"audio/*\\\" hidden>\\n <div id=\\\"auds\\\"><\\/div>\\n <p class=\\\"hint\\\">Music and sound effects are built in and chosen from your prompt: say \u201cemotional\u201d, \u201cepic\u201d, \u201cupbeat\u201d or \u201ccalm\u201d, or \u201cno music\u201d / \u201cno sound effects\u201d to turn them off. They are simple synthesized sounds, not a composed soundtrack. Voiceover: record yourself, or add a file made with a voice tool. A natural Urdu or English voice cannot be generated inside this page, and the browser\u2019s built-in speech voices cannot be saved into a video. Music plays quietly under the voice.<\\/p>\\n <div class=\\\"row\\\"><button class=\\\"main\\\" id=\\\"go\\\" disabled>Create and save video<\\/button><\\/div>\\n <div class=\\\"bar\\\" id=\\\"barw\\\" hidden><i id=\\\"bar\\\"><\\/i><\\/div>\\n <div id=\\\"msg\\\" role=\\\"status\\\" aria-live=\\\"polite\\\"><\\/div>\\n <div id=\\\"out\\\"><\\/div>\\n <p class=\\\"hint\\\">These animations only move the camera (zoom, pan, shake) over each picture; people or objects inside a picture do not move by themselves. Export runs in real time: a 2 minute video takes about 2 minutes and this screen must stay on. Output is MP4 where your browser supports it, otherwise WebM.<\\/p>\\n<\\/section>\\n<\\/main>\\n\\n<script>\\nconst $=s=>document.querySelector(s),cv=$('#cv'),ctx=cv.getContext('2d');\\nconst S={items:[],music:null,voice:null,raf:0,busy:false,cancel:false,outUrl:null,G:null,T:null,micRec:null};\\nconst SHAPES={tall:['9:16',720,1280],wide:['16:9',1280,720],sq:['1:1',900,900]};\\nconst R={push:/zoom(ing)? in|push|closer|approach|dolly in|aage|qareeb|nazdeek/,pull:/zoom(ing)? out|pull|reveal|away|wider|peeche|door/,\\n left:/pan(ning)? left|towards left|to the left|bayen|baen/,right:/pan(ning)? right|towards right|to the right|dayen|daen/,\\n up:/tilt(ing)? up|rise|rising|look up|upar/,down:/tilt(ing)? down|look down|sink|neeche|niche/,shake:/shake|shaky|earthquake|handheld|chaos|panic|jhatk|hilna|tense/};\\nconst NAMES={push:'zoom in',pull:'zoom out',left:'pan left',right:'pan right',up:'tilt up',down:'tilt down',shake:'handheld shake'};\\nconst CYC=['push','left','pull','right','up','push','down','pull'];\\n\\n/* ---- timeline ---- */\\nconst ANIMS={slow:{n:'Slow zoom',d:'Gentle zoom in with soft crossfades.',moves:i=>['push'],int:.4,tr:'fade',xf:.8},\\n ken:{n:'Ken Burns',d:'Zoom and pan together, documentary style.',moves:i=>['push',i%2?'right':'left'],int:.5,tr:'fade',xf:.9},\\n pan:{n:'Smooth pan',d:'Pictures slide in from the side.',moves:i=>[i%2?'right':'left'],int:.6,tr:'slide',xf:.6},\\n dram:{n:'Dramatic',d:'Fast push, shake and a white flash on every cut.',moves:i=>['push','shake'],int:.9,tr:'flash',xf:.3},\\n mix:{n:'Mix',d:'A different move for each picture (zoom in, pan, zoom out, tilt) with soft crossfades.',moves:i=>[['push','left','pull','right','up','push','down','pull'][i%8]],int:.6,tr:'fade',xf:.7},\\n punch:{n:'Punchy',d:'Quick pops and hard cuts, reels style.',moves:i=>['push'],int:1,tr:'cut',xf:.15,pop:true}};\\nS.o={anim:'mix',sec:3,shape:'auto',music:'cinematic',fit:'auto',look:'cine',sfx:'on',fade:'on'};\\nfunction build(){const o=S.o,A=ANIMS[o.anim],n=S.items.length;\\n const G={shape:o.shape,fit:o.fit,bw:o.look==='bw',grade:o.look==='cine',fade:o.fade==='on',nomusic:o.music==='none',nosfx:o.sfx==='off',mood:o.music==='none'?'cinematic':o.music,named:true,moves:A.moves(0),int:A.int,anim:o.anim};S.G=G;\\n if(G.fit==='auto')G.fit=(n&&S.items.every(i=>i.vid))?'blur':'fill';\\n if(G.shape==='auto'){const f=S.items[0],r=f?f.w/f.h:1.78;G.shape=r<.85?'tall':r>1.2?'wide':'sq'}\\n if(!n){S.T=null;return}\\n const per=Math.max(.5,Math.min(30,+o.sec||3)),xf=n>1?Math.min(A.xf,per*.45):0,total=per*n-(n-1)*xf;\\n const segs=S.items.map((it,i)=>({it,start:i*(per-xf),dur:per,moves:A.moves(i),int:A.int,tr:A.tr,pop:!!A.pop}));\\n S.T={segs,total,xf,per}}\\nfunction describe(){const G=S.G,T=S.T,A=ANIMS[S.o.anim];if(!T)return 'Add pictures to begin.';\\n const m=T.total>=90?(T.total/60).toFixed(1)+' min':Math.round(T.total)+' s';\\n return S.items.length+' pictures \u00d7 '+T.per+' s = about '+m+' \u00b7 '+SHAPES[G.shape][0]+' \u00b7 '+A.n+(G.fit==='blur'?' \u00b7 whole picture with blur':' \u00b7 fills the frame')+(G.bw?' \u00b7 black and white':G.grade?' \u00b7 cinematic look':'')+' \u00b7 sound: '+soundText()+(S.voice&&T.total<S.voice.dur?' \u00b7 note: the video is shorter than your voiceover':'')}\\nfunction soundText(){const G=S.G;return (S.music?'your music':G.nomusic?'no music':G.mood+' music (built-in)')+(G.nosfx?', no effects':' + sound effects')}\\nfunction update(){build();$('#plan').textContent=describe();if(S.G){const[,w,h]=SHAPES[S.G.shape];if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}}\\n $('#go').disabled=!S.items.length;$('#clr').disabled=!S.items.length;$('#cnt').textContent=S.items.length?S.items.length+' added':'none yet';start()}\\n\\nfunction chipsO(box,items,key,after){const el=$(box);items.forEach(([v,l])=>{const b=document.createElement('button');b.className='chip';b.textContent=l;b.dataset.v=v;b.onclick=()=>{S.o[key]=v;syncO();update();if(after)after()};el.append(b)})}\\nfunction syncO(){[['#anims','anim'],['#shp','shape'],['#mus','music'],['#fit','fit'],['#lk','look'],['#sfxo','sfx'],['#fdo','fade']].forEach(([b,k])=>$(b).querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.v===S.o[k])));$('#animdesc').textContent=ANIMS[S.o.anim].d}\\nchipsO('#anims',['mix','slow','ken','pan','dram','punch'].map(k=>[k,ANIMS[k].n]),'anim');\\nchipsO('#shp',[['auto','Match first picture'],['tall','9:16'],['wide','16:9'],['sq','1:1']],'shape');\\nchipsO('#mus',[['cinematic','Epic'],['emotional','Emotional'],['upbeat','Upbeat'],['calm','Calm'],['none','None']],'music');\\nchipsO('#fit',[['auto','Auto'],['blur','Whole picture + blur'],['fill','Fill the frame']],'fit');\\nchipsO('#lk',[['cine','Cinematic'],['normal','Normal'],['bw','Black and white']],'look');\\nchipsO('#sfxo',[['on','On'],['off','Off']],'sfx');chipsO('#fdo',[['on','On'],['off','Off']],'fade');\\n$('#sec').oninput=e=>{const v=parseFloat(e.target.value);if(v>0){S.o.sec=Math.max(.5,Math.min(30,v));update()}};\\n$('#sec').onchange=e=>{const v=parseFloat(e.target.value);S.o.sec=v>0?Math.max(.5,Math.min(30,v)):3;e.target.value=S.o.sec;update()};\\nsyncO();\\n\\n/* ---- pictures ---- */\\nfunction msg(t,bad){const m=$('#msg');m.textContent=t;m.className=bad?'err':''}\\nfunction addImage(f){return new Promise(res=>{const u=URL.createObjectURL(f),im=new Image();\\n im.onload=()=>{const sc=Math.min(1,2000/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement('canvas');c.width=Math.round(im.naturalWidth*sc);c.height=Math.round(im.naturalHeight*sc);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);S.items.push({c,w:c.width,h:c.height,prompt:'',name:f.name});res(true)};\\n im.onerror=()=>{URL.revokeObjectURL(u);res(false)};im.src=u})}\\nasync function addFiles(list){const fs=[...list].filter(f=>f.type.startsWith('image/'));if(!fs.length)return msg('Choose image files (JPG, PNG, WebP).',1);\\n if(S.items.length+fs.length>40)return msg('Up to 40 pictures at a time.',1);let bad=0;for(const f of fs)if(!await addImage(f))bad++;\\n msg(bad?bad+' file(s) could not be opened.':fs.length+' picture(s) added.',!!bad);renderGrid();update()}\\nfunction renderGrid(){const g=$('#grid');g.innerHTML='';S.items.forEach((it,i)=>{const d=document.createElement('div');d.className='it';\\n const th=document.createElement('canvas');th.width=160;th.height=96;const x=th.getContext('2d'),sc=Math.max(160/it.w,96/it.h);x.drawImage(it.c,(160-it.w*sc)/2,(96-it.h*sc)/2,it.w*sc,it.h*sc);d.append(th);\\n \\n const r=document.createElement('div');r.className='row';\\n [['\u2190',()=>mv(i,-1),i===0],['\u2192',()=>mv(i,1),i===S.items.length-1],['\u2715',()=>{S.items.splice(i,1);renderGrid();update()},false]].forEach(([l,fn,dis])=>{const b=document.createElement('button');b.textContent=l;b.disabled=dis;b.setAttribute('aria-label',{'\u2190':'Move earlier','\u2192':'Move later','\u2715':'Remove'}[l]);b.onclick=fn;r.append(b)});\\n d.append(r);g.append(d)})}\\nfunction mv(i,d){const j=i+d;if(j<0||j>=S.items.length)return;[S.items[i],S.items[j]]=[S.items[j],S.items[i]];renderGrid();update()}\\n$('#addp').onclick=()=>$('#file').click();$('#file').onchange=e=>{addFiles(e.target.files);e.target.value=''};\\n$('#clr').onclick=()=>{if(confirm('Remove all pictures?')){S.items=[];renderGrid();update()}};\\ndocument.body.ondragover=e=>e.preventDefault();document.body.ondrop=e=>{e.preventDefault();if(e.dataTransfer.files.length)addFiles(e.dataTransfer.files)};\\n\\n/* ---- pictures from a video ---- */\\nconst vSeek=(v,t)=>new Promise(res=>{let d=0;const f=()=>{if(!d){d=1;v.removeEventListener('seeked',f);res()}};v.addEventListener('seeked',f);v.currentTime=Math.max(0,Math.min(v.duration-.05,t));setTimeout(f,4000)});\\nlet VP=null;\\nasync function grabFrames(v,n,name){const D=v.duration,lo=D*.05,hi=D*.95,span=(hi-lo)/n,out=[],k=Math.min(1,1920/Math.max(v.videoWidth,v.videoHeight)),W=Math.round(v.videoWidth*k),H=Math.round(v.videoHeight*k);\\n const sc=document.createElement('canvas');sc.width=320;sc.height=Math.max(8,Math.round(320*v.videoHeight/v.videoWidth));const sx=sc.getContext('2d',{willReadFrequently:true});\\n const analyse=()=>{sx.drawImage(v,0,0,sc.width,sc.height);const d=sx.getImageData(0,0,sc.width,sc.height).data,w=sc.width,h=sc.height,g=new Float32Array(w*h);for(let i=0;i<g.length;i++)g[i]=d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11;\\n  let a=0,b=0,c=0;for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x,l=4*g[i]-g[i-1]-g[i+1]-g[i-w]-g[i+w];a+=l;b+=l*l;c++}\\n  const tiny=new Float32Array(144);for(let y=0;y<9;y++)for(let x=0;x<16;x++)tiny[y*16+x]=g[Math.floor(y*h/9)*w+Math.floor(x*w/16)];return{sharp:b/c-(a/c)*(a/c),tiny}};\\n let prev=null;\\n for(let i=0;i<n;i++){msg('Taking picture '+(i+1)+' of '+n+'\u2026');const tc=lo+span*(i+.5),wd=Math.min(span*.4,1.2),cand=[];\\n  for(const o of [-1,-.5,0,.5,1]){const t=Math.max(0,Math.min(D-.05,tc+o*wd));await vSeek(v,t);const a=analyse();cand.push({t,sharp:a.sharp,tiny:a.tiny})}\\n  cand.sort((a,b)=>b.sharp-a.sharp);let pick=cand[0];\\n  if(prev){const diff=c=>c.tiny.reduce((q,x,j)=>q+Math.abs(x-prev[j]),0)/144,ok=cand.find(c=>diff(c)>=8);if(ok)pick=ok}\\n  await vSeek(v,pick.t);const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(v,0,0,W,H);prev=pick.tiny;\\n  out.push({c,w:W,h:H,prompt:'',name:name.replace(/\\\\.[^.]+$/,'').slice(0,14)+' @'+pick.t.toFixed(1)+'s',vid:true})}\\n const bs=out.map(o=>barsOf(o.c)),m={l:Math.min(...bs.map(b=>b.l)),r:Math.min(...bs.map(b=>b.r)),t:Math.min(...bs.map(b=>b.t)),b:Math.min(...bs.map(b=>b.b))};\\n if(Math.max(m.l,m.r,m.t,m.b)>=.03&&1-m.l-m.r>=.3&&1-m.t-m.b>=.3)out.forEach(o=>{const x0=Math.round(o.w*m.l),y0=Math.round(o.h*m.t),w2=Math.round(o.w*(1-m.l-m.r)),h2=Math.round(o.h*(1-m.t-m.b)),c2=document.createElement('canvas');c2.width=w2;c2.height=h2;c2.getContext('2d').drawImage(o.c,x0,y0,w2,h2,0,0,w2,h2);o.c=c2;o.w=w2;o.h=h2;o.bars=true});\\n return out}\\nfunction barsOf(c){const w=160,h=Math.max(8,Math.round(160*c.height/c.width)),t=document.createElement('canvas');t.width=w;t.height=h;const x=t.getContext('2d',{willReadFrequently:true});x.drawImage(c,0,0,w,h);const d=x.getImageData(0,0,w,h).data,lit=i=>d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11>22;\\n const col=X=>{let n=0;for(let y=0;y<h;y++)if(lit(y*w+X))n++;return n>h*.03},row=Y=>{let n=0;for(let X=0;X<w;X++)if(lit(Y*w+X))n++;return n>w*.03};\\n let l=0;while(l<w-1&&!col(l))l++;let r=0;while(r<w-1&&!col(w-1-r))r++;let tp=0;while(tp<h-1&&!row(tp))tp++;let b=0;while(b<h-1&&!row(h-1-b))b++;return{l:l/w,r:r/w,t:tp/h,b:b/h}}\\n$('#addv2').onclick=()=>$('#vfile').click();\\n$('#vfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(!f.type.startsWith('video/'))return msg('Choose a video file (MP4 or WebM).',1);\\n const u=URL.createObjectURL(f),v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='auto';\\n v.onloadedmetadata=()=>{if(VP)URL.revokeObjectURL(VP.u);VP={f,u,v};$('#vpanel').hidden=false;$('#vinfo').textContent=f.name+' \u00b7 '+v.videoWidth+'\u00d7'+v.videoHeight+' \u00b7 '+v.duration.toFixed(1)+' s';$('#vn').value='';$('#vn').focus();msg('Type how many pictures you want from this video, then press Take pictures.')};\\n v.onerror=()=>{URL.revokeObjectURL(u);msg('This browser cannot play that video. Try an MP4 (H.264) or WebM file.',1)};v.src=u};\\n$('#vgo').onclick=async()=>{if(!VP)return;const n=Math.floor(+$('#vn').value);if(!(n>=1))return msg('Type how many pictures you want, as a whole number (for example 8).',1);\\n if(S.items.length+n>40)return msg('That would make more than 40 pictures in total. Type a smaller number.',1);\\n $('#vgo').disabled=true;S.extracting=true;notifyBusy();try{const out=await grabFrames(VP.v,n,VP.f.name);out.forEach(o=>S.items.push(o));renderGrid();update();msg(out.length+' pictures taken from the video'+(out[0]&&out[0].bars?' (black bars around the picture were cut off)':'')+'. Remove any you do not want with \u2715.')}catch(e){msg('Could not take pictures: '+(e.message||e),1)}S.extracting=false;notifyBusy();$('#vgo').disabled=false};\\n\\n/* ---- audio ---- */\\nlet AC0=null;const ac=()=>AC0||(AC0=new(window.AudioContext||window.webkitAudioContext)());\\nasync function decode(blob){return ac().decodeAudioData(await blob.arrayBuffer())}\\nfunction renderAud(){const b=$('#auds');b.innerHTML='';[['music','Music'],['voice','Voiceover']].forEach(([k,l])=>{const a=S[k];if(!a)return;const d=document.createElement('div');d.className='aud';\\n d.innerHTML='<b>'+l+'<\\/b>';const sp=document.createElement('span');sp.textContent=a.name+' \u00b7 '+a.dur.toFixed(1)+' s';const x=document.createElement('button');x.className='alt';x.textContent='Remove';x.onclick=()=>{if(a.url)URL.revokeObjectURL(a.url);S[k]=null;renderAud();update()};d.append(sp,x);if(a.url){const au=document.createElement('audio');au.controls=true;au.src=a.url;d.append(au)}b.append(d)})}\\nasync function setAudio(k,f){try{const buf=await decode(f);if(S[k]&&S[k].url)URL.revokeObjectURL(S[k].url);S[k]={buf,dur:buf.duration,name:f.name||'recording',url:k==='voice'?URL.createObjectURL(f):null};renderAud();update();msg((k==='music'?'Music':'Voiceover')+' added.')}catch(e){msg('This audio file could not be read. Try MP3, M4A, WAV or OGG.',1)}}\\n$('#addm').onclick=()=>$('#mf').click();$('#addv').onclick=()=>$('#vf').click();\\n$('#mf').onchange=e=>{if(e.target.files[0])setAudio('music',e.target.files[0]);e.target.value=''};\\n$('#vf').onchange=e=>{if(e.target.files[0])setAudio('voice',e.target.files[0]);e.target.value=''};\\n$('#rec').onclick=async()=>{\\n if(S.micRec){S.micRec.stop();return}\\n if(!navigator.mediaDevices||!window.MediaRecorder)return msg('Recording needs a recent Chrome, Edge or Safari.',1);\\n try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),ch=[],r=new MediaRecorder(st);S.micRec=r;notifyBusy();\\n  r.ondataavailable=e=>{if(e.data.size)ch.push(e.data)};\\n  r.onstop=async()=>{st.getTracks().forEach(t=>t.stop());S.micRec=null;notifyBusy();$('#rec').textContent='Record my voice';if(ch.length)await setAudio('voice',Object.assign(new Blob(ch,{type:r.mimeType}),{name:'My recording'}))};\\n  r.start();$('#rec').textContent='Stop recording';msg('Recording\u2026 speak now, then press Stop.')}\\n catch(e){msg('Microphone is blocked or not available. Allow microphone access for this page and try again.',1)}};\\n\\n\\n/* ---- drawing ---- */\\nconst oc=p=>1-Math.pow(1-Math.max(0,Math.min(1,p)),3),ioc=p=>{p=Math.max(0,Math.min(1,p));return p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2};const ease=p=>.5-.5*Math.cos(Math.PI*p);let tiny=null;\\nfunction blurBg(it){const w=cv.width,h=cv.height;if(!tiny)tiny=document.createElement('canvas');tiny.width=32;tiny.height=Math.max(8,Math.round(32*h/w));tiny.getContext('2d').drawImage(it.c,0,0,tiny.width,tiny.height);\\n const sc=Math.max(w/tiny.width,h/tiny.height);ctx.drawImage(tiny,(w-tiny.width*sc)/2,(h-tiny.height*sc)/2,tiny.width*sc,tiny.height*sc);ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(0,0,w,h)}\\nfunction drawSeg(sg,t,alpha){const w=cv.width,h=cv.height,it=sg.it,G=S.G,k2=w/720,p=ease(Math.max(0,Math.min(1,t/sg.dur))),I=sg.int,M=sg.moves,has=k=>M.includes(k);\\n const base=G.fit==='fill'?Math.max(w/it.w,h/it.h):Math.min(w/it.w,h/it.h);let z=1.06+.1*I,ox=0,oy=0;\\n if(has('push'))z+=.3*I*p;if(has('pull'))z+=.3*I*(1-p);if(sg.pop)z*=1+.12*(1-oc(t/.3));if(has('left')||has('right')||has('up')||has('down'))z+=.08+.14*I;\\n const dw=it.w*base*z,dh=it.h*base*z,sx=Math.max(0,(dw-w)/2),sy=Math.max(0,(dh-h)/2),mv=p*2-1;\\n if(has('left'))ox-=mv*sx*.95;if(has('right'))ox+=mv*sx*.95;if(has('up'))oy-=mv*sy*.95;if(has('down'))oy+=mv*sy*.95;\\n if(has('shake')){const a=(8+16*I)*k2;ox+=(Math.sin(t*23)+Math.sin(t*37+1))*a*.5;oy+=(Math.sin(t*29+2)+Math.sin(t*41))*a*.5}\\n ctx.save();ctx.globalAlpha=alpha;if(G.fit==='blur')blurBg(it);ctx.drawImage(it.c,(w-dw)/2+ox,(h-dh)/2+oy,dw,dh);ctx.restore()}\\nfunction draw(t){const w=cv.width,h=cv.height,T=S.T,G=S.G;ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);if(!T)return;\\n const cur=T.segs.filter(s=>t>=s.start&&t<s.start+s.dur+.001);\\n if(!cur.length)drawSeg(T.segs[T.segs.length-1],T.per,1);\\n else if(cur.length===1)drawSeg(cur[0],t-cur[0].start,1);\\n else{const a=cur[cur.length-2],b=cur[cur.length-1],p=Math.min(1,(t-b.start)/Math.max(.01,T.xf));\\n  if(b.tr==='slide'){const e=ioc(p);ctx.save();ctx.translate(-e*w*.3,0);drawSeg(a,t-a.start,1);ctx.restore();ctx.save();ctx.translate((1-e)*w,0);drawSeg(b,t-b.start,1);ctx.restore()}\\n  else if(b.tr==='flash'||b.tr==='cut'){const q=p<.5?a:b;drawSeg(q,t-q.start,1);if(b.tr==='flash'){ctx.save();ctx.fillStyle='rgba(255,255,255,'+(.9*(1-Math.abs(2*p-1)))+')';ctx.fillRect(0,0,w,h);ctx.restore()}}\\n  else{drawSeg(a,t-a.start,1);drawSeg(b,t-b.start,p)}}\\n if(G.bw){ctx.save();ctx.globalCompositeOperation='saturation';ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);ctx.restore()}\\n if(G.grade){ctx.save();ctx.globalCompositeOperation='overlay';let g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(0,90,120,.35)');g.addColorStop(1,'rgba(150,70,0,.28)');ctx.fillStyle=G.bw?'rgba(0,0,0,0)':g;ctx.fillRect(0,0,w,h);ctx.restore();\\n  g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.35,w/2,h/2,Math.max(w,h)*.72);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.55)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h)}\\n if(G.fade){const f=Math.min(.7,T.total*.08),a=Math.max(f-t,t-(T.total-f),0)/f;if(a>0){ctx.fillStyle='rgba(0,0,0,'+Math.min(1,a)+')';ctx.fillRect(0,0,w,h)}}}\\nfunction start(){cancelAnimationFrame(S.raf);if(!S.T||S.busy){if(!S.T){ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height)}return}\\n const t0=performance.now(),loop=n=>{if(S.busy)return;const L=S.T.total+.8;draw(Math.min(S.T.total,((n-t0)/1000)%L));S.raf=requestAnimationFrame(loop)};S.raf=requestAnimationFrame(loop)}\\n\\n\\n/* ---- built-in music and sound effects (made inside the browser) ---- */\\nlet NB=null;const noiseBuf=A=>NB&&NB.sampleRate===A.sampleRate?NB:(NB=(()=>{const b=A.createBuffer(1,A.sampleRate*2,A.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b})());\\nconst NOTE=m=>440*Math.pow(2,(m-69)/12);\\nfunction tone(A,dst,type,f,t,dur,g,att,lp,nodes){const o=A.createOscillator(),e=A.createGain();o.type=type;o.frequency.value=f;e.gain.setValueAtTime(0.0001,t);e.gain.linearRampToValueAtTime(g,t+att);e.gain.exponentialRampToValueAtTime(.0001,t+dur);\\n if(lp){const q=A.createBiquadFilter();q.type='lowpass';q.frequency.value=lp;o.connect(q);q.connect(e)}else o.connect(e);e.connect(dst);o.start(t);o.stop(t+dur+.05);nodes.push(o)}\\nfunction burst(A,dst,t,dur,type,f0,f1,g,nodes){const n=A.createBufferSource(),q=A.createBiquadFilter(),e=A.createGain();n.buffer=noiseBuf(A);q.type=type;q.frequency.setValueAtTime(f0,t);q.frequency.exponentialRampToValueAtTime(f1,t+dur);\\n e.gain.setValueAtTime(.0001,t);e.gain.exponentialRampToValueAtTime(g,t+dur*.4);e.gain.exponentialRampToValueAtTime(.0001,t+dur);n.connect(q);q.connect(e);e.connect(dst);n.start(t);n.stop(t+dur+.05);nodes.push(n)}\\nfunction thumpAt(A,dst,t,g,len,nodes){const o=A.createOscillator(),e=A.createGain();o.type='sine';o.frequency.setValueAtTime(len>.5?110:75,t);o.frequency.exponentialRampToValueAtTime(30,t+len);e.gain.setValueAtTime(g,t);e.gain.exponentialRampToValueAtTime(.0001,t+len);o.connect(e);e.connect(dst);o.start(t);o.stop(t+len+.05);nodes.push(o)}\\nfunction makeScore(A,dest,mood,total,t0,vol,nodes){\\n const sr=A.sampleRate,master=A.createGain();master.gain.setValueAtTime(0,t0);master.gain.linearRampToValueAtTime(vol,t0+2);master.gain.setValueAtTime(vol,t0+Math.max(2,total-2.5));master.gain.linearRampToValueAtTime(0,t0+total);master.connect(dest);\\n const rv=A.createConvolver(),ib=A.createBuffer(2,sr*2,sr);for(let c=0;c<2;c++){const d=ib.getChannelData(c);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.5)}rv.buffer=ib;\\n const wet=A.createGain();wet.gain.value=.4;rv.connect(wet);wet.connect(master);const out=A.createGain();out.connect(master);out.connect(rv);\\n const minor=mood==='emotional'||mood==='cinematic',prog=minor?[[57,60,64],[53,57,60],[60,64,67],[55,59,62]]:[[60,64,67],[67,71,74],[69,72,76],[65,69,72]];\\n const bpm={emotional:70,cinematic:84,upbeat:112,calm:60}[mood],beat=60/bpm;let next=t0+.1,b=0;\\n const step=(b,t)=>{const ch=prog[Math.floor(b/8)%4],pos=b%8,root=ch[0],prog01=(t-t0)/total;\\n  if(mood==='emotional'){if(pos===0){ch.forEach(m=>{tone(A,out,'sine',NOTE(m),t,beat*8,.07,1.2,900,nodes);tone(A,out,'triangle',NOTE(m),t,beat*8,.04,1.2,900,nodes)});tone(A,out,'sine',NOTE(root-12),t,beat*4,.22,.05,0,nodes)}\\n   if(pos%2===0){const m=ch[[0,1,2,1][(pos/2)|0]]+12;tone(A,out,'triangle',NOTE(m),t,1.6,.2,.006,2200,nodes)}}\\n  else if(mood==='cinematic'){if(pos===0){ch.forEach(m=>tone(A,out,'sawtooth',NOTE(m-12),t,beat*8,.05,1.6,260+700*prog01,nodes));tone(A,out,'sine',NOTE(root-24),t,beat*6,.34,.1,0,nodes)}\\n   if(pos%4===0&&prog01>.12)thumpAt(A,out,t,.5,.28,nodes);if(pos===4&&prog01>.3)tone(A,out,'triangle',NOTE(ch[2]+12),t,beat*3,.08,.8,1800,nodes)}\\n  else if(mood==='upbeat'){if(pos%2===0)thumpAt(A,out,t,.55,.2,nodes);else burst(A,out,t,.06,'highpass',6000,9000,.1,nodes);\\n   if([0,3,4,6].includes(pos))tone(A,out,'sawtooth',NOTE(root-12),t,beat*.9,.16,.01,420,nodes);if(pos===2||pos===6)ch.forEach(m=>tone(A,out,'triangle',NOTE(m),t,beat*.8,.07,.01,2500,nodes))}\\n  else{if(pos===0)ch.forEach(m=>{tone(A,out,'sine',NOTE(m),t,beat*8,.08,1.8,800,nodes);tone(A,out,'triangle',NOTE(m+12),t,beat*8,.025,1.8,900,nodes)});\\n   if(pos===0||pos===5)tone(A,out,'sine',NOTE(ch[(pos+1)%3]+24),t,2.2,.07,.01,0,nodes)}};\\n const iv=setInterval(()=>{while(next<A.currentTime+1.2&&next<t0+total){step(b,next);next+=beat/2;b++}},200);\\n return{stop(){clearInterval(iv)}}}\\nfunction sfxPlan(A,dest,mood,T,t0,g,nodes){const bus=A.createGain();bus.gain.value=g;bus.connect(dest);const big=mood==='cinematic'||mood==='upbeat';\\n if(big)thumpAt(A,bus,t0+.15,.9,1.1,nodes);\\n T.segs.forEach((sg,i)=>{if(!i)return;const t=t0+sg.start;burst(A,bus,t-.25,.5,'bandpass',350,3500,.5,nodes);if(big&&i%2===1)thumpAt(A,bus,t,.6,.35,nodes)});\\n if(big){burst(A,bus,t0+T.total-2.6,2.2,'bandpass',200,5000,.35,nodes);thumpAt(A,bus,t0+T.total-.9,1,1.4,nodes)}}\\n\\nlet PV=null;\\n$('#prev').onclick=async()=>{\\n if(PV){PV.stop();return}\\n if(!S.G)build();const G=S.G;if(S.music)return msg('You added your own music, so the built-in music is not used. Remove yours to preview the built-in one.',1);\\n if(G.nomusic&&G.nosfx)return msg('Your prompt says no music and no sound effects.',1);\\n try{const A=ac();if(A.state==='suspended')await A.resume();const nodes=[],t0=A.currentTime+.1,total=14;let ctl=null;\\n  if(!G.nomusic)ctl=makeScore(A,A.destination,G.mood,total,t0,.5,nodes);\\n  if(!G.nosfx)sfxPlan(A,A.destination,G.mood,{total,segs:[{start:0},{start:5},{start:10}]},t0,.6,nodes);\\n  const end=setTimeout(()=>PV&&PV.stop(),total*1000+300);\\n  PV={stop(){clearTimeout(end);ctl&&ctl.stop();nodes.forEach(n=>{try{n.stop()}catch(e){}});PV=null;$('#prev').textContent='Preview built-in sound';msg('')}};\\n  $('#prev').textContent='Stop preview';msg('Playing the '+(G.nomusic?'sound effects':G.mood+' music')+' preview (14 s). Change the mood by writing emotional, epic, upbeat or calm in the prompt.')}\\n catch(e){msg('Could not play sound: '+(e.message||e),1)}};\\n\\n/* ---- export ---- */\\nfunction pickMime(){const c=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];return window.MediaRecorder&&c.find(t=>MediaRecorder.isTypeSupported(t))||''}\\n$('#go').onclick=async()=>{\\n if(S.busy){S.cancel=true;return}\\n if(!S.items.length)return msg('Add at least one picture.',1);\\n if(S.micRec)return msg('Stop the voice recording first.',1);\\n const mime=pickMime();if(!mime)return msg('This browser cannot record video. Try Chrome, Edge or Safari 14.1 or newer.',1);\\n update();const T=S.T,chunks=[];let nodes=[],scoreCtl=null;\\n S.busy=true;notifyBusy();S.cancel=false;cancelAnimationFrame(S.raf);$('#go').textContent='Cancel';$('#barw').hidden=false;$('#bar').style.width='0';$('#out').innerHTML='';\\n if(S.outUrl){URL.revokeObjectURL(S.outUrl);S.outUrl=null}\\n try{const A=ac();if(A.state==='suspended')await A.resume();const dest=A.createMediaStreamDestination(),now=A.currentTime+.15;\\n  const G=S.G,builtin=!S.music&&!G.nomusic,sfxOn=!G.nosfx,useAudio=!!(S.music||S.voice||builtin||sfxOn);\\n  if(S.music){const s=A.createBufferSource(),g=A.createGain();s.buffer=S.music.buf;s.loop=true;const vol=S.voice?.16:.45;g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(vol,now+1.5);g.gain.setValueAtTime(vol,now+Math.max(1.5,T.total-2));g.gain.linearRampToValueAtTime(0,now+T.total);s.connect(g);g.connect(dest);s.start(now);nodes.push(s)}\\n  else if(builtin)scoreCtl=makeScore(A,dest,G.mood,T.total,now,S.voice?.2:.5,nodes);\\n  if(sfxOn)sfxPlan(A,dest,G.mood,T,now,S.voice?.35:.6,nodes);\\n  if(S.voice){const s=A.createBufferSource(),g=A.createGain();s.buffer=S.voice.buf;g.gain.value=1;s.connect(g);g.connect(dest);s.start(now+.3);nodes.push(s)}\\n  const vs=cv.captureStream(30),tracks=[...vs.getVideoTracks(),...(useAudio?dest.stream.getAudioTracks():[])],st=new MediaStream(tracks),\\n   rec=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:cv.width>1000?8e6:5e6});\\n  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};\\n  const done=new Promise((res,rej)=>{rec.onstop=res;rec.onerror=e=>rej(e.error||new Error('Recording failed'))});\\n  msg('Creating video\u2026 keep this screen on.');draw(0);rec.start(500);const t0=performance.now()+150;\\n  await new Promise(r=>{const loop=n=>{const t=(n-t0)/1000;if(S.cancel||t>=T.total){r();return}draw(Math.max(0,t));$('#bar').style.width=Math.max(0,t/T.total*100)+'%';requestAnimationFrame(loop)};requestAnimationFrame(loop)});\\n  draw(T.total);await new Promise(r=>setTimeout(r,150));rec.stop();await done;scoreCtl&&scoreCtl.stop();nodes.forEach(n=>{try{n.stop()}catch(e){}});st.getTracks().forEach(t=>t.stop());\\n  if(S.cancel)msg('Cancelled.');else{const ext=mime.includes('mp4')?'mp4':'webm',blob=new Blob(chunks,{type:mime.split(';')[0]});\\n   S.outUrl=URL.createObjectURL(blob);$('#bar').style.width='100%';msg('Done. '+(blob.size/1048576).toFixed(1)+' MB, '+ext.toUpperCase()+'.');\\n   $('#out').innerHTML='<a class=\\\"dl\\\" download=\\\"animated-pictures.'+ext+'\\\" href=\\\"'+S.outUrl+'\\\">Save video<\\/a>'}\\n }catch(e){scoreCtl&&scoreCtl.stop();nodes.forEach(n=>{try{n.stop()}catch(x){}});msg('Export failed: '+(e.message||e)+'. Try fewer pictures or a shorter video.',1)}\\n S.busy=false;notifyBusy();$('#go').textContent='Create and save video';$('#barw').hidden=true;start()};\\nwindow.addEventListener('beforeunload',()=>{if(S.outUrl)URL.revokeObjectURL(S.outUrl)});\\nfunction notifyBusy(){try{parent.postMessage({ia:'busy',v:!!(S.busy||S.micRec||S.extracting)},'*')}catch(e){}}\\naddEventListener('message',e=>{const d=e.data||{};if(d.ia==='theme'){if(d.v)document.documentElement.dataset.theme=d.v;else delete document.documentElement.dataset.theme}});\\ntry{new ResizeObserver(()=>{try{parent.postMessage({ia:'h',v:document.documentElement.scrollHeight},'*')}catch(e){}}).observe(document.body)}catch(e){}\\nupdate();\\n<\\/script>\\n\\n<\\/body>\\n<\\/html>\\n\"");
+// box = where the iframe goes, note = message line; fr = the iframe, iaBusy = the animator is working, onIa = the animator is open.
+const box=document.getElementById('iaBox'),note=document.getElementById('iaNote');let fr=null,iaBusy=false,onIa=false;
+// Tell the animator which theme (light / dark) is active.
+function sendTheme(){try{fr&&fr.contentWindow.postMessage({ia:'theme',v:document.documentElement.dataset.theme||''},'*')}catch(e){}}
+// Create the iframe once and fill it with IA_HTML.
+function mount(){if(fr)return;fr=document.createElement('iframe');fr.title='Image Animator';fr.setAttribute('allow','microphone; autoplay');fr.style.cssText='width:100%;border:0;min-height:900px;display:block;background:transparent';fr.onload=sendTheme;fr.srcdoc=IA_HTML;box.append(fr)}
+// Send the theme again whenever it changes.
+new MutationObserver(sendTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+// Messages from the animator: its busy state and its height.
+addEventListener('message',e=>{if(!fr||e.source!==fr.contentWindow)return;const d=e.data||{};if(d.ia==='busy')iaBusy=!!d.v;else if(d.ia==='h')fr.style.height=Math.max(700,+d.v+8)+'px'});
+// Show the animator when the address is #animator; refuse to leave while it is busy.
+function route(){const h=location.hash.replace('#','');
+ if(h==='animator'){onIa=true;document.body.classList.add('solo');document.body.dataset.tool='animator';document.title='Image Animator – ClipForge Studio';note.textContent='';mount();window.scrollTo(0,0)}
+ else if(onIa){if(iaBusy){location.hash='#animator';return}onIa=false}}
+// Block other links while the animator is busy and show a message.
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#"]');if(a&&onIa&&iaBusy&&a.getAttribute('href')!=='#animator'){e.preventDefault();note.textContent='Image Animator is working. Wait for it to finish (or press Cancel inside it) before leaving this page.'}},true);
+// Run on every hash change and once now.
+addEventListener('hashchange',route);route();
+})();
+</script>
+<!-- ===== JAVASCRIPT: Video Reverser ===== -->
+<script>
+/* ===========================================================================
+   14. VIDEO REVERSER (separate small tool, #reverse)
+   Rebuilds a video backwards, frame by frame, with WebCodecs and writes an MP4.
+   It does not use any of the Shorts / Trailer code, so it cannot affect them.
+     1. Load the chosen video and its sound
+     2. Find a video encoder that works on this device (H.264, else VP9)
+     3. For every output frame: jump to that moment of the source (starting at
+        the END), draw it on a canvas and send it to the encoder
+     4. Reverse the sound samples and encode them (AAC, else Opus)
+     5. Mux everything into an MP4 (mp4-muxer, loaded from a CDN) and show it
+   =========================================================================== */
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const E={file:$('#rvFile'),drop:$('#rvDrop'),work:$('#rvWork'),src:$('#rvSrc'),est:$('#rvEst'),go:$('#rvGo'),stop:$('#rvStop'),bar:$('#rvBar'),
+  msg:$('#rvMsg'),out:$('#rvOut'),res:$('#rvRes'),save:$('#rvSave'),back:$('#rvBack')};
+if(!E.file)return;
+// O = chosen options (the frame rate is not an option: the result keeps the frame rate of your video); file / url = the source video; busy / cancel = running state.
+const O={sound:'rev',size:'1080'};
+let file=null,url=null,outUrl=null,busy=false,cancel=false,outName='video_reversed.mp4';
+const say=t=>{E.msg.textContent=t||''};
+const prog=p=>{E.bar.firstElementChild.style.width=(Math.max(0,Math.min(1,p))*100)+'%'};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const mmss=t=>{t=Math.max(0,Math.round(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
+// This tool needs WebCodecs (Chrome, Edge, recent Safari / Firefox).
+const CAN=!!(window.VideoEncoder&&window.VideoFrame);
+if(!CAN){E.go.disabled=true;say('This browser cannot build video files for this tool. Please use Chrome or Edge.')}
+
+// ---- option chips (sound / size)
+[['#rvSound','sound'],['#rvSize','size']].forEach(([id,k])=>{
+  $(id).addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b||busy)return;O[k]=b.dataset.v;
+    [...$(id).children].forEach(c=>c.classList.toggle('on',c===b));estimate()})});
+
+// Show how many frames will be rebuilt and a warning for long videos.
+function estimate(){const d=E.src.duration;if(!isFinite(d)||!d){E.est.textContent='';return}
+  E.est.textContent=mmss(d)+' long. The result keeps the frame rate of your video. Every frame is rebuilt one by one, so expect several times the video length. Keep this tab open and visible.'+(d>600?' This video is long: consider reversing a shorter part.':'')}
+
+// ---- loading a video
+function load(f){if(!f||busy)return;
+  if(!/^video\//.test(f.type)&&!/\.(mp4|mov|m4v|webm|mkv)$/i.test(f.name)){say('Please choose a video file.');return}
+  file=f;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);
+  if(outUrl){URL.revokeObjectURL(outUrl);outUrl=null}
+  E.out.classList.add('hide');E.res.removeAttribute('src');
+  outName=f.name.replace(/\.[^.]+$/,'')+'_reversed.mp4';
+  E.src.onloadedmetadata=estimate;
+  E.src.onerror=()=>say('This browser cannot play that video format. Convert it to H.264 MP4 and try again.');
+  E.src.src=url;if(CAN)say('');E.work.classList.remove('hide')}
+E.file.addEventListener('change',()=>load(E.file.files[0]));
+['dragover','drop'].forEach(ev=>E.drop.addEventListener(ev,e=>{e.preventDefault();if(ev==='drop')load(e.dataTransfer.files[0])}));
+
+// H.264 level that fits the picture size and frame rate (macroblocks per second).
+function level(w,h,fps){const mb=Math.ceil(w/16)*Math.ceil(h/16)*Math.ceil(fps);
+  return mb<=108000?'1f':mb<=245760?'28':mb<=522240?'2a':mb<=589824?'32':'33'}
+
+// Measure the frame rate of the video: play it silently for about a second and look at the time between two shown frames.
+// The result is matched to a common value (23.976, 24, 25, 29.97, 30, 50, 59.94, 60). If it cannot be measured, 30 is used.
+async function detectFps(v){
+  if(!('requestVideoFrameCallback' in v))return 30;
+  const times=[];
+  await new Promise(res=>{
+    const to=setTimeout(res,2500);
+    const cb=(now,md)=>{times.push(md.mediaTime);if(times.length>=24){clearTimeout(to);res()}else v.requestVideoFrameCallback(cb)};
+    v.requestVideoFrameCallback(cb);
+    v.play().catch(()=>{clearTimeout(to);res()})});
+  try{v.pause()}catch(e){}
+  const d=[];for(let i=1;i<times.length;i++){const x=times[i]-times[i-1];if(x>.004&&x<.2)d.push(x)}
+  if(d.length<5)return 30;
+  d.sort((a,b)=>a-b);const f=1/d[Math.floor(d.length/2)];      // the middle value ignores a few skipped frames
+  let best=null;for(const c of [24000/1001,24,25,30000/1001,30,48,50,60000/1001,60])if(Math.abs(f-c)/c<.04&&(!best||Math.abs(f-c)<Math.abs(f-best)))best=c;
+  return best||Math.max(15,Math.min(60,Math.round(f)))}
+
+// ---- the reversing job
+async function run(){
+  if(busy||!file||!CAN)return;
+  busy=true;cancel=false;
+  E.go.classList.add('hide');E.stop.classList.remove('hide');E.bar.classList.remove('hide');E.out.classList.add('hide');prog(0);
+  let pv=null,ve=null,ae=null,wl=null,encErr=null;const notes=[];
+  try{
+    try{wl=await navigator.wakeLock.request('screen')}catch(e){}
+    const dur=E.src.duration;
+    if(!isFinite(dur)||dur<=0)throw new Error('Could not read the length of this video.');
+    // Output size: keep the picture shape, limit the long side, use even numbers.
+    let w=E.src.videoWidth,h=E.src.videoHeight;
+    if(O.size!=='orig'){const lim=O.size==='1080'?1920:1280,m=Math.max(w,h);if(m>lim){const k=lim/m;w=Math.round(w*k);h=Math.round(h*k)}}
+    w&=~1;h&=~1;
+    if(w<16||h<16)throw new Error('The video picture is too small.');
+
+    // 1. MP4 library
+    say('Loading the MP4 library…');
+    const M=await Promise.race([import('https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.mjs'),
+      sleep(60000).then(()=>{throw new Error('The MP4 library could not be downloaded. Check your internet connection.')})]);
+    if(cancel)throw new Error('Stopped');
+
+    // 2. Sound: decode it, then reverse it later (needs AudioEncoder).
+    let abuf=null,sr=48000,nch=2,ac='mp4a.40.2',am='aac';
+    if(O.sound==='rev'){
+      if(!(window.AudioEncoder&&window.AudioData))notes.push('This browser cannot encode sound, so the result has no sound.');
+      else{say('Reading the sound…');
+        try{const AC=window.AudioContext||window.webkitAudioContext;let cx;try{cx=new AC({sampleRate:48000})}catch(e){cx=new AC()}
+          abuf=await cx.decodeAudioData(await file.arrayBuffer());try{cx.close()}catch(e){}
+          sr=abuf.sampleRate;nch=Math.min(2,abuf.numberOfChannels);
+          if(!(await AudioEncoder.isConfigSupported({codec:ac,sampleRate:sr,numberOfChannels:nch,bitrate:128000})).supported){
+            ac='opus';am='opus';
+            if(!(await AudioEncoder.isConfigSupported({codec:ac,sampleRate:sr,numberOfChannels:nch,bitrate:128000})).supported)throw new Error('no audio codec')}
+        }catch(e){abuf=null;notes.push('The sound could not be read, so the result has no sound.')}}}
+    if(cancel)throw new Error('Stopped');
+
+    // 2b. A second, hidden player does the seeking so the visible one is never disturbed. It also tells us the frame rate.
+    say('Opening the video…');
+    pv=document.createElement('video');pv.muted=true;pv.playsInline=true;pv.preload='auto';pv.src=url;
+    await new Promise((res,rej)=>{if(pv.readyState>=2)return res();
+      const to=setTimeout(()=>rej(new Error('The video could not be opened for processing.')),20000);
+      pv.addEventListener('loadeddata',()=>{clearTimeout(to);res()},{once:true});
+      pv.addEventListener('error',()=>{clearTimeout(to);rej(new Error('This browser cannot decode that video.'))},{once:true})});
+    const fps=await detectFps(pv);          // the result keeps the frame rate of the source video
+    if(cancel)throw new Error('Stopped');
+
+    // 3. Find a video encoder that really works here (same test the recorder in Shorts uses).
+    say('Preparing the video encoder…');
+    const br=Math.min(20e6,Math.max(1.5e6,Math.round(w*h*fps*0.09)));
+    let vc=null,vm='avc',vhw='no-preference';
+    const probe=async cfg=>{try{if(!(await VideoEncoder.isConfigSupported(cfg)).supported)return false;let got=0,bad=false;
+      const e=new VideoEncoder({output:()=>{got++},error:()=>{bad=true}});e.configure(cfg);
+      const pc=document.createElement('canvas');pc.width=cfg.width;pc.height=cfg.height;const px=pc.getContext('2d');
+      for(let i=0;i<4;i++){px.fillStyle=i%2?'#445':'#a63';px.fillRect(0,0,pc.width,pc.height);const f=new VideoFrame(pc,{timestamp:i*33333});e.encode(f,{keyFrame:i===0});f.close()}
+      try{await Promise.race([e.flush(),sleep(5000).then(()=>{throw new Error('timeout')})])}catch(x){bad=true}
+      try{e.close()}catch(x){}return got>0&&!bad}catch(x){return false}};
+    const lv=level(w,h,fps);
+    find:for(const pr of ['64','4d','42'])for(const hw of ['no-preference','prefer-software','prefer-hardware']){
+      const cfg={codec:'avc1.'+pr+'00'+lv,width:w,height:h,bitrate:br,framerate:fps,hardwareAcceleration:hw};
+      if(await probe(cfg)){vc=cfg.codec;vhw=hw;break find}}
+    if(!vc){const cfg={codec:'vp09.00.40.08',width:w,height:h,bitrate:br,framerate:fps};if(await probe(cfg)){vc=cfg.codec;vm='vp9';vhw='no-preference'}}
+    if(!vc)throw new Error('This device could not start a video encoder at '+w+'×'+h+'. Choose "Up to 720p", or use Chrome or Edge on a computer.');
+    if(cancel)throw new Error('Stopped');
+
+    // 4. Muxer and encoders
+    const tg=new M.ArrayBufferTarget();
+    const mo={target:tg,video:{codec:vm,width:w,height:h,frameRate:fps},fastStart:'in-memory'};
+    if(abuf)mo.audio={codec:am,numberOfChannels:nch,sampleRate:sr};
+    const mux=new M.Muxer(mo);
+    ve=new VideoEncoder({output:(c,m)=>mux.addVideoChunk(c,m),error:e=>{encErr=e}});
+    ve.configure({codec:vc,width:w,height:h,bitrate:br,framerate:fps,hardwareAcceleration:vhw});
+    if(abuf){ae=new AudioEncoder({output:(c,m)=>mux.addAudioChunk(c,m),error:e=>{encErr=e}});
+      ae.configure({codec:ac,sampleRate:sr,numberOfChannels:nch,bitrate:128000})}
+
+    // 5. The hidden player opened above does the seeking, so the visible one is never disturbed.
+    // Jump to time t and wait for the picture (continues after 8 s so one slow jump cannot hang the job).
+    const seekTo=t=>new Promise(res=>{let done=false;const fin=()=>{if(done)return;done=true;clearTimeout(to);pv.removeEventListener('seeked',fin);res()};
+      const to=setTimeout(fin,8000);pv.addEventListener('seeked',fin);pv.currentTime=t});
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d',{alpha:false});
+
+    // 6. Frames, from the last one to the first one
+    const N=Math.max(1,Math.floor(dur*fps)),t0=performance.now(),kf=Math.max(1,Math.round(fps*2));
+    for(let i=0;i<N;i++){
+      if(cancel)throw new Error('Stopped');
+      if(encErr)throw encErr;
+      const T=Math.max(0,Math.min(dur-.001,dur-(i+.5)/fps));      // output frame i shows this moment of the source
+      await seekTo(T);
+      cx.drawImage(pv,0,0,w,h);
+      const f=new VideoFrame(cv,{timestamp:Math.round(i*1e6/fps),duration:Math.round(1e6/fps)});
+      ve.encode(f,{keyFrame:i%kf===0});f.close();
+      while(ve.encodeQueueSize>6){await sleep(4);if(cancel)throw new Error('Stopped')}
+      if(i%4===0){prog(i/N*(abuf?.92:.97));
+        const left=(performance.now()-t0)/(i+1)*(N-i-1)/1000;say('Frame '+(i+1)+' of '+N+(i>8?' · about '+mmss(left)+' left':'')+'. Keep this tab open.')}}
+
+    // 7. Sound: flip every channel and encode it in 0.1 s pieces
+    if(abuf){say('Reversing the sound…');prog(.93);
+      const ch=[];for(let c=0;c<nch;c++){const d=abuf.getChannelData(c);d.reverse();ch.push(d)}
+      const total=ch[0].length,CH=Math.round(sr/10);
+      for(let p=0;p<total;p+=CH){
+        if(cancel)throw new Error('Stopped');if(encErr)throw encErr;
+        const n=Math.min(CH,total-p),data=new Float32Array(n*nch);
+        for(let c=0;c<nch;c++)data.set(ch[c].subarray(p,p+n),c*n);
+        const ad=new AudioData({format:'f32-planar',sampleRate:sr,numberOfFrames:n,numberOfChannels:nch,timestamp:Math.round(p*1e6/sr),data});
+        ae.encode(ad);ad.close();
+        while(ae.encodeQueueSize>20){await sleep(2)}}}
+
+    // 8. Finish the file
+    say('Finishing the file…');prog(.97);
+    await ve.flush();if(ae)await ae.flush();
+    if(encErr)throw encErr;
+    mux.finalize();
+    const blob=new Blob([tg.buffer],{type:'video/mp4'});
+    if(blob.size<2000)throw new Error('The reversed file came out empty. Try "Up to 720p".');
+    outUrl=URL.createObjectURL(blob);E.res.src=outUrl;E.out.classList.remove('hide');prog(1);
+    say('Done: '+mmss(N/fps)+' reversed video, '+(blob.size/1048576).toFixed(1)+' MB.'+(notes.length?' '+notes.join(' '):''));
+  }catch(e){
+    say(e&&e.message==='Stopped'?'Stopped.':'Could not reverse this video: '+((e&&e.message)||e));
+  }finally{
+    try{ve&&ve.state!=='closed'&&ve.close()}catch(e){}
+    try{ae&&ae.state!=='closed'&&ae.close()}catch(e){}
+    if(pv){try{pv.removeAttribute('src');pv.load()}catch(e){}}
+    try{wl&&wl.release()}catch(e){}
+    busy=false;E.go.classList.remove('hide');E.stop.classList.add('hide');E.bar.classList.add('hide');
+  }
+}
+E.go.addEventListener('click',run);
+E.stop.addEventListener('click',()=>{cancel=true});
+// Save button: download the reversed MP4.
+E.save.addEventListener('click',()=>{if(!outUrl)return;const a=document.createElement('a');a.href=outUrl;a.download=outName;document.body.append(a);a.click();a.remove()});
+// Do not leave this tool by accident while it is working.
+E.back.addEventListener('click',e=>{if(busy){e.preventDefault();say('Stop the current job first, then go back.')}});
+
+// ---- routing: show this tool when the address is #reverse
+let onRv=false;
+function route(){const h=location.hash.replace('#','');
+  if(h==='reverse'){onRv=true;document.body.classList.add('solo');document.body.dataset.tool='reverse';document.title='Reverse Video – ClipForge Studio';window.scrollTo(0,0)}
+  else if(onRv){if(busy){location.hash='#reverse';return}onRv=false}}
+addEventListener('hashchange',route);route();
+})();
+</script>
+</body></html>
