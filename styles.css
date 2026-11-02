@@ -1,0 +1,571 @@
+
+
+/* ===== THEME COLOURS (CSS variables)
+   Light colours by default; dark colours follow the device setting, or the
+   theme button (data-theme="dark" / "light" on <html>). ===== */
+:root {
+  --bg: #fafaf7;
+  --card: #fff;
+  --tx: #1c1b18;
+  --mu: #6b675e;
+  --bd: #e4e1d8;
+  --ac: #8b7cff;
+  --acx: #fff;
+  --ft: #16150f;
+  --ftx: #cfcabd;
+}
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme=light]) {
+    --bg: #121211;
+    --card: #1d1c1a;
+    --tx: #f1efe8;
+    --mu: #a09b8f;
+    --bd: #33312d;
+    --ac: #8b7cff;
+    --acx: #141413;
+    --ft: #0b0b0a;
+  }
+}
+:root[data-theme=dark] {
+  --bg: #121211;
+  --card: #1d1c1a;
+  --tx: #f1efe8;
+  --mu: #a09b8f;
+  --bd: #33312d;
+  --ac: #8b7cff;
+  --acx: #141413;
+  --ft: #0b0b0a;
+}
+
+/* ===== BASE STYLES: box sizing, page font, links ===== */
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 70px;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font: 16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+a {
+  color: inherit;
+}
+
+/* ===== HEADER AND NAVIGATION: sticky top bar, logo, menu, privacy pill, theme button ===== */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--bd);
+  padding-top: env(safe-area-inset-top,0px);
+}
+.nav {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 18px;
+  text-decoration: none;
+}
+.nav nav {
+  margin-left: auto;
+  display: flex;
+  gap: 18px;
+  font-size: 14px;
+}
+.nav nav a {
+  text-decoration: none;
+  color: var(--mu);
+}
+.nav nav a:hover {
+  color: var(--tx);
+}
+.pill {
+  font-size: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: var(--mu);
+  white-space: nowrap;
+}
+.tbtn {
+  background: transparent;
+  border: 1px solid var(--bd);
+  color: var(--tx);
+  border-radius: 999px;
+  width: 36px;
+  height: 32px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.tbtn:focus-visible,
+.chip:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 2px;
+}
+@media (max-width:600px) {
+  .nav {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .nav nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+    gap: 16px;
+    padding-bottom: 2px;
+    white-space: nowrap;
+  }
+  .pill {
+    margin-left: auto;
+  }
+}
+
+/* ===== PAGE LAYOUT AND HERO: centred column and the big heading at the top ===== */
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+.hero {
+  padding: 34px 0 18px;
+}
+.hero h1 {
+  font-size: clamp(28px,6vw,44px);
+  line-height: 1.1;
+  margin: 0 0 10px;
+  letter-spacing: -.02em;
+}
+.hero p {
+  color: var(--mu);
+  max-width: 560px;
+  margin: 0;
+}
+
+/* ===== CARDS, UPLOAD BOX AND SOURCE VIDEO: white panels, the "Choose a video" drop area, the video player ===== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 16px 0;
+}
+.drop {
+  display: block;
+  text-align: center;
+  padding: 30px 14px;
+  border: 2px dashed var(--bd);
+  border-radius: 14px;
+  cursor: pointer;
+  color: var(--mu);
+}
+.drop b {
+  color: var(--tx);
+  display: block;
+  font-size: 17px;
+  margin-bottom: 4px;
+}
+input[type=file] {
+  display: none;
+}
+video#src {
+  width: 100%;
+  max-height: 240px;
+  border-radius: 10px;
+  background: #000;
+}
+
+/* ===== FORM LABELS, OPTION CHIPS AND INPUTS: small headings, rows of chips (the round option buttons), number/range boxes ===== */
+.lbl {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+.lbl small {
+  font-weight: 400;
+  color: var(--mu);
+}
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.chip {
+  border: 1px solid var(--bd);
+  background: transparent;
+  color: var(--tx);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.chip.on {
+  background: var(--ac);
+  color: var(--acx);
+  border-color: var(--ac);
+}
+input[type=number] {
+  width: 76px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--bd);
+  background: var(--bg);
+  color: var(--tx);
+  font: inherit;
+}
+input[type=range] {
+  width: 100%;
+  accent-color: var(--ac);
+}
+
+/* ===== BUTTONS: main action button, small buttons ===== */
+button.main {
+  width: 100%;
+  margin-top: 18px;
+  background: var(--ac);
+  color: var(--acx);
+  border: 0;
+  border-radius: 12px;
+  padding: 14px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: .5;
+}
+button.sm {
+  background: transparent;
+  border: 1px solid var(--bd);
+  color: var(--tx);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+button.sm.p {
+  background: var(--ac);
+  color: var(--acx);
+  border-color: var(--ac);
+}
+
+/* ===== PROGRESS BAR, NOTES AND UTILITY CLASSES (.hide hides an element) ===== */
+.bar {
+  height: 6px;
+  background: var(--bd);
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--ac);
+  transition: width .2s;
+}
+.note {
+  color: var(--mu);
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+.hide {
+  display: none;
+}
+
+/* ===== RESULT LIST: one row per short (thumbnail, score, tags) ===== */
+.clip {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--bd);
+}
+.clip:first-child {
+  border-top: 0;
+}
+.thumb {
+  width: 58px;
+  height: 102px;
+  border-radius: 8px;
+  background: #000;
+  object-fit: cover;
+  flex: none;
+}
+.info {
+  flex: 1;
+  min-width: 0;
+}
+.info b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.info span.t {
+  color: var(--mu);
+  font-size: 13px;
+}
+.score {
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--ac);
+  color: var(--acx);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.tag {
+  font-size: 11px;
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  padding: 1px 6px;
+  color: var(--mu);
+  font-weight: 400;
+}
+
+/* ===== HOME PAGE SECTIONS: "How it works", "Features" grids, FAQ ===== */
+h2 {
+  font-size: 22px;
+  margin: 40px 0 4px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(210px,1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.grid .card {
+  margin: 0;
+}
+.grid h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+.grid p {
+  margin: 0;
+  color: var(--mu);
+  font-size: 14px;
+}
+.num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ac);
+  color: var(--acx);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+details {
+  border-bottom: 1px solid var(--bd);
+  padding: 12px 0;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+details p {
+  color: var(--mu);
+  margin: 8px 0 0;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  margin-top: 56px;
+  background: var(--ft);
+  color: var(--ftx);
+  padding: 36px 0 calc(24px + env(safe-area-inset-bottom,0px));
+}
+.fg {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width:600px) {
+  .fg {
+    grid-template-columns: 1fr 1fr;
+  }
+  .fg>:first-child {
+    grid-column: 1/-1;
+  }
+}
+footer h4 {
+  margin: 0 0 10px;
+  color: #fff;
+  font-size: 14px;
+}
+footer a {
+  display: block;
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: var(--ftx);
+}
+footer a:hover {
+  color: #fff;
+}
+footer .brand {
+  color: #fff;
+}
+footer p {
+  font-size: 14px;
+  margin: 10px 0 0;
+  max-width: 320px;
+}
+.copy {
+  border-top: 1px solid #2c2a25;
+  margin-top: 26px;
+  padding-top: 16px;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ===== LIVE PREVIEW CANVAS (the small 9:16 preview) ===== */
+#cv {
+  display: block;
+  width: 120px;
+  height: auto;
+  border-radius: 10px;
+  background: #000;
+  margin-top: 6px;
+}
+
+/* ===== TOOL CARDS AND PER-TOOL VISIBILITY
+   Shows or hides parts of the page depending on the selected tool
+   (shorts / trailer / animator) using body[data-tool] and body.solo. ===== */
+.tools {
+  grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+}
+.toolcard {
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--tx);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--bd);
+}
+.toolcard:hover,
+.toolcard:focus-visible {
+  border-color: var(--ac);
+}
+.toolcard ul {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+  color: var(--mu);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ttag {
+  font-size: 12px;
+  color: var(--ac);
+  font-weight: 700;
+}
+.toolcard .go {
+  font-weight: 700;
+  margin-top: auto;
+}
+#tooltabs {
+  display: none;
+}
+.toolcard {
+  text-decoration: none;
+}
+.soloonly {
+  display: none;
+}
+.solo .soloonly {
+  display: inline-block;
+  margin: 6px 0 10px;
+  font-weight: 700;
+}
+body:not(.solo) #tool {
+  display: none;
+}
+.solo .hero,
+.solo #tools {
+  display: none;
+}
+body[data-tool=trailer] #soBox,
+body[data-tool=trailer] #res,
+body[data-tool=trailer] #capnote,
+body[data-tool=trailer] #pnote {
+  display: none!important;
+}
+body[data-tool=shorts] #trl,
+body[data-tool=shorts] .toBox {
+  display: none!important;
+}
+#iaTool {
+  display: none;
+}
+body.solo[data-tool=animator] #iaTool {
+  display: block;
+}
+body[data-tool=animator] #tool {
+  display: none!important;
+}
+
+/* ===== ADVANCED OPTIONS PANEL AND THE [hidden] ATTRIBUTE ===== */
+#adv {
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 12px 0;
+}
+#adv>summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#adv[open]>summary {
+  margin-bottom: 8px;
+}
+body[data-tool=shorts] #logoTrailer {
+  display: none;
+}
+[hidden] {
+  display: none!important;
+}
+/* ===== SAVED-PLAN NOTICE ===== */
+.restore {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+/* ===== VIDEO REVERSER: only visible for #reverse ===== */
+#rvTool {
+  display: none;
+}
+body.solo[data-tool=reverse] #rvTool {
+  display: block;
+}
+body[data-tool=reverse] #tool {
+  display: none!important;
+}
