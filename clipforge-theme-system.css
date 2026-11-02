@@ -72,3 +72,34 @@ footer .brand,footer p,footer a{color:var(--muted)!important}
  .wrap{width:100%!important;max-width:none!important;margin:0!important}
  footer{margin-left:0!important}
 }
+
+
+/* Desktop layout pass: consistent widths and usable editor panels */
+@media(min-width:901px){
+ html,body{min-width:0;overflow-x:hidden}
+ .wrap{width:calc(100% - 252px)!important;max-width:none!important;margin-left:252px!important;padding:clamp(24px,3vw,54px)!important}
+ .tools{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;align-items:stretch;gap:20px!important}
+ .toolcard{min-width:0;height:100%;display:flex!important;flex-direction:column!important}
+ .toolcard ul{margin-bottom:20px}
+ #tool,#iaTool,#rvTool,#vmTool,#editorTool{width:100%;max-width:none;min-width:0}
+ .st-workspace{grid-template-columns:minmax(190px,220px) minmax(0,1fr)!important;gap:18px!important}
+ .st-main,.st-preview-row,.st-preview-panel,.st-inspector,.st-timeline-panel{min-width:0}
+ .st-preview-row{grid-template-columns:minmax(0,1fr) minmax(235px,270px)!important;gap:16px!important}
+ .st-timeline-scroll{max-width:100%;overflow-x:auto}
+ footer{margin-left:252px!important}
+}
+@media(min-width:901px) and (max-width:1199px){
+ .wrap{padding:24px!important}
+ .tools{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .st-workspace{grid-template-columns:180px minmax(0,1fr)!important}
+ .st-preview-row{grid-template-columns:minmax(0,1fr)!important}
+ .st-inspector{max-height:none!important}
+}
+@media(min-width:1200px) and (max-width:1499px){
+ .wrap{padding:30px 34px!important}
+ .tools{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(min-width:1500px){
+ .wrap{padding:38px 54px!important}
+ .tools{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
