@@ -38,7 +38,7 @@ function renderImages() {
     const signature = Array.from(mediaRoot.children)
         .filter((node) => !node.classList.contains("st-image-item"))
         .map((node) => node.textContent || "")
-        .join("|");
+        .join("|") + "|" + imageAssets.length;
     if (signature === lastMediaSignature && mediaRoot.querySelector(".st-image-item"))
         return;
     lastMediaSignature = signature;
@@ -93,9 +93,7 @@ function mountEditorLayout() {
                     target: { files: videoAndAudio, value: "" }
                 });
             }
-            else {
-                input.value = "";
-            }
+            input.value = "";
             images.forEach((file) => {
                 const url = URL.createObjectURL(file);
                 const image = new Image();
