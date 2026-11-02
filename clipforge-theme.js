@@ -10,8 +10,8 @@ const frameCss=[
 'button.main,.chip[aria-pressed=true],a.dl{background:linear-gradient(110deg,var(--ac),#5a9cff)!important;color:#fff!important;border-color:transparent!important}',
 'input,textarea{background:var(--pn)!important;color:var(--tx)!important;border-color:var(--ln)!important}',
 '.bar{background:var(--ln)!important}.bar i{background:linear-gradient(90deg,var(--ac),#4dd8e8)!important}'
-].join('\\n');
-function apply(frame){try{const doc=frame.contentDocument;if(!doc||!doc.head)return;let style=doc.getElementById('cf-unified-theme');if(!style){style=doc.createElement('style');style.id='cf-unified-theme';doc.head.appendChild(style)}style.textContent=frameCss;const theme=document.documentElement.dataset.theme;if(theme)doc.documentElement.dataset.theme=theme;else doc.documentElement.removeAttribute('data-theme')}catch(e){}}
+].join('\n');
+function apply(frame){try{const doc=frame.contentDocument;if(!doc||!doc.head)return;let style=doc.getElementById('cf-unified-theme');if(!style){style=doc.createElement('style');style.id='cf-unified-theme';doc.head.appendChild(style)}if(style.textContent!==frameCss)style.textContent=frameCss;const theme=document.documentElement.dataset.theme;if(theme)doc.documentElement.dataset.theme=theme;else doc.documentElement.removeAttribute('data-theme')}catch(e){}}
 function sync(){document.querySelectorAll('iframe').forEach(apply)}
 new MutationObserver(sync).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['data-theme']});
 document.addEventListener('load',e=>{if(e.target instanceof HTMLIFrameElement)apply(e.target)},true);
