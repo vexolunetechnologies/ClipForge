@@ -11,14 +11,14 @@ export default {
       ["/clipforge-studio.css", '<link rel="stylesheet" href="/clipforge-studio.css">']
     ];
     let enhanced = html;
-    for (const [path, tag] of styles) if (!enhanced.includes(path)) enhanced = enhanced.replace("</head>", tag + "\\n</head>");
+    for (const [path, tag] of styles) if (!enhanced.includes(path)) enhanced = enhanced.replace("</head>", tag + "\n</head>");
     const scripts = [
       ["/clipforge-v2.js", '<script src="/clipforge-v2.js"></script>'],
       ["/clipforge-v2-patch.js", '<script src="/clipforge-v2-patch.js"></script>'],
       ["/clipforge-editor-pro.js", '<script src="/clipforge-editor-pro.js"></script>'],
       ["/clipforge-studio.js", '<script src="/clipforge-studio.js"></script>']
     ];
-    for (const [path, tag] of scripts) if (!enhanced.includes(path)) enhanced = enhanced.replace("</body>", tag + "\\n</body>");
+    for (const [path, tag] of scripts) if (!enhanced.includes(path)) enhanced = enhanced.replace("</body>", tag + "\n</body>");
     const headers = new Headers(assetResponse.headers);
     headers.set("content-type", "text/html; charset=utf-8");
     headers.set("cache-control", "no-cache");
