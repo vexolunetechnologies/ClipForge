@@ -30,7 +30,7 @@ const frameCss=[
 'canvas{border-radius:12px!important}',
 'a{color:var(--ac)!important}',
 ':focus-visible{outline:2px solid #4dd8e8!important;outline-offset:2px!important}'
-].join('\\n');
+].join('\n');
 function apply(frame){try{const doc=frame.contentDocument;if(!doc||!doc.head)return;let style=doc.getElementById('cf-unified-theme');if(!style){style=doc.createElement('style');style.id='cf-unified-theme';doc.head.appendChild(style)}if(style.textContent!==frameCss)style.textContent=frameCss;const theme=document.documentElement.dataset.theme;if(theme)doc.documentElement.dataset.theme=theme;else doc.documentElement.removeAttribute('data-theme')}catch(e){}}
 function sync(){document.querySelectorAll('iframe').forEach(apply)}
 new MutationObserver(sync).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['data-theme']});
