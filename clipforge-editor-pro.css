@@ -15,3 +15,4 @@
 .cf-timeline{margin:0 -3px;padding:10px 3px;scroll-snap-type:x proximity}.cf-clip{min-width:190px;scroll-snap-align:start}
 .cf-toolbar{gap:6px}.cf-toolbar button,.cf-toolbar label{flex:1 1 auto;text-align:center}
 .cf-stat{display:flex;align-items:center;justify-content:space-between;gap:10px}.cf-stat b{font-size:17px}.cf-page-head h2{font-size:26px!important}}
+@media(min-width:901px){.wrap{margin-left:252px!important;max-width:calc(100% - 252px)!important;}}
