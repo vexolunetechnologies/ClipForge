@@ -10,12 +10,18 @@ export default {
     const withStyles = html.includes("/clipforge-v2.css")
       ? html
       : html.replace("</head>", '<link rel="stylesheet" href="/clipforge-v2.css">\n</head>');
-    const withApp = withStyles.includes("/clipforge-v2.js")
+    const withProStyles = withStyles.includes("/clipforge-editor-pro.css")
       ? withStyles
-      : withStyles.replace("</body>", '<script src="/clipforge-v2.js"></script>\n</body>');
-    const enhanced = withApp.includes("/clipforge-v2-patch.js")
+      : withStyles.replace("</head>", '<link rel="stylesheet" href="/clipforge-editor-pro.css">\n</head>');
+    const withApp = withProStyles.includes("/clipforge-v2.js")
+      ? withProStyles
+      : withProStyles.replace("</body>", '<script src="/clipforge-v2.js"></script>\n</body>');
+    const withPatch = withApp.includes("/clipforge-v2-patch.js")
       ? withApp
       : withApp.replace("</body>", '<script src="/clipforge-v2-patch.js"></script>\n</body>');
+    const enhanced = withPatch.includes("/clipforge-editor-pro.js")
+      ? withPatch
+      : withPatch.replace("</body>", '<script src="/clipforge-editor-pro.js"></script>\n</body>');
     const headers = new Headers(assetResponse.headers);
     headers.set("content-type", "text/html; charset=utf-8");
     headers.set("cache-control", "no-cache");
