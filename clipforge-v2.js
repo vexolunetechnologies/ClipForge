@@ -8,8 +8,14 @@ const brand=$('header .brand');
 if(brand)brand.innerHTML='<svg width="34" height="34" viewBox="0 0 36 36" aria-hidden="true"><defs><linearGradient id="cfmark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8b7cff"/><stop offset="1" stop-color="#4dd8e8"/></linearGradient></defs><rect x="1" y="1" width="34" height="34" rx="11" fill="url(#cfmark)"/><path d="M14 10.5 26 18l-12 7.5z" fill="#fff"/></svg><span>ClipForge<small style="display:block;font-size:9px;letter-spacing:.12em;color:var(--muted);font-weight:700;text-transform:uppercase">by Vexolune Technologies</small></span>';
 const hero=$('.hero');
 if(hero){hero.innerHTML='<h1>Make every frame<br><span style="background:linear-gradient(100deg,var(--accent),var(--accent-2));background-clip:text;-webkit-background-clip:text;color:transparent">count.</span></h1><p>One creative workspace for shorts, trailers, animated visuals and professional video edits. Built by Vexolune Technologies.</p>'}
-const oldCards=$$('.toolcard');
-oldCards.forEach(a=>{const h=a.querySelector('h3');if(h&&/Image Animator/i.test(h.textContent))h.textContent='Picture to Video';if(h&&/Long Video/i.test(h.textContent))h.textContent='AI Shorts Maker'});
+const oldCards=$('.toolcard');
+oldCards.forEach(a=>{
+ const h=a.querySelector('h3');
+ if(h&&/Image Animator/i.test(h.textContent)){
+  a.innerHTML='<span class="ttag">IMAGE TO VIDEO · AI MOTION</span><h3>Picture to Video</h3><p>Turn your still photos into a smooth, animated video in your browser.</p><ul><li>Combine multiple pictures into one sequence</li><li>Create cinematic zooms, pans and camera moves</li><li>Choose 9:16, 16:9 or square video format</li><li>Add music, sound effects or your own voiceover</li><li>Preview and export as MP4 or WebM</li><li>Your pictures stay on your device</li></ul><span class="go">Open workspace ↗</span>';
+ }
+ if(h&&/Long Video/i.test(h.textContent))h.textContent='AI Shorts Maker';
+});
 const cardGrid=$('.tools');
 if(cardGrid){
  const add=(href,tag,title,desc,bullets)=>{const a=document.createElement('a');a.className='card toolcard';a.href=href;a.innerHTML='<span class="ttag">'+tag+'</span><h3>'+title+'</h3><p>'+desc+'</p><ul>'+bullets.map(x=>'<li>'+x+'</li>').join('')+'</ul><span class="go">Open workspace ↗</span>';cardGrid.append(a)};
