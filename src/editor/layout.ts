@@ -47,7 +47,7 @@ function renderImages(): void {
   const signature = Array.from(mediaRoot.children)
     .filter((node) => !node.classList.contains("st-image-item"))
     .map((node) => node.textContent || "")
-    .join("|");
+    .join("|") + "|" + imageAssets.length;
 
   if (signature === lastMediaSignature && mediaRoot.querySelector(".st-image-item")) {
     return;
@@ -111,9 +111,8 @@ function mountEditorLayout(): void {
         previousHandler.call(input, {
           target: { files: videoAndAudio, value: "" }
         } as unknown as Event);
-      } else {
-        input.value = "";
       }
+      input.value = "";
 
       images.forEach((file) => {
         const url = URL.createObjectURL(file);
