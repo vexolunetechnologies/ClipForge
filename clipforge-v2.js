@@ -149,7 +149,7 @@ function mountTimeline(prefix,mode){
    for(let i=0;i<clips.length;i++){
     if(state.cancel)throw new Error('Export stopped.');
     const c=clips[i];video.src=c.url;video.load();await waitEvent(video,'loadedmetadata');
-    video.currentTime=Math.min(c.start,Math.max(0,c.duration-.05));await waitEvent(video,'seeked');
+    const seekTarget=Math.min(c.start,Math.max(0,c.duration-.05));if(Math.abs(video.currentTime-seekTarget)>.04){const seekDone=waitEvent(video,'seeked');video.currentTime=seekTarget;await seekDone;}
     await video.play();const start=performance.now(),clipDur=c.end-c.start;
     while(video.currentTime<c.end-.035&&!video.ended){
      if(state.cancel)throw new Error('Export stopped.');
