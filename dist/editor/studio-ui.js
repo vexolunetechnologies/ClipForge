@@ -233,6 +233,19 @@
     setTab("media");
   }
 
+  window.addEventListener("hashchange", () => {
+    if (location.hash !== "#editor") {
+      if (state.exporting) state.exportCancel = true;
+      if (voiceRecorder && voiceRecorder.state !== "inactive") voiceRecorder.stop();
+    }
+  });
+  window.addEventListener("beforeunload", () => {
+    if (voiceRecorder && voiceRecorder.state !== "inactive") {
+      try { voiceRecorder.stop(); } catch (_) {}
+    }
+    voiceStream?.getTracks().forEach(track => track.stop());
+  });
+
   // Keep keyboard commands predictable and connected to the same undo stack.
   document.addEventListener("keydown", event => {
     if (event.target.matches("input,textarea,select,[contenteditable=true]")) return;
