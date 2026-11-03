@@ -538,6 +538,48 @@
     });
   }
 
+  // Mobile editing surface: compact preview, touch-friendly timeline and CapCut-style tool dock.
+  const mobileDock = document.createElement("nav");
+  mobileDock.className = "st-mobile-dock";
+  mobileDock.setAttribute("aria-label", "Mobile editing tools");
+  mobileDock.innerHTML = `
+    <button type="button" data-mobile-action="edit"><span>✎</span><small>Edit</small></button>
+    <button type="button" data-mobile-action="audio"><span>♫</span><small>Audio</small></button>
+    <button type="button" data-mobile-action="text"><span>T</span><small>Text</small></button>
+    <button type="button" data-mobile-action="effects"><span>✧</span><small>Effects</small></button>
+    <button type="button" data-mobile-action="overlay"><span>▧</span><small>Overlay</small></button>
+    <button type="button" data-mobile-action="captions"><span>▤</span><small>Captions</small></button>`;
+  root.append(mobileDock);
+  const mobileImport = document.createElement("button");
+  mobileImport.type = "button";
+  mobileImport.className = "st-mobile-import";
+  mobileImport.textContent = "+ Media";
+  mobileImport.addEventListener("click", () => {
+    root.classList.remove("st-mobile-inspector-open");
+    root.classList.toggle("st-mobile-media-open");
+  });
+  const programTitle = root.querySelector(".st-preview-panel .st-panel-title");
+  programTitle?.append(mobileImport);
+  mobileDock.addEventListener("click", event => {
+    const button = event.target.closest("[data-mobile-action]");
+    if (!button) return;
+    const action = button.dataset.mobileAction;
+    root.classList.remove("st-mobile-media-open");
+    if (action === "edit") {
+      root.classList.toggle("st-mobile-inspector-open");
+      return;
+    }
+    root.classList.remove("st-mobile-inspector-open");
+    if (action === "audio") {
+      const picker = $("stImport");
+      if (picker) { picker.accept = "audio/*"; picker.click(); setTimeout(() => { picker.accept = "video/*,audio/*,image/*"; }, 1200); }
+    } else if (action === "text") $("stAddText")?.click();
+    else if (action === "effects") root.querySelector('[data-rail-tab="effects"]')?.click();
+    else if (action === "overlay") root.querySelector('[data-rail-tab="stickers"]')?.click();
+    else if (action === "captions") root.querySelector('[data-rail-tab="captions"]')?.click();
+  });
+  root.querySelector(".st-assets .st-import")?.addEventListener("click", () => root.classList.remove("st-mobile-media-open"));
+
   window.addEventListener("hashchange", () => {
     if (location.hash !== "#editor") {
       if (state.exporting) state.exportCancel = true;
