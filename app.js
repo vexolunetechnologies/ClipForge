@@ -1731,7 +1731,7 @@ function timeline(){
    };
   });
  });
- const inRange=inner.querySelector('.st-inout-range');if(inRange){inRange.style.display=S.inPoint==null?'none':'block';inRange.style.left=(150+S.inPoint*S.zoom)+'px';inRange.style.width=S.outPoint==null?'2px':Math.max(2,(S.outPoint-S.inPoint)*S.zoom)+'px'}
+ const rangeMarker=inner.querySelector('.st-inout-range');if(rangeMarker){rangeMarker.style.display=S.inPoint==null?'none':'block';rangeMarker.style.left=(150+S.inPoint*S.zoom)+'px';rangeMarker.style.width=S.outPoint==null?'2px':Math.max(2,(S.outPoint-S.inPoint)*S.zoom)+'px'}
  $('stPlayhead').style.left=(150+S.time*S.zoom)+'px';
  $('stCurrent').textContent=fmt(S.time);$('stTimecode').textContent=fmt(S.time);
 }
