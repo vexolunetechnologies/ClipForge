@@ -24,12 +24,14 @@
     <button class="st-btn" id="stAppRedo" title="Redo (Ctrl+Shift+Z)">↷ <span>Redo</span></button>
     <button class="st-btn" id="stAppSave" title="Export editable project file">Project file</button>
     <button class="st-btn st-primary" id="stAppExport">Export video</button>
+    <button class="st-btn st-cancel-export" id="stAppCancel" hidden>Cancel export</button>
     <a class="st-app-exit" href="#top">Exit Studio ↗</a>`;
   root.prepend(bar);
   $("stAppUndo").onclick = () => $("stUndo")?.click();
   $("stAppRedo").onclick = () => $("stRedo")?.click();
   $("stAppSave").onclick = () => $("stProjectSave")?.click();
   $("stAppExport").onclick = () => $("stExport")?.click();
+  $("stAppCancel").onclick = () => { if (!state.exporting) return; state.exportCancel = true; api.msg("Stopping export…"); };
 
   // A real tool rail: each tab changes the visible media filter or exposes
   // controls already wired to the editor engine.
