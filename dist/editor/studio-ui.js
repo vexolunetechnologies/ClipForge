@@ -341,8 +341,12 @@
     root.addEventListener("keydown", event => {
       if ((event.key === "Enter" || event.key === " ") && event.target.closest("[data-media-preview]")) { event.preventDefault(); event.target.closest("[data-media-preview]").click(); }
     }, true);
+    // Premiere-inspired four-panel composition:
+    // Source / Effect Controls (top-left), Program Monitor (top-right),
+    // Project bin (bottom-left), and the multi-track timeline (bottom-right).
+    sourcePanel.append(inspector);
     monitorPair.append(sourcePanel, preview);
-    stage.append(rail, assetPanel, monitorPair, inspector);
+    stage.append(rail, assetPanel, monitorPair);
     main.replaceChildren(stage, timeline);
     workspace.replaceChildren(main);
     workspace.classList.add("st-pro-workspace");
