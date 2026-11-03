@@ -2141,3 +2141,33 @@ body.studio-app #editorTool .st-clip-block.audio {padding-right:28px!important}
   body.studio-app #editorTool #stPlay{accent-color:#13c4d2!important}
   body.studio-app #editorTool.st-mobile-media-open .st-source-panel,body.studio-app #editorTool.st-mobile-inspector-open .st-assets{display:none!important}
 }
+
+
+/* Mobile polish: real inspector overlay, touch sizing and compact timeline controls. */
+@media (max-width:760px){
+  body.studio-app #editorTool.st-mobile-inspector-open .st-main>.st-preview-row>.st-inspector{display:flex!important;position:absolute!important;inset:auto 8px 8px!important;z-index:96!important;width:auto!important;height:min(58%,480px)!important;max-height:58%!important;min-height:0!important;flex-direction:column!important;padding:12px!important;overflow:hidden!important;background:#222428!important;border:1px solid #41454a!important;border-radius:12px!important;box-shadow:0 14px 45px #000b!important}
+  body.studio-app #editorTool.st-mobile-inspector-open .st-inspector-body{display:block!important;flex:1 1 auto!important;width:100%!important;min-height:0!important;overflow:auto!important;padding:8px 2px 18px!important}
+  body.studio-app #editorTool.st-mobile-inspector-open .st-preview-row{z-index:1!important}
+  body.studio-app #editorTool.st-mobile-inspector-open .st-timeline-panel{filter:brightness(.48)!important;pointer-events:none!important}
+  body.studio-app #editorTool .st-assets{border-radius:14px 14px 8px 8px!important}
+  body.studio-app #editorTool .st-assets>.st-panel-title{position:sticky!important;top:0!important;z-index:3!important;padding:8px 0!important;background:#222428!important}
+  body.studio-app #editorTool .st-assets .st-import{display:flex!important;align-items:center!important;justify-content:center!important;min-height:48px!important;border:1px dashed #5c626a!important;border-radius:9px!important;background:#292d32!important}
+  body.studio-app #editorTool .st-media-item{border-radius:8px!important}
+  body.studio-app #editorTool .st-mobile-dock button{min-height:48px!important;touch-action:manipulation!important}
+  body.studio-app #editorTool .st-mobile-dock button span{font-size:21px!important}
+  body.studio-app #editorTool .st-mobile-dock button small{font-weight:650!important;letter-spacing:.01em!important}
+  body.studio-app #editorTool .st-timeline-actions #stSplit,body.studio-app #editorTool .st-timeline-actions #stDelete{display:inline-flex!important}
+  body.studio-app #editorTool .st-timeline-actions #stSplit,body.studio-app #editorTool .st-timeline-actions #stDelete{font-size:9px!important;min-width:36px!important}
+  body.studio-app #editorTool .st-timeline-actions input[type=range]{width:42px!important;min-width:34px!important}
+  body.studio-app #editorTool .st-timeline-top{gap:4px!important}
+  body.studio-app #editorTool .st-timeline-top .st-panel-title{white-space:nowrap!important}
+  body.studio-app #editorTool .st-track-label{font-size:8px!important}
+  body.studio-app #editorTool .st-timeline-scroll{scrollbar-width:thin!important;scrollbar-color:#555 transparent!important}
+  body.studio-app #editorTool .st-timeline-scroll::-webkit-scrollbar{height:4px;width:4px}
+  body.studio-app #editorTool .st-timeline-scroll::-webkit-scrollbar-thumb{background:#555;border-radius:4px}
+  body.studio-app #editorTool.st-mobile-media-open .st-timeline-panel,body.studio-app #editorTool.st-mobile-inspector-open .st-timeline-panel{filter:brightness(.48)!important}
+  body.studio-app #editorTool.st-mobile-media-open .st-timeline-panel{pointer-events:none!important}
+  body.studio-app #editorTool.st-mobile-media-open .st-assets{display:block!important}
+  body.studio-app #editorTool.st-mobile-inspector-open .st-inspector{display:flex!important}
+  body.studio-app #editorTool .st-mobile-dock button:focus-visible,body.studio-app #editorTool .st-mobile-import:focus-visible{outline:2px solid #13bfd0!important;outline-offset:2px!important}
+}
