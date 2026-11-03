@@ -47,6 +47,7 @@
         <button type="button" data-st-tab="stickers" role="tab" aria-selected="false">Stickers</button>
         <button type="button" data-st-tab="effects" role="tab" aria-selected="false">Effects</button>
         <button type="button" data-st-tab="transitions" role="tab" aria-selected="false">Transitions</button>
+        <button type="button" data-st-tab="tracks" role="tab" aria-selected="false">Tracks</button>
       </div>
       <div class="st-tool-pane" data-st-pane="media">
         <p>Import video, audio and images. Select an asset to add it to the timeline.</p>
@@ -80,6 +81,10 @@
           <button type="button" data-st-effect="cool">Cool</button>
           <button type="button" data-st-effect="vivid">Vivid</button>
         </div>
+      </div>
+      <div class="st-tool-pane" data-st-pane="tracks" hidden>
+        <p>Add additional video layers. Audio lanes are created automatically when you add more audio clips.</p>
+        <button type="button" class="st-tool-action" data-st-action="video-track">＋ Add video track</button>
       </div>
       <div class="st-tool-pane" data-st-pane="transitions" hidden>
         <p>Choose a transition treatment for the selected video clip.</p>
@@ -200,7 +205,7 @@
       if (filter) { setFilter(filter.dataset.stFilter); return; }
       const action = event.target.closest("[data-st-action]");
       if (action) {
-        const ids = {text:"stAddText",caption:"stCaption",sticker:"stSticker",shape:"stShape",subtitles:"stSubFile"};
+        const ids = {text:"stAddText",caption:"stCaption",sticker:"stSticker",shape:"stShape",subtitles:"stSubFile","video-track":"stAddVideoTrack"};
         if (action.dataset.stAction === "import") $("stImport")?.click();
         else if (action.dataset.stAction === "voiceover") toggleVoiceover(action);
         else if (action.dataset.stAction === "subtitles") $(ids.subtitles)?.click();
