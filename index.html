@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@700&family=Noto+Sans+Devanagari:wght@700&display=swap" rel="stylesheet">
 </head>
-<body data-tool="shorts">
+<body data-tool="shorts" data-page="home">
 <!-- ===== HTML: page structure ===== -->
 <!-- ===== SITE HEADER: logo, menu links, privacy badge, light/dark theme button ===== -->
 <header><div class="nav">
@@ -243,6 +243,36 @@
 <!-- ===== JAVASCRIPT: Video Reverser ===== -->
 
 <script src="/app.js"></script>
+<script>
+/* Independent navigation bootstrap: runs even if an earlier app.js feature throws. */
+(function(){
+  'use strict';
+  var ids=['shorts','trailer','animator','reverse','montage','editor'];
+  function route(){
+    var hash=(location.hash||'#top').slice(1);
+    var page=ids.indexOf(hash)>-1?'workspace':hash==='tools'?'tools':'home';
+    document.body.setAttribute('data-page',page);
+    document.body.classList.toggle('solo',page==='workspace');
+    if(page==='workspace')document.body.setAttribute('data-tool',hash);
+    else document.body.setAttribute('data-tool','shorts');
+    var section=document.getElementById('tools');
+    if(section){section.style.setProperty('display',page==='tools'?'block':'none','important');}
+    document.querySelectorAll('[data-sidebar-tool]').forEach(function(a){
+      var active=a.getAttribute('data-sidebar-tool')===hash;
+      a.classList.toggle('active',active);
+      if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('.cf-side-link[href="#tools"]').forEach(function(a){
+      var active=page==='tools';a.classList.toggle('active',active);
+      if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+    });
+    document.title=page==='tools'?'All Creative Tools – ClipForge Studio':page==='workspace'?'ClipForge Studio – '+hash:'ClipForge Studio – Creative Workspace';
+  }
+  window.addEventListener('hashchange',route);
+  window.addEventListener('pageshow',route);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',route,{once:true});else route();
+})();
+</script>
 <script type="module" src="/dist/editor/layout.js"></script>
 <script type="module" src="/dist/editor/timeline.js"></script>
 </body></html>
