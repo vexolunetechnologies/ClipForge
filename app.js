@@ -116,7 +116,13 @@ function planFrames(S,ww,t0){
   else{const col=new Float32Array(16);for(let i=0;i<n;i++){const m=S[sh.a+i].mc;if(m)for(let j=0;j<16;j++)col[j]+=m[j]}
    const Wc=Math.max(1,Math.round(ww*16));let bj=-1,bs=0;for(let j=0;j+Wc<=16;j++){let s=0;for(let q=j;q<j+Wc;q++)s+=col[q];if(s>bs){bs=s;bj=j}}
    const all=col.reduce((a,b)=>a+b,0),x=bj>=0&&bs>=all*.5?(bj+Wc/2)/16:.5;tg.fill(x)}
-  const sm=tg.map((_,i)=>{const w=tg.slice(Math.max(0,i-2),Math.min(n,i+3)).sort((a,b)=>a-b);return w[w.length>>1]});
+  // Median-filter isolated detector noise, then apply a bidirectional low-pass
+  // so the planned crop follows a subject without twitching between nearby samples.
+  const med=tg.map((_,i)=>{const w=tg.slice(Math.max(0,i-2),Math.min(n,i+3)).sort((a,b)=>a-b);return w[w.length>>1]});
+  const fwd=new Array(n),bwd=new Array(n);fwd[0]=med[0];
+  for(let i=1;i<n;i++){const d=med[i]-fwd[i-1];fwd[i]=Math.abs(d)<ww*.025?fwd[i-1]:fwd[i-1]+d*.34}
+  bwd[n-1]=med[n-1];for(let i=n-2;i>=0;i--){const d=med[i]-bwd[i+1];bwd[i]=Math.abs(d)<ww*.025?bwd[i+1]:bwd[i+1]+d*.34}
+  const sm=med.map((x,i)=>cl(fwd[i]*.5+bwd[i]*.5));
   let curx=cl(sm[0]);keys.push({t:si?sh.l:t0,t0:si?sh.e:t0,x:curx,cut:true});
   let streak=0;const dead=ww*.14;
   for(let i=1;i<n;i++){const x=cl(sm[i]),tt=S[sh.a+i].t,lk=keys[keys.length-1],dx=Math.abs(x-curx);
@@ -700,8 +706,11 @@ loadCapFonts();
 function drawCapWords(c,t){
  const w=cv.width,k=w/720,rtl=/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(c.text),dev=/[\u0900-\u097F]/.test(c.text),hl=S.cs==='hl';
  const words=c.text.split(/\s+/).filter(Boolean).map(x=>(hl&&!rtl&&!dev)?x.toUpperCase():x);if(!words.length)return;
- const tot=words.reduce((a,x)=>a+x.length+1,0);let a0=c.s;
- const tm=words.map(x=>{const d=(c.e-c.s)*(x.length+1)/tot,r=[a0,a0+d];a0+=d;return r});
+ // Whisper currently returns phrase-level timestamps in this browser model.
+ // Use balanced word timing for Urdu/Arabic instead of treating joined-script
+ // character counts as pronunciation lengths; Latin text keeps proportional timing.
+ const weights=words.map(x=>rtl?1:Array.from(x).length+1),tot=weights.reduce((a,x)=>a+x,0);let a0=c.s;
+ const tm=words.map((x,i)=>{const d=(c.e-c.s)*weights[i]/tot,r=[a0,a0+d];a0+=d;return r});
  let cur=tm.findIndex(r=>t>=r[0]&&t<r[1]);if(cur<0)cur=t>=c.e?words.length-1:0;
  const size=Math.round(50*k);
  ctx.font=(rtl||dev?'700 ':'800 ')+size+'px '+(rtl?FONT_RTL:dev?FONT_DEV:FONT_LATIN);ctx.textAlign='left';ctx.lineJoin='round';
@@ -807,7 +816,9 @@ async function transcribe(pcm){const p=await loadASR(),o={task:'transcribe',chun
 // Phrases Whisper invents on silence (like "thanks for watching"); they are removed.
 const JUNK=/^(thanks? for watching|thank you( so much)?( for watching)?|please subscribe|subscribe|bye|you|\.+|music|\[.*\]|\(.*\)|♪.*)[.!\s]*$/i;
 // Normalize common Arabic-codepoint variants that Whisper sometimes emits in Urdu transcripts.
-const normalizeCaptionText=s=>String(s||'').replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[\u0640]/g,'').replace(/[\t ]+/g,' ').trim();
+const normalizeCaptionText=s=>{let t=String(s||'').replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[\u0640]/g,'').replace(/[\t ]+/g,' ').trim();
+ if(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(t))t=t.replace(/,/g,'،').replace(/;/g,'؛').replace(/\?/g,'؟');
+ return t.replace(/\s+([،؛؟,.!?])/g,'$1')};
 // Turn Whisper chunks into timed caption cues (words and short lines).
 function buildCues(ch,off,pcm){let out=[];
  ch.forEach(h=>{const w=normalizeCaptionText(h.text).split(/\s+/).filter(Boolean);if(!w.length)return;
