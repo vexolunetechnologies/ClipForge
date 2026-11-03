@@ -108,11 +108,14 @@
   <video id="src" controls playsinline></video>
 <!-- Shorts options: how many, length, quality, captions -->
 <div id="soBox">
+  <p class="note">Upload once. ClipForge reads the dialogue, finds the strongest moments and prepares editable Shorts automatically. Fine-tuning is optional.</p>
+  <details class="optional-settings"><summary>Clip count and duration (optional)</summary>
   <div class="lbl">How many shorts do you want?</div>
   <div class="row" id="counts"></div>
   <div class="lbl">Length of each short</div><div class="row" id="lens"></div><input type="number" id="cl" class="hide" min="10" max="90" placeholder="Seconds (10–90)" style="width:150px;margin-top:8px">
   <p class="note hide" id="fullnote"><b>Full video:</b> turns the whole video into one 9:16 file. Export runs in real time, so a 30-minute video takes about 30 minutes and this screen must stay on. Choose <b>Fit + blur</b> to keep the whole picture (center crop cuts the sides). Smart reframe, captions and dialogue-only trim scan the entire video, so turn them off for long videos. Very long videos can run out of browser memory; 720p and under 30 minutes is safest.</p>
   
+  </details>
   <div class="lbl">Export quality</div><div class="row"><button class="chip on" data-k="res" data-v="720">720p · faster</button><button class="chip" data-k="res" data-v="1080">1080p</button></div>
   <div class="lbl">Add captions?</div>
   <div class="row"><button class="chip on" data-k="cap" data-v="off">No captions</button><button class="chip" data-k="cap" data-v="auto">Auto-generate</button><button class="chip" data-k="cap" data-v="file">Subtitle file</button></div>
@@ -120,6 +123,7 @@
   <div id="autobox" class="hide"><div class="lbl">Speech language <small>(pick it for best accuracy)</small></div><div class="row"><button class="chip on" data-k="lang" data-v="auto">Auto</button><button class="chip" data-k="lang" data-v="english">English</button><button class="chip" data-k="lang" data-v="urdu">Urdu</button><button class="chip" data-k="lang" data-v="hindi">Hindi</button></div>
   <button class="sm" id="capgo" hidden style="margin-top:10px">Generate captions for all shorts now</button></div>
   <p class="note" id="capnote">Auto captions run Whisper on your device. Internet is needed once to download the model. For Urdu drama, choose Urdu and Better or Best.</p>
+<details class="optional-settings"><summary>More editing controls (optional)</summary>
 <!-- More options. Only Framing, Crop position and Caption style are shown; the other settings keep their best default and are hidden (wrapped in hidden divs, so the script still finds them) -->
 <div id="adv">
   <div hidden>
@@ -144,7 +148,8 @@
   <div id="stylebox" class="hide"><div class="lbl">Caption style</div><div class="row"><button class="chip on" data-k="cs" data-v="classic">Classic</button><button class="chip" data-k="cs" data-v="pop">Pop (yellow)</button><button class="chip" data-k="cs" data-v="box">Box</button><button class="chip" data-k="cs" data-v="karaoke">Karaoke</button><button class="chip" data-k="cs" data-v="hl">Highlight</button><button class="chip" data-k="cs" data-v="neon">Neon</button><button class="chip" data-k="cs" data-v="min">Minimal</button><button class="chip" data-k="cs" data-v="pill">Pill</button><button class="chip" data-k="cs" data-v="news">News bar</button><button class="chip" data-k="cs" data-v="outline">Bold outline</button><button class="chip" data-k="cs" data-v="urdu">Urdu Nastaliq</button></div>
   <p class="note">Karaoke: spoken words highlight in sequence. Highlight: the active word gets a colour block. Pill and News bar add clean lower-third panels. Urdu Nastaliq uses a dedicated Urdu font; transcription still depends on the selected Whisper model.</p></div>
   <div hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div></div>
-</div>
+</div></details>
+
 <!-- Live preview of the 9:16 frame -->
   <div class="lbl">Live preview <small>(9:16)</small></div><canvas id="cv" width="720" height="1280"></canvas><p class="note" id="pnote"></p>
 </div>
