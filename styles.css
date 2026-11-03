@@ -2036,3 +2036,32 @@ body.solo[data-tool="editor"] #editorTool .st-timeline-panel .st-timeline-scroll
 body.solo[data-tool="editor"] #editorTool .st-source-panel .st-source-footer {
   font-size:9px!important;color:#8995a2!important;
 }
+
+
+/* Dedicated audio lanes: linked video-source waveforms and imported audio. */
+body.solo[data-tool="editor"] #editorTool .st-pro-lane[data-lane-kind="audio"] .st-track-label {
+  color:#79d7b5!important;background:#10251f!important;border-right-color:#285443!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-pro-lane[data-lane-kind="audio"] .st-lane-content {
+  background-color:#0b1918!important;
+  background-image:linear-gradient(to right,rgba(83,178,145,.12) 1px,transparent 1px)!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-clip-block.audio {
+  background:linear-gradient(180deg,rgba(30,153,119,.42),rgba(15,91,76,.56))!important;
+  border:1px solid #319b7b!important;color:#d8fff0!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-clip-block.audio .st-waveform {
+  position:absolute;inset:8px 9px 5px;display:flex;align-items:center;gap:2px;
+  overflow:hidden;opacity:.72;pointer-events:none;
+}
+body.solo[data-tool="editor"] #editorTool .st-clip-block.audio .st-waveform i {
+  display:block;flex:1;min-width:1px;max-width:4px;border-radius:1px;
+  background:#8be4c3;opacity:.85;
+}
+body.solo[data-tool="editor"] #editorTool .st-clip-block.audio b,
+body.solo[data-tool="editor"] #editorTool .st-clip-block.audio small {
+  position:relative;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,.7);
+}
+body.solo[data-tool="editor"] #editorTool .st-pro-lane[data-lane-kind="video"] .st-track-label {
+  color:#a9bfff!important;
+}
