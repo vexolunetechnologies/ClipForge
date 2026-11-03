@@ -1732,7 +1732,7 @@ $('stExport').onclick=async()=>{
    await audioCtx.resume();
   }catch(e){msg('One or more audio tracks could not be attached; continuing with available audio.')}
  }
- const mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
+ const mime=typeof MediaRecorder.isTypeSupported==='function'?['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x)):undefined;
  try{rec=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:(S.exportQuality||720)*9000}:{videoBitsPerSecond:(S.exportQuality||720)*9000})}
  catch(e){cleanup();msg('The browser encoder could not start.');return}
  const chunks=[];
