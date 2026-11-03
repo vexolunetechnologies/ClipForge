@@ -261,6 +261,12 @@ function to16k(a,sr){if(sr===16000)return a;const r=sr/16000,n=Math.floor(a.leng
 /* ===== 5. VIDEO ANALYSIS (audio features, motion probe, planning, logo finder) ===== */
 /* ---------- analysis ---------- */
 // Decode the file's audio (when small enough) and measure loudness / speech-likeness per second; also fills ENV (loudness every 0.1 s).
+async function decodeFullAudioForAI(tok){
+ const AC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+ const oc=new AC(1,1,16000);
+ const buf=await guard(oc.decodeAudioData(await file.arrayBuffer()),300000,'Audio decode');
+ alive(tok);AUD=buf.getChannelData(0);return AUD
+}
 async function audioFeats(D,tok){
  const AC=window.OfflineAudioContext||window.webkitOfflineAudioContext,oc=new AC(1,1,16000);
  const buf=await guard(oc.decodeAudioData(await file.arrayBuffer()),300000,'Audio decode');alive(tok);const d=buf.getChannelData(0),sr=buf.sampleRate;AUD=d;
@@ -641,15 +647,23 @@ $('#go').onclick=async()=>{
   else if(S.tool==='trailer'&&S.mode==='even'){clips=evenPlan(dur,PL,S.n).map(x=>({...x,score:null,tags:[],blob:null,pcm:null}));say('Split into '+clips.length+' trailer parts.')}
   else{
    let lo=0,hi=D;if(S.skip==='on'&&D>300){lo=Math.min(90,Math.round(D*.04));hi=D-Math.min(120,Math.round(D*.05))}
-   let A=null,M=null;
-   if(file.size<=decodeLimit()){say('Reading audio…');try{A=await audioFeats(D,tok)}catch(e){if(e.message==='Stopped')throw e;A=null;AUD=null;ENV=null}}
-   if(!A){const step=S.deep==='1'?6:12,n=Math.ceil((hi-lo)/step);
-    say('Scanning '+n+' points across the video (about '+Math.max(1,Math.ceil(n*1.5/60))+' min). Keep this screen on.');
-    const P=await probeScan(D,lo,hi,step,true,true,tok);A=P.A;M=P.M}
-   else if(S.deep==='1'){say('Scanning motion…');M=(await probeScan(D,lo,hi,8,false,true,tok)).M}
-   alive(tok);
-   if(!A&&!M)throw new Error('Could not read audio or video frames from this file.');
-   LAST={D,lo,hi,dur,seen:[],C:comps(A,M,D)};if(S.tool==='shorts'){say('Understanding dialogue with AI…');clips=await semanticShortPlan(tok,dur)}else clips=doPlan(false);
+   if(S.tool==='shorts'){
+    if(file.size>decodeLimit())throw new Error('This video is too large for reliable on-device dialogue analysis on this device. Try a shorter or smaller source video.');
+    say('Preparing audio for dialogue transcription…');
+    try{await decodeFullAudioForAI(tok)}catch(e){if(e.message==='Stopped')throw e;AUD=null;throw new Error('Could not decode this video’s audio for AI dialogue analysis: '+(e.message||e))}
+    alive(tok);LAST={D,lo,hi,dur,seen:[]};
+    say('Understanding dialogue with AI…');clips=await semanticShortPlan(tok,dur);
+   }else{
+    let A=null,M=null;
+    if(file.size<=decodeLimit()){say('Reading audio…');try{A=await audioFeats(D,tok)}catch(e){if(e.message==='Stopped')throw e;A=null;AUD=null;ENV=null}}
+    if(!A){const step=S.deep==='1'?6:12,n=Math.ceil((hi-lo)/step);
+     say('Scanning '+n+' points across the video (about '+Math.max(1,Math.ceil(n*1.5/60))+' min). Keep this screen on.');
+     const P=await probeScan(D,lo,hi,step,true,true,tok);A=P.A;M=P.M}
+    else if(S.deep==='1'){say('Scanning motion…');M=(await probeScan(D,lo,hi,8,false,true,tok)).M}
+    alive(tok);
+    if(!A&&!M)throw new Error('Could not read audio or video frames from this file.');
+    LAST={D,lo,hi,dur,seen:[],C:comps(A,M,D)};clips=doPlan(false);
+   }
    if(S.logo==='on'&&v.videoWidth){try{const dn=await logoFilter(tok);$('#capnote').textContent=(dn?'Replaced '+dn+' short(s) that showed a logo. ':'')+(LAST.logoNote||'')}catch(e){if(e.message==='Stopped')throw e;$('#capnote').textContent='Logo check skipped: '+(e.message||e)}}
    if(!clips.length)throw new Error('No moments found. Try a shorter length.');
    say(clips.length<S.n?'Only '+clips.length+' non-overlapping shorts fit. Try a shorter length.':'Found '+clips.length+' moments spread across the video. Tap "Different picks" for another set.')}
@@ -828,10 +842,15 @@ async function semanticShortPlan(tok,dur){
  if(segments.length>2500)throw new Error('This video has too much dialogue for one analysis pass. Try a shorter section first.');
  const wanted=S.n==='auto'?Math.min(10,Math.max(3,Math.round(dur/180))):Math.max(1,Math.min(50,+S.n||3));
  stat('ai','understanding dialogue and finding the strongest moments…');
- const response=await guard(fetch(SEMANTIC_ENDPOINT,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({duration:dur,targetLength:PL,count:wanted,language:S.lang,segments})}),120000,'AI dialogue analysis');
- let data={};try{data=await response.json()}catch(e){}
- alive(tok);
+ const response=await guard(fetch(SEMANTIC_ENDPOINT,{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({duration:dur,targetLength:PL,count:wanted,language:S.lang,segments})}),120000,'AI dialogue analysis');
+ const responseText=await response.text();alive(tok);
+ let data=null;try{data=JSON.parse(responseText)}catch(e){
+  const preview=String(responseText||'').replace(/\\s+/g,' ').slice(0,160);
+  if(/<\\s*!doctype|<\\s*html/i.test(responseText))throw new Error('The AI API returned an HTML page instead of JSON. The live Worker route or deployment is not serving this API response. Please check the Cloudflare Pages deployment.');
+  throw new Error('The AI API returned an unreadable response ('+response.status+'): '+(preview||'empty response'));
+ }
  if(!response.ok)throw new Error(data.error||('AI analysis failed ('+response.status+').'));
+ if(!data||!Array.isArray(data.clips))throw new Error('The AI API response is missing its clips list. Please try again.');
  const pool=(data.clips||[]).map(q=>({s:Number(q.start),e:Number(q.end),score:Math.max(0,Math.min(100,Math.round(Number(q.score)||0))),tags:[String(q.category||'AI selected').slice(0,32)],reason:String(q.reason||'').slice(0,240),hook:String(q.hook||'').slice(0,120),blob:null,pcm:null,cap:false,ai:true}))
   .filter(q=>Number.isFinite(q.s)&&Number.isFinite(q.e)&&q.s>=0&&q.e<=dur&&q.e-q.s>=8&&q.e-q.s<=95);
  if(!pool.length)throw new Error('AI could not find enough strong dialogue moments. Try another source or a longer target length.');
