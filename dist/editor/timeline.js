@@ -112,7 +112,7 @@
     $("stCaption").onclick = () => addCaption("Your caption");
     $("stAddVideoTrack").onclick = () => { const current = Math.min(8, Math.max(4, Number(S.videoTrackCount) || 4)); if (current >= 8) { say("Studio supports up to 8 video tracks."); $("stAddVideoTrack").disabled = true; return; } snapshot(); S.videoTrackCount = current + 1; api.render(); $("stAddVideoTrack").disabled = S.videoTrackCount >= 8; say("Video track " + S.videoTrackCount + " added. Drag a clip onto the new lane."); };
     $("stSnap").onchange = e => { S.snapEnabled = e.target.checked; };
-    $("stQuality").onchange = e => { S.exportQuality = Number(e.target.value); say("Export resolution set to " + e.target.value + "p."); };
+    $("stQuality").onchange = e => { S.exportQuality = Number(e.target.value); api.render(); say("Export resolution set to " + e.target.value + "p."); };
     $("stFps").onchange = e => { S.exportFps = Number(e.target.value); say("Export frame rate set to " + e.target.value + " FPS."); };
     $("stSubFile").onchange = importSubtitles;
     $("stProjectSave").onclick = saveProject;
