@@ -307,7 +307,9 @@
     } else if (audio) {
       panel.insertAdjacentHTML("beforeend",
         '<div class="st-prop"><label>FADE IN (SECONDS)</label><input id="exFadeIn" type="number" min="0" max="10" step=".1" value="' + (audio.fadeIn || 0) + '"></div>'
-        + '<div class="st-prop"><label>FADE OUT (SECONDS)</label><input id="exFadeOut" type="number" min="0" max="10" step=".1" value="' + (audio.fadeOut || 0) + '"></div>');
+        + '<div class="st-prop"><label>FADE OUT (SECONDS)</label><input id="exFadeOut" type="number" min="0" max="10" step=".1" value="' + (audio.fadeOut || 0) + '"></div>'
+        + '<button class="st-tool" id="exDownloadAudio">↓ Download source audio</button>');
+      $("exDownloadAudio").onclick = () => { const link=document.createElement("a"); link.href=audio.url; link.download=audio.name || "clipforge-audio"; link.click(); };
       [["exFadeIn","fadeIn"],["exFadeOut","fadeOut"]].forEach(([id,key]) => {
         $(id).onchange = e => { snapshot(); audio[key] = Math.max(0,Number(e.target.value)||0); };
       });
