@@ -32,21 +32,23 @@
 <!-- ===== SITE HEADER: logo, menu links, privacy badge, light/dark theme button ===== -->
 <header><div class="nav">
  <a class="brand" href="#top"><svg width="26" height="26" viewBox="0 0 26 26"><rect x="7" y="1" width="12" height="24" rx="3" fill="var(--ac)"/><path d="M11 9l6 4-6 4z" fill="var(--acx)"/></svg>ClipForge Studio</a>
- <nav><a href="#top">Home</a><a href="#tools">Tools</a><a href="#features">Features</a><a href="#faq">Help</a></nav>
+ <nav class="cf-main-nav" aria-label="Main navigation">
+  <div class="cf-nav-label">WORKSPACE</div>
+  <a class="cf-nav-link" data-route="home" href="#top"><span class="cf-nav-icon">⌂</span><span>Home</span></a>
+  <a class="cf-nav-link" data-route="tools" href="#tools"><span class="cf-nav-icon">▦</span><span>All tools</span></a>
+  <div class="cf-nav-label cf-nav-create">CREATE</div>
+  <a class="cf-nav-link" data-tool-route="shorts" href="#shorts"><span class="cf-nav-icon">▣</span><span>Video to Shorts</span></a>
+  <a class="cf-nav-link" data-tool-route="trailer" href="#trailer"><span class="cf-nav-icon">▶</span><span>Trailer Maker</span></a>
+  <a class="cf-nav-link" data-tool-route="animator" href="#animator"><span class="cf-nav-icon">✧</span><span>Picture to Video</span></a>
+  <a class="cf-nav-link" data-tool-route="reverse" href="#reverse"><span class="cf-nav-icon">↶</span><span>Reverse Video</span></a>
+  <a class="cf-nav-link" data-tool-route="montage" href="#montage"><span class="cf-nav-icon">▤</span><span>Video Montage</span></a>
+  <a class="cf-nav-link" data-tool-route="editor" href="#editor"><span class="cf-nav-icon">▥</span><span>Studio Editor</span></a>
+  <div class="cf-nav-label cf-nav-explore">MORE</div>
+  <a class="cf-nav-link" data-route="features" href="#features"><span class="cf-nav-icon">✦</span><span>Features</span></a>
+  <a class="cf-nav-link" data-route="faq" href="#faq"><span class="cf-nav-icon">?</span><span>Help & FAQ</span></a>
+</nav>
  <span class="pill">Videos stay on your device</span><button class="tbtn" id="theme" type="button" aria-label="Switch light or dark theme" title="Switch theme">◐</button></div></header>
-<aside class="cf-sidebar" aria-label="Main navigation">
- <div class="cf-sidebar-label">WORKSPACE</div>
- <a class="cf-side-link" href="#top"><span>⌂</span> Home</a>
- <a class="cf-side-link" href="#tools"><span>▦</span> All tools</a>
- <div class="cf-sidebar-label cf-side-tools-label">CREATE</div>
- <a class="cf-side-link" data-sidebar-tool="shorts" href="#shorts"><span>▣</span> Video to Shorts</a>
- <a class="cf-side-link" data-sidebar-tool="trailer" href="#trailer"><span>▶</span> Trailer Maker</a>
- <a class="cf-side-link" data-sidebar-tool="animator" href="#animator"><span>✧</span> Picture to Video</a>
- <a class="cf-side-link" data-sidebar-tool="reverse" href="#reverse"><span>↶</span> Reverse Video</a>
- <a class="cf-side-link" data-sidebar-tool="montage" href="#montage"><span>▤</span> Video Montage</a>
- <a class="cf-side-link" data-sidebar-tool="editor" href="#editor"><span>▥</span> Studio Editor</a>
- <div class="cf-sidebar-foot"><span class="cf-status-dot"></span> Private on-device editing</div>
-</aside>
+
 
 <!-- ===== PAGE WRAPPER: everything below until the footer sits in this centred column ===== -->
 <div class="wrap" id="top">
@@ -244,33 +246,32 @@
 
 <script src="/app.js"></script>
 <script>
-/* Independent navigation bootstrap: runs even if an earlier app.js feature throws. */
 (function(){
-  'use strict';
-  var ids=['shorts','trailer','animator','reverse','montage','editor'];
-  function route(){
-    var hash=(location.hash||'#top').slice(1);
-    var page=ids.indexOf(hash)>-1?'workspace':hash==='tools'?'tools':'home';
-    document.body.setAttribute('data-page',page);
-    document.body.classList.toggle('solo',page==='workspace');
-    if(page==='workspace')document.body.setAttribute('data-tool',hash);
-    else document.body.setAttribute('data-tool','shorts');
-    var section=document.getElementById('tools');
-    if(section){section.style.setProperty('display',page==='tools'?'block':'none','important');}
-    document.querySelectorAll('[data-sidebar-tool]').forEach(function(a){
-      var active=a.getAttribute('data-sidebar-tool')===hash;
-      a.classList.toggle('active',active);
-      if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
-    });
-    document.querySelectorAll('.cf-side-link[href="#tools"]').forEach(function(a){
-      var active=page==='tools';a.classList.toggle('active',active);
-      if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
-    });
-    document.title=page==='tools'?'All Creative Tools – ClipForge Studio':page==='workspace'?'ClipForge Studio – '+hash:'ClipForge Studio – Creative Workspace';
-  }
-  window.addEventListener('hashchange',route);
-  window.addEventListener('pageshow',route);
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',route,{once:true});else route();
+ 'use strict';
+ var tools=['shorts','trailer','animator','reverse','montage','editor'];
+ function route(){
+  var hash=(location.hash||'#top').slice(1);
+  var page=tools.indexOf(hash)>=0?'workspace':hash==='tools'?'tools':hash==='features'?'features':hash==='faq'?'faq':'home';
+  document.body.dataset.page=page;
+  document.body.classList.toggle('solo',page==='workspace');
+  document.body.dataset.tool=tools.indexOf(hash)>=0?hash:'shorts';
+  var section=document.getElementById('tools');
+  if(section)section.style.setProperty('display',page==='tools'?'block':'none','important');
+  document.querySelectorAll('[data-tool-route]').forEach(function(a){
+   var active=a.getAttribute('data-tool-route')===hash;
+   a.classList.toggle('active',active);
+   if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('[data-route]').forEach(function(a){
+   var active=a.getAttribute('data-route')===page || (page==='home'&&a.getAttribute('data-route')==='home');
+   a.classList.toggle('active',active);
+   if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+  });
+  document.title=page==='tools'?'All Creative Tools – ClipForge Studio':page==='workspace'?'ClipForge Studio – '+hash:page==='home'?'ClipForge Studio – Creative Workspace':'ClipForge Studio';
+ }
+ window.addEventListener('hashchange',route);
+ window.addEventListener('pageshow',route);
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',route,{once:true});else route();
 })();
 </script>
 <script type="module" src="/dist/editor/layout.js"></script>
