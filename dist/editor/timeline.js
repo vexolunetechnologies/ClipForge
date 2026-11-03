@@ -150,7 +150,7 @@
 
   function saveProject() {
     const data = {
-      format:"clipforge-project", version:1, ratio:$("stRatio")?.value || "16:9",
+      format:"clipforge-project", version:2, projectName:$("stProjectName")?.value || "Untitled Project", ratio:$("stRatio")?.value || "16:9",
       clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
       titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation,fontFamily:x.fontFamily,positionY:x.positionY,stroke:x.stroke,shadowColor:x.shadowColor,shadow:x.shadow})),
       overlays:S.overlays.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
@@ -188,6 +188,7 @@
       });
       S.audio = S.audioTracks[0] || null;
       if ($("stRatio") && data.ratio) $("stRatio").value = data.ratio;
+      if ($("stProjectName") && data.projectName) $("stProjectName").value = data.projectName;
       S.sel = null; api.render();
       say(missing.length ? "Project loaded. Re-import media: " + missing.join(", ") : "Project loaded.");
     } catch (error) { say(error.message || "Could not load project."); }
