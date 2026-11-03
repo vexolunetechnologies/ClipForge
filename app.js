@@ -1792,7 +1792,10 @@ if(!root.dataset.proShortcutsReady){
   }
   if(key==='home'){event.preventDefault();stop();seek(0);return}
   if(key==='end'){event.preventDefault();stop();seek(total());return}
-  if(!mod&&!shift&&key==='i'){event.preventDefault();markInOut('in');return}\n  if(!mod&&!shift&&key==='o'){event.preventDefault();markInOut('out');return}\n  if(mod&&shift&&key==='x'){event.preventDefault();clearInOut();return}\n  if(!mod&&!shift&&key==='n'){event.preventDefault();const snap=$('stSnap');if(snap){snap.checked=!snap.checked;snap.dispatchEvent(new Event('change',{bubbles:true}));msg('Timeline snapping '+(snap.checked?'enabled.':'disabled.'));}return}
+  if(!mod&&!shift&&key==='i'){event.preventDefault();markInOut('in');return}
+  if(!mod&&!shift&&key==='o'){event.preventDefault();markInOut('out');return}
+  if(mod&&shift&&key==='x'){event.preventDefault();clearInOut();return}
+  if(!mod&&!shift&&key==='n'){event.preventDefault();const snap=$('stSnap');if(snap){snap.checked=!snap.checked;snap.dispatchEvent(new Event('change',{bubbles:true}));msg('Timeline snapping '+(snap.checked?'enabled.':'disabled.'));}return}
   if(!mod&&!shift&&key==='f'){event.preventDefault();$('stZoomFit')?.click();return}
   if(!mod&&!shift&&(key==='+'||key==='=')){event.preventDefault();zoomBy(10);return}
   if(!mod&&!shift&&key==='-'){event.preventDefault();zoomBy(-10);return}
