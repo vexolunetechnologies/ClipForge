@@ -156,7 +156,7 @@
       audioTracks:(S.audioTracks || []).map(x => ({name:x.name,start:x.start,in:x.in,out:x.out,duration:x.duration,volume:x.volume,fadeIn:x.fadeIn,fadeOut:x.fadeOut,track:x.track}))
     };
     const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:"application/json"}));
-    const a = document.createElement("a"); a.href=url; a.download="clipforge-project.clipforge"; a.click();
+    const a = document.createElement("a"); a.href=url; const projectName = (document.getElementById("stProjectName")?.value || "clipforge-project").trim().replace(/[^a-z0-9-_]+/gi,"-").replace(/^-+|-+$/g,"") || "clipforge-project"; a.download=projectName+".clipforge"; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     say("Project edit file exported. Media remains on this device.");
   }
