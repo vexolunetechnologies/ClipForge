@@ -114,7 +114,7 @@
         <button type="button" class="st-tool-action secondary" data-st-action="shape">＋ Add shape</button>
       </div>
       <div class="st-tool-pane" data-st-pane="effects" hidden>
-        <p>Apply a visual look to the selected video clip.</p>
+        <p>Apply a look to a clip, or add an adjustment layer that grades every visible layer beneath it.</p>\n        <button type="button" class="st-tool-action" data-st-action="adjustment">＋ Add adjustment layer</button>
         <div class="st-effect-grid">
           <button type="button" data-st-effect="none">Original</button>
           <button type="button" data-st-effect="cinema">Cinematic</button>
@@ -321,7 +321,7 @@
       if (filter) { setFilter(filter.dataset.stFilter); return; }
       const action = event.target.closest("[data-st-action]");
       if (action) {
-        const ids = {text:"stAddText",caption:"stCaption",sticker:"stSticker",shape:"stShape",subtitles:"stSubFile","video-track":"stAddVideoTrack"};
+        const ids = {text:"stAddText",caption:"stCaption",sticker:"stSticker",shape:"stShape",adjustment:"stAddAdjustment",subtitles:"stSubFile","video-track":"stAddVideoTrack"};
         if (action.dataset.stAction === "import") audioPicker.click();
         else if (action.dataset.stAction === "voiceover") toggleVoiceover(action);
         else if (action.dataset.stAction === "subtitles") $(ids.subtitles)?.click();
