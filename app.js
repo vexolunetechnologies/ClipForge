@@ -689,11 +689,11 @@ function draw(){const w=cv.width,h=cv.height,vw=v.videoWidth,vh=v.videoHeight;if
  drawCap()}
 // Fonts for the captions (Latin, Arabic / Urdu, Devanagari).
 const FONT_LATIN='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',
- FONT_RTL='"Noto Naskh Arabic","Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Segoe UI",Tahoma,"Geeza Pro","Arial Unicode MS",Arial,sans-serif',
+ FONT_RTL='"Noto Nastaliq Urdu","Noto Naskh Arabic","Jameel Noori Nastaleeq","Segoe UI",Tahoma,"Geeza Pro","Arial Unicode MS",Arial,sans-serif',
  FONT_DEV='"Noto Sans Devanagari","Nirmala UI","Kohinoor Devanagari",Mangal,"Arial Unicode MS",sans-serif';
 // Ask the browser to load the caption fonts once.
 let fontsAsked=false;function loadCapFonts(){if(fontsAsked||!document.fonts)return;fontsAsked=true;
- ['700 40px "Noto Naskh Arabic"','700 40px "Noto Sans Devanagari"'].forEach((f,i)=>document.fonts.load(f,i?'हिन्दी':'اردو کیپشن').catch(()=>{}))}
+ ['700 40px "Noto Nastaliq Urdu"','700 40px "Noto Naskh Arabic"','700 40px "Noto Sans Devanagari"'].forEach((f,i)=>document.fonts.load(f,i?'हिन्दी':'اردو کیپشن').catch(()=>{}))}
 loadCapFonts();
 // Word-by-word caption styles. Whisper gives times per phrase, so the time of each word is estimated from its length.
 // "karaoke": words already spoken turn yellow. "hl" (highlight): the spoken word sits on an orange box.
@@ -726,17 +726,18 @@ function drawCapWords(c,t){
 // Draw the caption text for the current time (Classic, Pop, Box, Neon, Minimal here; Karaoke and Highlight in drawCapWords).
 function drawCap(){if(!capOn||!cues.length)return;const t=v.currentTime,c=cues.find(q=>t>=q.s&&t<=q.e);if(!c)return;
  if(S.cs==='karaoke'||S.cs==='hl')return drawCapWords(c,t);
- const w=cv.width,k=w/720,pop=S.cs==='pop',rtl=/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(c.text),dev=/[\u0900-\u097F]/.test(c.text),txt=(pop&&!rtl&&!dev)?c.text.toUpperCase():c.text;
- ctx.font=(rtl||dev?'700 ':'800 ')+Math.round(pop?54*k:S.cs==='min'?38*k:46*k)+'px '+(rtl?FONT_RTL:dev?FONT_DEV:FONT_LATIN);ctx.textAlign='center';ctx.lineJoin='round';
+ const w=cv.width,k=w/720,pop=S.cs==='pop',pill=S.cs==='pill',news=S.cs==='news',urduStyle=S.cs==='urdu',outline=S.cs==='outline',rtl=/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(c.text),dev=/[\u0900-\u097F]/.test(c.text),txt=(pop&&!rtl&&!dev)?c.text.toUpperCase():c.text;
+ ctx.font=(rtl||dev?'700 ':'800 ')+Math.round(pop?54*k:(urduStyle&&rtl?56*k:S.cs==='min'?38*k:46*k))+'px '+(rtl?FONT_RTL:dev?FONT_DEV:FONT_LATIN);ctx.textAlign='center';ctx.lineJoin='round';
  try{ctx.direction=rtl?'rtl':'ltr'}catch(e){}
  const lines=[];let l='';for(const x of txt.split(/\s+/)){const tt=l?l+' '+x:x;if(ctx.measureText(tt).width>w-90*k&&l){lines.push(l);l=x}else l=tt}lines.push(l);
  const lh=(pop?64:56)*k*(rtl?1.3:1);let y=cv.height*.72-(lines.length-1)*lh/2;ctx.lineWidth=(rtl||dev?7:11)*k;ctx.strokeStyle='#000';ctx.fillStyle=pop?'#ffe14d':S.cs==='neon'?'#7df9ff':'#fff';
- if(S.cs==='box'){const mw=Math.max(...lines.map(x=>ctx.measureText(x).width))+40*k,top=y-lh*.8,bh=lh*lines.length+16*k;ctx.fillStyle='rgba(0,0,0,.72)';ctx.beginPath();
-  if(ctx.roundRect)ctx.roundRect(w/2-mw/2,top,mw,bh,22*k);else ctx.rect(w/2-mw/2,top,mw,bh);ctx.fill();ctx.fillStyle='#fff'}
+ if(S.cs==='box'||pill||news){const mw=Math.max(...lines.map(x=>ctx.measureText(x).width))+40*k,top=y-lh*.8,bh=lh*lines.length+16*k;ctx.fillStyle=news?'rgba(8,20,42,.94)':pill?'rgba(12,16,26,.78)':'rgba(0,0,0,.72)';ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(w/2-mw/2,top,mw,bh,news?8*k:22*k);else ctx.rect(w/2-mw/2,top,mw,bh);ctx.fill();if(news){ctx.fillStyle='#ffd84d';ctx.fillRect(w/2-mw/2,top,6*k,bh)}ctx.fillStyle='#fff'}
  // Neon: glowing cyan text. Minimal: smaller white text with a soft shadow and no outline.
  if(S.cs==='neon'){ctx.shadowColor='#00e5ff';ctx.shadowBlur=26*k;ctx.lineWidth=5*k;ctx.strokeStyle='#022'}
  if(S.cs==='min'){ctx.shadowColor='rgba(0,0,0,.85)';ctx.shadowBlur=10*k;ctx.shadowOffsetY=2*k}
- for(const ln of lines){if(S.cs!=='box'&&S.cs!=='min')ctx.strokeText(ln,w/2,y);ctx.fillText(ln,w/2,y);y+=lh}
+ if(outline){ctx.lineWidth=13*k;ctx.strokeStyle='#000'}
+ for(const ln of lines){if(S.cs!=='box'&&S.cs!=='min'&&!pill&&!news)ctx.strokeText(ln,w/2,y);ctx.fillText(ln,w/2,y);y+=lh}
  ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.shadowOffsetY=0;
  try{ctx.direction='ltr'}catch(e){}}
 
@@ -900,7 +901,7 @@ async function prepFrame(c,tok){if(c.plan)return;
  const smp=await frameScan(c,fd,tok);alive(tok);
  c.plan=planFrames(smp,ww,c.s);c.planInfo={faces:smp.filter(s=>s.faces.length).length,n:smp.length,cuts:smp.filter(s=>s.cut).length,fd:!!fd};stat('fr','')}
 // Put the camera at the start of a clip.
-function camInit(c){cam.ww=Math.min(1,v.videoHeight*9/16/v.videoWidth);cam.keys=c.plan&&c.plan.length?c.plan:[{t:c.s,t0:c.s,x:.5,cut:true}];cam.k=0;cam.x=cam.tx=cam.keys[0].x;cam.pg=null}
+function camInit(c){cam.ww=Math.min(1,v.videoHeight*9/16/v.videoWidth);cam.keys=c.plan&&c.plan.length?c.plan:[{t:c.s,t0:c.s,x:.5,cut:true}];cam.k=0;cam.x=cam.tx=cam.keys[0].x;cam.vx=0;cam.pg=null}
 // A tiny canvas used to detect scene cuts live while recording.
 const lcv=document.createElement('canvas');lcv.width=32;lcv.height=18;const lcx=lcv.getContext('2d',{willReadFrequently:true});
 // Detect a scene cut live while recording.
@@ -909,8 +910,8 @@ function liveCut(){lcx.drawImage(v,0,0,32,18);const d=lcx.getImageData(0,0,32,18
  cam.pg=d.slice();return r}
 // Move the camera towards its target every frame (hard cut on scene changes, smooth otherwise).
 function camUpdate(t,dt,lc){const K=cam.keys;
- while(cam.k+1<K.length){const n=K[cam.k+1],due=n.cut?(t>=n.t||(lc&&t>=n.t0-.05)):(t>=n.t-.25);if(!due)break;cam.k++;cam.tx=n.x;if(n.cut)cam.x=n.x}
- const d=(cam.tx-cam.x)*(1-Math.exp(-dt*5)),m=.45*dt;cam.x+=Math.max(-m,Math.min(m,d))}
+ while(cam.k+1<K.length){const n=K[cam.k+1],due=n.cut?(t>=n.t||(lc&&t>=n.t0-.05)):(t>=n.t-.25);if(!due)break;cam.k++;cam.tx=n.x;if(n.cut)cam.vx=0}
+ const d=(cam.tx-cam.x)*(1-Math.exp(-dt*3.8)),m=.38*dt;cam.x+=Math.max(-m,Math.min(m,d))}
 // Redraw the preview when the player seeks or its time changes (not while recording).
 v.addEventListener('seeked',()=>{if(!busy)draw()});v.addEventListener('timeupdate',()=>{if(!busy)draw()});v.addEventListener('loadeddata',()=>draw());
 
