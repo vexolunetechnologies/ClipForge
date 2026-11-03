@@ -1387,8 +1387,9 @@ function routeV2(){
  if(h==='montage'||h==='editor'){
   document.body.classList.add('solo');document.body.dataset.tool=h;document.title=(h==='montage'?'Video Montage Maker':'Editor')+' – ClipForge Studio';
   window.scrollTo(0,0);
- }else if(h==='tools'||h===''){
-  document.body.classList.remove('solo');document.body.dataset.tool='shorts';document.title='ClipForge Studio – Vexolune Technologies';
+ }else{
+  document.body.classList.remove('solo');
+  if(['','top','tools','how','features','faq'].includes(h)){document.body.dataset.tool='shorts';document.title='ClipForge Studio – Vexolune Technologies'}
  }
 }
 addEventListener('hashchange',routeV2);routeV2();
