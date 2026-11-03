@@ -7,6 +7,24 @@
   root.dataset.proUiReady = "1";
   const $ = id => document.getElementById(id);
   const state = api.state;
+  const audioPicker = document.createElement("input");
+  audioPicker.type = "file"; audioPicker.accept = "audio/*"; audioPicker.multiple = true;
+  audioPicker.hidden = true; audioPicker.setAttribute("aria-label","Import audio files");
+  root.append(audioPicker);
+  audioPicker.addEventListener("change", () => {
+    Array.from(audioPicker.files || []).forEach(file => {
+      if (!file.type.startsWith("audio/")) return;
+      const url = URL.createObjectURL(file), audio = new Audio();
+      audio.preload = "metadata";
+      audio.onloadedmetadata = () => {
+        state.media.push({id:crypto.randomUUID(),name:file.name,file,url,kind:"audio",duration:audio.duration,audio});
+        api.render(); api.msg(file.name + " added to Media.");
+      };
+      audio.onerror = () => { URL.revokeObjectURL(url); api.msg("Could not read " + file.name + "."); };
+      audio.src = url;
+    });
+    audioPicker.value = "";
+  });
 
   // Replace the generic page heading with a dedicated editor command bar.
   const oldHead = root.querySelector(".st-head");
@@ -233,7 +251,7 @@
       const action = event.target.closest("[data-st-action]");
       if (action) {
         const ids = {text:"stAddText",caption:"stCaption",sticker:"stSticker",shape:"stShape",subtitles:"stSubFile","video-track":"stAddVideoTrack"};
-        if (action.dataset.stAction === "import") $("stImport")?.click();
+        if (action.dataset.stAction === "import") audioPicker.click();
         else if (action.dataset.stAction === "voiceover") toggleVoiceover(action);
         else if (action.dataset.stAction === "subtitles") $(ids.subtitles)?.click();
         else $(ids[action.dataset.stAction])?.click();
