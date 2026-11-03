@@ -160,7 +160,7 @@
   function saveProject() {
     const data = {
       format:"clipforge-project", version:2, projectName:$("stProjectName")?.value || "Untitled Project", ratio:$("stRatio")?.value || "16:9",
-      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
+      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed,audioVolume:x.audioVolume,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
       titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation,fontFamily:x.fontFamily,positionY:x.positionY,stroke:x.stroke,shadowColor:x.shadowColor,shadow:x.shadow})),
       overlays:S.overlays.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
       audio:S.audio ? {name:S.audio.name,start:S.audio.start,in:S.audio.in,out:S.audio.out,duration:S.audio.duration,volume:S.audio.volume,fadeIn:S.audio.fadeIn,fadeOut:S.audio.fadeOut} : null,
@@ -264,6 +264,7 @@
     if (x) {
       panel.insertAdjacentHTML("beforeend",
         '<div class="st-prop"><label>PLAYBACK SPEED</label><select id="exSpeed"><option value=".25">0.25×</option><option value=".5">0.5×</option><option value="1">1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></div>'
+        + '<div class="st-prop"><label>ORIGINAL CLIP AUDIO</label><input id="exAudioVolume" type="range" min="0" max="100" value="' + (x.audioVolume ?? 100) + '"></div>'
         + '<div class="st-prop"><label>HORIZONTAL POSITION</label><input id="exX" type="range" min="0" max="100" value="' + (x.x ?? 50) + '"></div>'
         + '<div class="st-prop"><label>VERTICAL POSITION</label><input id="exY" type="range" min="0" max="100" value="' + (x.y ?? 50) + '"></div>'
         + '<div class="st-prop"><label>CROP / SCALE</label><input id="exScale" type="range" min="25" max="250" value="' + (x.scale || 100) + '"></div>'
@@ -271,8 +272,8 @@
         + '<button class="st-tool" id="exFreeze">＋ Create freeze-frame image</button>');
       $("exSpeed").value = String(x.speed || 1);
       $("exTransition").value = x.transition || "none";
-      [["exSpeed","speed"],["exX","x"],["exY","y"],["exScale","scale"],["exTransition","transition"]].forEach(([id,key]) => {
-        $(id).onchange = e => { snapshot(); x[key] = ["exX","exY","exScale"].includes(id) ? Number(e.target.value) : id === "exSpeed" ? Number(e.target.value) : e.target.value; api.render(); };
+      [["exSpeed","speed"],["exAudioVolume","audioVolume"],["exX","x"],["exY","y"],["exScale","scale"],["exTransition","transition"]].forEach(([id,key]) => {
+        $(id).onchange = e => { snapshot(); x[key] = ["exAudioVolume","exX","exY","exScale"].includes(id) ? Number(e.target.value) : id === "exSpeed" ? Number(e.target.value) : e.target.value; api.render(); };
       });
       $("exFreeze").onclick = () => {
         if (!x.video || x.video.readyState < 2) { say("Move the playhead onto a loaded video frame first."); return; }
