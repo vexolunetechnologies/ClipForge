@@ -160,7 +160,8 @@
       }
     }
     async function makeWaveform(media) {
-      if (!media || media.kind !== "audio" || !media.file || media.waveform || media.file.size > 100*1024*1024) return;
+      if (!media || media.kind !== "audio" || !media.file || media.waveform || media.waveformLoading || media.file.size > 100*1024*1024) return;
+      media.waveformLoading = true;
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextClass) return;
       let context;
@@ -175,11 +176,12 @@
           for(let j=start;j<end;j++) peak=Math.max(peak,Math.abs(channel[j]));
           peaks.push(Math.max(.04,peak));
         }
-        media.waveform = peaks;
+        media.waveform = peaks; media.waveformLoading = false;
         (state.audioTracks || []).filter(x => x.name === media.name).forEach(x => x.waveform = peaks);
         if (state.audio && state.audio.name === media.name) state.audio.waveform = peaks;
         api.render();
       } catch (_) {
+        media.waveformLoading = false;
         // Audio decoding is optional; editing and playback remain available.
       } finally {
         if (context) context.close().catch(() => {});
