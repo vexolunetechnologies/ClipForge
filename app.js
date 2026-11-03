@@ -1348,7 +1348,7 @@ const toast=(msg)=>{const t=$('#toast');if(t){t.textContent=msg;t.style.display=
 const brand=$('header .brand');
 if(brand)brand.innerHTML='<svg width="34" height="34" viewBox="0 0 36 36" aria-hidden="true"><defs><linearGradient id="cfmark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8b7cff"/><stop offset="1" stop-color="#4dd8e8"/></linearGradient></defs><rect x="1" y="1" width="34" height="34" rx="11" fill="url(#cfmark)"/><path d="M14 10.5 26 18l-12 7.5z" fill="#fff"/></svg><span>ClipForge<small style="display:block;font-size:9px;letter-spacing:.12em;color:var(--muted);font-weight:700;text-transform:uppercase">by Vexolune Technologies</small></span>';
 const hero=$('.hero');
-if(hero){hero.innerHTML='<h1>Make every frame<br><span style="background:linear-gradient(100deg,var(--accent),var(--accent-2));background-clip:text;-webkit-background-clip:text;color:transparent">count.</span></h1><p>One creative workspace for shorts, trailers, animated visuals and professional video edits. Built by Vexolune Technologies.</p>'}
+if(hero&&!hero.querySelector('.hero-copy')){hero.innerHTML='<h1>Make every frame count.</h1><p>One creative workspace for shorts, trailers, animated visuals and professional video edits. Built by Vexolune Technologies.</p>'}
 const oldCards=$$('.toolcard');
 oldCards.forEach(a=>{
  const h=a.querySelector('h3');
@@ -1359,7 +1359,7 @@ oldCards.forEach(a=>{
 });
 const cardGrid=$('.tools');
 if(cardGrid){
- const add=(href,tag,title,desc,bullets)=>{const a=document.createElement('a');a.className='card toolcard';a.href=href;a.innerHTML='<span class="ttag">'+tag+'</span><h3>'+title+'</h3><p>'+desc+'</p><ul>'+bullets.map(x=>'<li>'+x+'</li>').join('')+'</ul><span class="go">Open workspace ↗</span>';cardGrid.append(a)};
+ const add=(href,tag,title,desc,bullets)=>{if(cardGrid.querySelector('a.toolcard[href="'+href+'"]'))return;const a=document.createElement('a');a.className='card toolcard';a.href=href;a.innerHTML='<span class="ttag">'+tag+'</span><h3>'+title+'</h3><p>'+desc+'</p><ul>'+bullets.map(x=>'<li>'+x+'</li>').join('')+'</ul><span class="go">Open workspace ↗</span>';cardGrid.append(a)};
  add('#montage','MULTI-CLIP WORKFLOW','Video Montage Maker','Combine multiple clips into one polished sequence.',['Add and reorder multiple videos','Trim each clip independently','Choose aspect ratio and fade transitions','Add a music track and title overlay','Preview and export a single video']);
  add('#editor','MULTI-TRACK STARTER','Editor','A practical browser-based editing workspace for everyday video production.',['Import multiple video clips','Trim, split, reorder and remove clips','Set canvas ratio, visual look and title text','Add a music bed and export the timeline','No project saving — export your finished edit']);
 }
