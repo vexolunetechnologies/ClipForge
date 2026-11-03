@@ -1023,3 +1023,81 @@ body[data-page="workspace"][data-tool="editor"] #editorTool{display:block!import
  .cf-nav-link{gap:7px!important;padding:7px 9px!important}
  .wrap{padding:18px 14px!important}
 }
+
+
+/* ===== Complete tool-card content visibility / no-clipping pass ===== */
+#tools .tools,
+#tools>.grid.tools{
+  display:grid!important;
+  grid-auto-rows:auto!important;
+  align-items:stretch!important;
+  overflow:visible!important;
+}
+#tools .toolcard{
+  box-sizing:border-box!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  padding:20px!important;
+}
+#tools .toolcard h3,
+#tools .toolcard p,
+#tools .toolcard ul,
+#tools .toolcard li,
+#tools .toolcard .ttag,
+#tools .toolcard .go{
+  box-sizing:border-box!important;
+  max-height:none!important;
+  height:auto!important;
+  overflow:visible!important;
+  white-space:normal!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  -webkit-line-clamp:unset!important;
+  line-clamp:unset!important;
+}
+#tools .toolcard ul{
+  display:block!important;
+  flex:0 0 auto!important;
+  margin:8px 0 18px!important;
+  padding:0 0 0 20px!important;
+  list-style:disc outside!important;
+}
+#tools .toolcard li{
+  display:list-item!important;
+  margin:0 0 6px!important;
+  padding:0!important;
+  line-height:1.6!important;
+}
+#tools .toolcard p{
+  display:block!important;
+  flex:0 0 auto!important;
+  margin:4px 0 8px!important;
+  line-height:1.65!important;
+}
+#tools .toolcard .go{
+  display:block!important;
+  flex:0 0 auto!important;
+  margin-top:auto!important;
+  padding-top:8px!important;
+}
+@media(max-width:900px){
+  #tools .tools,#tools>.grid.tools{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #tools .toolcard{padding:17px!important}
+}
+@media(max-width:560px){
+  #tools .tools,#tools>.grid.tools{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  #tools .toolcard{padding:18px!important}
+}
+/* ===== End complete tool-card content visibility pass ===== */
