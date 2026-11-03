@@ -83,15 +83,16 @@ function mountEditorLayout(): void {
   const editorCard = byId<HTMLAnchorElement>('.toolcard[href="#editor"]');
   if (editorCard) {
     editorCard.innerHTML =
-      '<span class="ttag">MULTI-TRACK WORKSPACE</span>' +
-      "<h3>Video Editor</h3>" +
-      "<p>A focused workspace for arranging and preparing your media.</p>" +
+      '<span class="tool-icon">▥</span>' +
+      '<span class="ttag">PROFESSIONAL MULTI-TRACK EDITOR</span>' +
+      "<h3>ClipForge Studio</h3>" +
+      "<p>A dedicated video-editing workspace with a real timeline, media library and precision controls.</p>" +
       "<ul>" +
-      "<li>Import video, audio and image assets</li>" +
-      "<li>Dedicated preview and clip properties panel</li>" +
-      "<li>Visual timeline with video, text and audio lanes</li>" +
-      "<li>Designed for desktop and mobile screens</li>" +
-      "</ul><span class=\"go\">Open workspace ↗</span>";
+      "<li>Layered video, image, overlay, caption and audio tracks</li>" +
+      "<li>Trim, split, drag, snap, reorder and keyframe clips</li>" +
+      "<li>Color looks, motion, titles, subtitles and transitions</li>" +
+      "<li>Local project files and browser-based video export</li>" +
+      "</ul><span class=\\"go\\">Open ClipForge Studio ↗</span>";
   }
 
   const input = byId<HTMLInputElement>("#stImport");
