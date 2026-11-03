@@ -1988,3 +1988,51 @@ body.solo[data-tool="editor"] #editorTool .st-assets > .st-advanced-tools {displ
  body.solo[data-tool="editor"] #editorTool .st-assets {min-height:320px!important;height:360px!important}
  body.solo[data-tool="editor"] #editorTool .st-project-tabs {overflow-x:auto!important}
 }
+
+
+/* Source monitor transport + compact editing controls. */
+body.solo[data-tool="editor"] #editorTool .st-source-transport {
+  display:flex;align-items:center;gap:9px;min-height:34px;padding:4px 7px;
+  background:#20252b;border-top:1px solid #414a54;color:#c7d0d9;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-transport button {
+  width:28px;height:25px;padding:0;border:1px solid #59636e;border-radius:2px;
+  background:#35404a;color:#f3f6f9;font-size:12px;cursor:pointer;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-transport span {
+  min-width:34px;color:#aeb9c5;font-size:10px;font-variant-numeric:tabular-nums;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-transport input[type="range"] {
+  flex:1;min-width:40px;height:4px;padding:0;accent-color:#73a9d5;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-view video {
+  display:block;max-width:100%;max-height:100%;object-fit:contain;background:#080a0c;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-panel[data-left-tab="source"] .st-source-view {
+  grid-template-rows:minmax(0,1fr) auto!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-timeline-actions input[type="range"] {
+  min-width:64px;width:76px;accent-color:#78a9d3;
+}
+body.solo[data-tool="editor"] #editorTool .st-timeline-actions button {
+  min-width:28px;height:25px;padding:2px 8px!important;font-size:10px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-pro-lane .st-clip-block {
+  min-width:2px!important;overflow:hidden!important;white-space:nowrap!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-pro-lane .st-clip-block b {
+  display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10px!important;line-height:1.25!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-pro-lane .st-clip-block small {
+  font-size:9px!important;opacity:.75;
+}
+body.solo[data-tool="editor"] #editorTool .st-pro-lane .st-clip-block .st-trim-handle {
+  width:6px!important;opacity:.7;
+}
+body.solo[data-tool="editor"] #editorTool .st-timeline-panel .st-timeline-scroll {
+  scrollbar-width:thin;scrollbar-color:#66717c #1c2024;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-panel .st-source-footer {
+  font-size:9px!important;color:#8995a2!important;
+}
