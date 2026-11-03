@@ -294,13 +294,37 @@
   if (workspace && main && preview && inspector && timeline && assetPanel) {
     const stage = document.createElement("div");
     stage.className = "st-pro-stage";
-    stage.append(assetPanel, preview, inspector);
+    const rail = document.createElement("aside");
+    rail.className = "st-vertical-rail";
+    rail.setAttribute("aria-label", "Editing tool categories");
+    rail.innerHTML = `
+      <div class="st-rail-brand">CF</div>
+      <button type="button" class="active" data-rail-tab="media" title="Project / Media" aria-label="Project and media">▤</button>
+      <button type="button" data-rail-tab="audio" title="Audio" aria-label="Audio">♫</button>
+      <button type="button" data-rail-tab="text" title="Text" aria-label="Text">T</button>
+      <button type="button" data-rail-tab="captions" title="Captions" aria-label="Captions">▤</button>
+      <button type="button" data-rail-tab="stickers" title="Graphics" aria-label="Graphics">◇</button>
+      <button type="button" data-rail-tab="effects" title="Effects" aria-label="Effects">✧</button>
+      <button type="button" data-rail-tab="transitions" title="Transitions" aria-label="Transitions">◫</button>
+      <button type="button" data-rail-tab="tracks" title="Tracks" aria-label="Tracks">▥</button>
+      <span class="st-rail-spacer"></span>
+      <span class="st-rail-foot">EDIT</span>`;
+    rail.addEventListener("click", event => {
+      const button = event.target.closest("[data-rail-tab]");
+      if (!button) return;
+      const tab = button.dataset.railTab;
+      assetPanel.querySelector('[data-st-tab="' + tab + '"]')?.click();
+      rail.querySelectorAll("[data-rail-tab]").forEach(item => item.classList.toggle("active", item === button));
+    });
+    stage.append(rail, assetPanel, preview, inspector);
     main.replaceChildren(stage, timeline);
     workspace.replaceChildren(main);
     workspace.classList.add("st-pro-workspace");
     main.classList.add("st-pro-main");
     previewRow?.remove();
 
+    const projectTitle = assetPanel.querySelector(".st-panel-title");
+    if (projectTitle && projectTitle.firstChild) projectTitle.firstChild.textContent = "PROJECT / MEDIA BIN ";
     const previewTitle = preview.querySelector(".st-panel-title");
     if (previewTitle && previewTitle.firstChild) previewTitle.firstChild.textContent = "PROGRAM MONITOR ";
     const inspectorTitle = inspector.querySelector(".st-panel-title");
