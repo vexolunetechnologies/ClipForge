@@ -299,17 +299,16 @@
     rail.className = "st-vertical-rail";
     rail.setAttribute("aria-label", "Editing tool categories");
     rail.innerHTML = `
-      <div class="st-rail-brand">CF</div>
-      <button type="button" class="active" data-rail-tab="media" title="Project / Media" aria-label="Project and media">▤</button>
-      <button type="button" data-rail-tab="audio" title="Audio" aria-label="Audio">♫</button>
-      <button type="button" data-rail-tab="text" title="Text" aria-label="Text">T</button>
-      <button type="button" data-rail-tab="captions" title="Captions" aria-label="Captions">▤</button>
-      <button type="button" data-rail-tab="stickers" title="Graphics" aria-label="Graphics">◇</button>
-      <button type="button" data-rail-tab="effects" title="Effects" aria-label="Effects">✧</button>
-      <button type="button" data-rail-tab="transitions" title="Transitions" aria-label="Transitions">◫</button>
-      <button type="button" data-rail-tab="tracks" title="Tracks" aria-label="Tracks">▥</button>
-      <span class="st-rail-spacer"></span>
-      <span class="st-rail-foot">EDIT</span>`;
+      <div class="st-rail-brand" title="ClipForge tools">CF</div>
+      <button type="button" class="active" data-rail-tab="media" title="Project / Media" aria-label="Project and media"><svg viewBox="0 0 24 24"><path d="M3 6.5h7l2 2h9v10H3zM3 6.5V5h7l2 1.5"/></svg></button>
+      <button type="button" data-rail-tab="audio" title="Audio" aria-label="Audio"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 8l12-2M5 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm12-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg></button>
+      <button type="button" data-rail-tab="text" title="Text" aria-label="Text"><svg viewBox="0 0 24 24"><path d="M4 5h16M12 5v14m-5 0h10"/></svg></button>
+      <button type="button" data-rail-tab="captions" title="Captions" aria-label="Captions"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H8l-4 3zM8 10h3m2 0h3M8 13h8"/></svg></button>
+      <button type="button" data-rail-tab="stickers" title="Graphics" aria-label="Graphics"><svg viewBox="0 0 24 24"><path d="m12 3 9 9-9 9-9-9zM9 12h6M12 9v6"/></svg></button>
+      <button type="button" data-rail-tab="effects" title="Effects" aria-label="Effects"><svg viewBox="0 0 24 24"><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8zM19 16l1 3 3 1-3 1-1 3-1-3-3-1 3-1z"/></svg></button>
+      <button type="button" data-rail-tab="transitions" title="Transitions" aria-label="Transitions"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 13h7v7h-7zM13 4l7 7m-7-7v7h7"/></svg></button>
+      <button type="button" data-rail-tab="tracks" title="Tracks" aria-label="Tracks"><svg viewBox="0 0 24 24"><path d="M3 5h18M3 12h18M3 19h18M7 3v4m10-4v4M7 10v4m10-4v4M7 17v4m10-4v4"/></svg></button>
+      <span class="st-rail-spacer"></span><span class="st-rail-foot">EDIT</span>`;
     rail.addEventListener("click", event => {
       const button = event.target.closest("[data-rail-tab]");
       if (!button) return;
@@ -321,9 +320,23 @@
     monitorPair.className = "st-monitor-pair";
     const sourcePanel = document.createElement("section");
     sourcePanel.className = "st-source-panel";
-    sourcePanel.innerHTML = '<div class="st-panel-title">SOURCE MONITOR <span class="st-source-meta">No source loaded</span></div><div class="st-source-view"><div class="st-source-empty">Select SOURCE on a media item to preview it here.</div></div><div class="st-source-footer"><span>CLIPFORGE SOURCE</span><span>Local preview</span></div>';
+    sourcePanel.innerHTML = '<div class="st-left-tabs" role="tablist" aria-label="Source and effect panels"><button type="button" class="active" data-left-tab="effects" role="tab" aria-selected="true">Effect Controls</button><button type="button" data-left-tab="source" role="tab" aria-selected="false">Source</button><span class="st-source-meta">No source loaded</span></div><div class="st-source-view"><div class="st-source-empty">Select SOURCE on a media item to preview it here.</div></div><div class="st-source-footer"><span>CLIPFORGE SOURCE</span><span>Local preview</span></div>';
     const sourceView = sourcePanel.querySelector(".st-source-view");
+    const activateLeftTab = tab => {
+      sourcePanel.dataset.leftTab = tab;
+      sourcePanel.querySelectorAll("[data-left-tab]").forEach(button => {
+        const active = button.dataset.leftTab === tab;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+      });
+    };
+    sourcePanel.dataset.leftTab = "effects";
+    sourcePanel.addEventListener("click", event => {
+      const button = event.target.closest("[data-left-tab]");
+      if (button) activateLeftTab(button.dataset.leftTab);
+    });
     const loadSource = media => {
+      activateLeftTab("source");
       sourceView.replaceChildren();
       sourcePanel.querySelector(".st-source-meta").textContent = media.name;
       if (media.kind === "image") { const image = document.createElement("img"); image.src = media.url; image.alt = media.name; sourceView.append(image); }
