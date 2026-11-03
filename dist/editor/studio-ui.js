@@ -37,6 +37,7 @@
     </a>
     <span class="st-app-divider"></span>
     <label class="st-project-name-wrap"><small>PROJECT</small><input id="stProjectName" maxlength="70" value="Untitled Project" aria-label="Project name"></label>
+    <span class="st-app-status" id="stAppStatus" role="status">Ready to edit</span>
     <span class="st-app-spacer"></span>
     <button class="st-btn" id="stAppUndo" title="Undo (Ctrl+Z)">↶ <span>Undo</span></button>
     <button class="st-btn" id="stAppRedo" title="Redo (Ctrl+Shift+Z)">↷ <span>Redo</span></button>
@@ -66,6 +67,10 @@
   });
   new MutationObserver(syncToolbar).observe(root, {attributes:true,attributeFilter:["class"]});
   syncToolbar();
+  const statusSource = $("stStatus");
+  const mirrorStatus = () => { $("stAppStatus").textContent = statusSource?.textContent?.trim() || "Ready to edit"; };
+  if (statusSource) new MutationObserver(mirrorStatus).observe(statusSource,{childList:true,subtree:true,characterData:true});
+  mirrorStatus();
   $("stAppCancel").onclick = () => { if (!state.exporting) return; state.exportCancel = true; api.msg("Stopping export…"); };
 
   // A real tool rail: each tab changes the visible media filter or exposes
