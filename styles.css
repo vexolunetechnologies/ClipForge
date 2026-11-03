@@ -1517,3 +1517,166 @@ body.studio-app #editorTool .st-ruler-content span{color:#8d9db7!important;font-
 body.studio-app #editorTool .st-timeline-foot{border-top:1px solid #29364b;color:#7d8da8;font-size:9px}
 @media(max-width:1350px) and (min-width:761px){body.studio-app #editorTool .st-pro-stage{grid-template-columns:36px 180px minmax(0,1fr) 220px!important;grid-template-rows:minmax(0,1fr)}body.studio-app #editorTool .st-vertical-rail{grid-column:1;grid-row:1}body.studio-app #editorTool .st-assets{grid-column:2;grid-row:1}body.studio-app #editorTool .st-monitor-pair{grid-column:3;grid-row:1;grid-template-columns:minmax(0,1fr)}body.studio-app #editorTool .st-inspector{grid-column:4;grid-row:1}body.studio-app #editorTool .st-source-panel{min-height:180px}body.studio-app #editorTool .st-preview-panel{min-height:220px}}
 @media(max-width:760px){body.studio-app #editorTool .st-monitor-pair{display:flex;flex-direction:column;overflow:visible}body.studio-app #editorTool .st-source-panel{min-height:240px}body.studio-app #editorTool .st-preview-panel{min-height:300px}body.studio-app #editorTool .st-source-view{min-height:170px}}
+
+
+/* ClipForge Studio NLE workspace: scoped to the actual solo editor route.
+   The previous pro-panel rules targeted body.studio-app, a class the app never
+   sets, so the DOM was recomposed but all four panel columns stayed unstyled. */
+body.solo[data-tool="editor"] #editorTool {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+}
+body.solo[data-tool="editor"] #editorTool > .st-appbar {
+  flex: 0 0 62px !important;
+  position: relative !important;
+  margin-bottom: 0 !important;
+}
+body.solo[data-tool="editor"] #editorTool > .st-menubar {
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 14px;
+  background: #101a2b;
+  border-bottom: 1px solid #29364b;
+  color: #c8d4e8;
+}
+body.solo[data-tool="editor"] #editorTool .st-menubar details { position: relative; border: 0; padding: 0; }
+body.solo[data-tool="editor"] #editorTool .st-menubar summary { padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+body.solo[data-tool="editor"] #editorTool .st-menubar summary:hover { background: #263650; }
+body.solo[data-tool="editor"] #editorTool .st-menu-pop { position: absolute; z-index: 250; top: 27px; left: 0; min-width: 190px; padding: 5px; background: #172338; border: 1px solid #35445d; border-radius: 6px; box-shadow: 0 12px 30px #0008; }
+body.solo[data-tool="editor"] #editorTool .st-menu-pop button { display: flex; justify-content: space-between; width: 100%; padding: 8px 10px; border: 0; background: transparent; color: #dce6f7; text-align: left; font-size: 11px; cursor: pointer; }
+body.solo[data-tool="editor"] #editorTool .st-menu-pop button:hover { background: #293a56; }
+body.solo[data-tool="editor"] #editorTool .st-menu-workspace { margin-left: auto; color: #8194b2; font-size: 9px; letter-spacing: .12em; font-weight: 800; }
+body.solo[data-tool="editor"] #editorTool .st-workspace {
+  display: block !important;
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+}
+body.solo[data-tool="editor"] #editorTool .st-pro-main {
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) minmax(225px, 31vh) !important;
+  gap: 8px !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+body.solo[data-tool="editor"] #editorTool .st-pro-stage {
+  display: grid !important;
+  grid-template-columns: 42px minmax(190px, 225px) minmax(0, 1fr) minmax(225px, 260px) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  gap: 8px !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail {
+  grid-column: 1 !important; grid-row: 1 !important;
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 8px 4px; background: #0c1525; border: 1px solid #29364b; border-radius: 7px;
+}
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail button {
+  width: 31px; height: 31px; border: 1px solid transparent; border-radius: 5px;
+  background: transparent; color: #a9b9d2; cursor: pointer; font-size: 15px;
+}
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail button.active,
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail button:hover { background: #283958; border-color: #53688c; color: #fff; }
+body.solo[data-tool="editor"] #editorTool .st-rail-brand { color: #75dce8; font-size: 10px; font-weight: 900; padding: 5px 0 10px; }
+body.solo[data-tool="editor"] #editorTool .st-rail-spacer { flex: 1; }
+body.solo[data-tool="editor"] #editorTool .st-rail-foot { color: #62748f; font-size: 8px; letter-spacing: .12em; writing-mode: vertical-rl; }
+body.solo[data-tool="editor"] #editorTool .st-assets {
+  grid-column: 2 !important; grid-row: 1 !important;
+  min-width: 0 !important; min-height: 0 !important; max-height: none !important;
+  overflow: auto !important; padding: 10px !important;
+  background: #111a2b !important; border: 1px solid #29364b !important; border-radius: 7px !important;
+}
+body.solo[data-tool="editor"] #editorTool .st-tool-shelf { margin: 8px 0; padding: 8px; background: #0c1525; border: 1px solid #29364b; border-radius: 6px; }
+body.solo[data-tool="editor"] #editorTool .st-tool-shelf-title { font-size: 8px; color: #7f91ae; }
+body.solo[data-tool="editor"] #editorTool .st-tool-tabs { display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px; }
+body.solo[data-tool="editor"] #editorTool .st-tool-tabs button,
+body.solo[data-tool="editor"] #editorTool .st-media-filters button { padding: 6px 5px; border: 1px solid #2a3951; border-radius: 4px; background: #162238; color: #bdcbe0; font-size: 9px; cursor: pointer; }
+body.solo[data-tool="editor"] #editorTool .st-tool-tabs button.active,
+body.solo[data-tool="editor"] #editorTool .st-media-filters button.active { background: #34456b; color: #fff; border-color: #657da8; }
+body.solo[data-tool="editor"] #editorTool .st-tool-pane p { color: #8fa2bf; font-size: 9px; line-height: 1.5; }
+body.solo[data-tool="editor"] #editorTool .st-media { max-height: 30vh; overflow: auto; }
+body.solo[data-tool="editor"] #editorTool .st-media-item { padding: 6px; background: #172338; border: 1px solid #2c3d57; border-radius: 5px; }
+body.solo[data-tool="editor"] #editorTool .st-media-item b { font-size: 9px; }
+body.solo[data-tool="editor"] #editorTool .st-media-item small { font-size: 8px; }
+body.solo[data-tool="editor"] #editorTool .st-pro-stage .st-monitor-pair {
+  grid-column: 3 !important; grid-row: 1 !important;
+  display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 8px !important; min-width: 0 !important; min-height: 0 !important; overflow: hidden !important;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-panel,
+body.solo[data-tool="editor"] #editorTool .st-preview-panel,
+body.solo[data-tool="editor"] #editorTool .st-inspector {
+  min-width: 0 !important; min-height: 0 !important; max-height: none !important;
+  padding: 9px !important; overflow: hidden !important;
+  background: #111a2b !important; border: 1px solid #29364b !important; border-radius: 7px !important;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-panel,
+body.solo[data-tool="editor"] #editorTool .st-preview-panel { display: flex !important; flex-direction: column !important; }
+body.solo[data-tool="editor"] #editorTool .st-source-panel { grid-column: auto !important; }
+body.solo[data-tool="editor"] #editorTool .st-source-view,
+body.solo[data-tool="editor"] #editorTool .st-canvas-wrap {
+  flex: 1 1 0 !important; min-height: 0 !important; max-height: none !important;
+  display: grid; place-items: center; overflow: hidden !important;
+  background: #050a12 !important; border: 1px solid #26364e; border-radius: 4px;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-view video,
+body.solo[data-tool="editor"] #editorTool .st-source-view img,
+body.solo[data-tool="editor"] #editorTool .st-source-view audio { max-width: 100%; max-height: 100%; object-fit: contain; }
+body.solo[data-tool="editor"] #editorTool .st-source-view video,
+body.solo[data-tool="editor"] #editorTool .st-source-view img { width: 100%; height: 100%; }
+body.solo[data-tool="editor"] #editorTool .st-canvas-wrap canvas { width: 100%; height: 100%; max-height: 100% !important; object-fit: contain; }
+body.solo[data-tool="editor"] #editorTool .st-inspector {
+  grid-column: 4 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important;
+}
+body.solo[data-tool="editor"] #editorTool .st-inspector-body { min-height: 0; overflow: auto; display: grid; align-content: start; gap: 8px; }
+body.solo[data-tool="editor"] #editorTool .st-inspector-tabs { display: flex; flex-wrap: wrap; gap: 3px; }
+body.solo[data-tool="editor"] #editorTool .st-inspector-tabs button { padding: 5px 7px; border: 1px solid #2b3b55; border-radius: 4px; background: #162238; color: #aebed5; font-size: 9px; }
+body.solo[data-tool="editor"] #editorTool .st-inspector-tabs button.active { background: #34456b; color: #fff; }
+body.solo[data-tool="editor"] #editorTool .st-panel-title { color: #93a5c1 !important; font-size: 9px !important; letter-spacing: .13em; }
+body.solo[data-tool="editor"] #editorTool .st-source-meta { max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.solo[data-tool="editor"] #editorTool .st-source-footer { display: flex; justify-content: space-between; color: #6f829f; font-size: 8px; padding-top: 6px; }
+body.solo[data-tool="editor"] #editorTool .st-timeline-panel {
+  height: 100% !important; min-height: 0 !important; max-height: none !important;
+  display: flex !important; flex-direction: column !important; overflow: hidden !important;
+  padding: 8px !important; background: #0c1525 !important; border: 1px solid #29364b !important; border-radius: 7px !important;
+}
+body.solo[data-tool="editor"] #editorTool .st-timeline-top { flex: 0 0 32px; min-height: 32px; }
+body.solo[data-tool="editor"] #editorTool .st-timeline-scroll { flex: 1 1 0; min-height: 0; max-height: none !important; overflow: auto !important; }
+body.solo[data-tool="editor"] #editorTool .st-timeline-inner { min-height: 100%; }
+body.solo[data-tool="editor"] #editorTool .st-lane { min-height: 39px; }
+body.solo[data-tool="editor"] #editorTool .st-track-label { min-width: 105px; background: #111d30; color: #9aabc5; font-size: 8px; }
+body.solo[data-tool="editor"] #editorTool .st-lane-content { background-color: #091321; background-image: linear-gradient(to right,rgba(116,137,172,.1) 1px,transparent 1px); background-size: var(--timeline-grid,80px) 100%; }
+body.solo[data-tool="editor"] #editorTool .st-clip-block { min-height: 29px; border-radius: 3px; overflow: hidden; text-align: left; }
+body.solo[data-tool="editor"] #editorTool .st-clip-block b { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+body.solo[data-tool="editor"] #editorTool .st-ruler { background: #101a2b; }
+body.solo[data-tool="editor"] #editorTool .st-ruler-content span { color: #8d9db7; font-size: 8px; }
+body.solo[data-tool="editor"] #editorTool .st-timeline-foot { border-top: 1px solid #29364b; color: #7d8da8; font-size: 9px; }
+@media (max-width: 1250px) and (min-width: 761px) {
+  body.solo[data-tool="editor"] #editorTool .st-pro-stage { grid-template-columns: 38px 185px minmax(0,1fr) 225px !important; }
+  body.solo[data-tool="editor"] #editorTool .st-pro-stage .st-monitor-pair { grid-template-columns: minmax(0,1fr) !important; overflow: auto !important; }
+  body.solo[data-tool="editor"] #editorTool .st-source-panel { min-height: 180px !important; }
+  body.solo[data-tool="editor"] #editorTool .st-preview-panel { min-height: 220px !important; }
+}
+@media (max-width: 760px) {
+  body.solo[data-tool="editor"] #editorTool { height: auto !important; min-height: 100dvh !important; overflow: visible !important; }
+  body.solo[data-tool="editor"] #editorTool > .st-appbar { position: sticky !important; top: 0; flex-wrap: wrap; min-height: 62px; height: auto; }
+  body.solo[data-tool="editor"] #editorTool .st-pro-main { display: flex !important; flex-direction: column !important; height: auto !important; }
+  body.solo[data-tool="editor"] #editorTool .st-pro-stage { display: flex !important; flex-direction: column !important; height: auto !important; overflow: visible !important; }
+  body.solo[data-tool="editor"] #editorTool .st-vertical-rail { flex-direction: row; overflow-x: auto; }
+  body.solo[data-tool="editor"] #editorTool .st-assets { max-height: 360px !important; }
+  body.solo[data-tool="editor"] #editorTool .st-monitor-pair { display: flex !important; flex-direction: column !important; overflow: visible !important; }
+  body.solo[data-tool="editor"] #editorTool .st-source-panel { min-height: 260px !important; }
+  body.solo[data-tool="editor"] #editorTool .st-preview-panel { min-height: 320px !important; }
+  body.solo[data-tool="editor"] #editorTool .st-inspector { min-height: 260px !important; }
+  body.solo[data-tool="editor"] #editorTool .st-timeline-panel { min-height: 300px !important; }
+}
