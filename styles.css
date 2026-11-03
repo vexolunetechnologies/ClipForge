@@ -2216,3 +2216,16 @@ body.studio-app #editorTool .st-clip-block.audio {padding-right:28px!important}
 .st-shortcut-card kbd { display:inline-block;padding:2px 5px;border:1px solid #52617a;border-radius:4px;background:#202d42;color:#fff;font:10px ui-monospace,monospace; }
 .st-shortcut-card footer { position:static!important;width:auto!important;margin:12px 0 0!important;padding:10px 0 0!important;border:0!important;background:transparent!important;color:#91a0b8!important;font-size:10px; }
 @media(max-width:760px){.st-shortcut-grid{grid-template-columns:1fr}.st-shortcut-card{max-height:78dvh;padding:14px}}
+
+/* Sequence monitor: preserve pixel aspect, fit canvas without distortion. */
+body.solo[data-tool="editor"] #editorTool .st-canvas-wrap{display:grid!important;place-items:center!important;overflow:hidden!important;background:#05070b!important;padding:12px!important;min-width:0!important;min-height:0!important}
+body.solo[data-tool="editor"] #editorTool #stCanvas{display:block!important;width:auto!important;height:auto!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;aspect-ratio:auto!important;flex:none!important}
+body.solo[data-tool="editor"] #editorTool .st-transport{flex-wrap:wrap!important;gap:7px!important}
+body.solo[data-tool="editor"] #editorTool .st-sequence-size{display:inline-flex;align-items:center;gap:3px;color:var(--muted);font-size:10px}
+body.solo[data-tool="editor"] #editorTool .st-sequence-size input{width:56px;min-width:0;padding:4px 5px;border:1px solid var(--line);border-radius:5px;background:var(--panel-2);color:var(--text);font:10px ui-monospace,monospace}
+body.solo[data-tool="editor"] #editorTool #stFitMode{width:66px;min-width:56px}
+body.solo[data-tool="editor"] #editorTool .st-inout-range{position:absolute;z-index:4;top:0;bottom:0;height:100%;pointer-events:none;background:rgba(66,190,150,.12);border-left:2px solid #40d7a0;border-right:2px solid #40d7a0}
+body.solo[data-tool="editor"] #editorTool .st-inout-range:before{content:"IN";position:absolute;top:3px;left:3px;color:#6ff0bd;font-size:9px;font-weight:900}
+body.solo[data-tool="editor"] #editorTool .st-inout-range:after{content:"OUT";position:absolute;top:3px;right:3px;color:#6ff0bd;font-size:9px;font-weight:900}
+body.solo[data-tool="editor"] #editorTool .st-timeline-scroll{scroll-behavior:auto!important;overscroll-behavior-x:contain}
+@media(max-width:760px){body.solo[data-tool="editor"] #editorTool .st-sequence-size input{width:43px}body.solo[data-tool="editor"] #editorTool .st-transport{gap:4px}}
