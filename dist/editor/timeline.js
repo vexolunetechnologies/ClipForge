@@ -200,7 +200,7 @@
         return [{...saved,id:uid(),file:m.file || null,audio:m.audio,url:m.url,waveform:m.waveform || null}];
       });
       S.audio = S.audioTracks[0] || null;
-      if ($("stRatio") && data.ratio) $("stRatio").value = data.ratio; S.sequenceWidth=Math.max(16,Math.min(7680,Number(data.sequenceWidth)||1920)); S.sequenceHeight=Math.max(16,Math.min(7680,Number(data.sequenceHeight)||1080)); S.fitMode=data.fitMode==="cover"?"cover":"contain"; S.inPoint=Number.isFinite(Number(data.inPoint))?Number(data.inPoint):null; S.outPoint=Number.isFinite(Number(data.outPoint))?Number(data.outPoint):null; if($("stSeqW"))$("stSeqW").value=String(S.sequenceWidth); if($("stSeqH"))$("stSeqH").value=String(S.sequenceHeight); if($("stFitMode"))$("stFitMode").value=S.fitMode;
+      if ($("stRatio") && data.ratio) $("stRatio").value = data.ratio; S.sequenceWidth=Math.max(16,Math.min(7680,Number(data.sequenceWidth)||1920)); S.sequenceHeight=Math.max(16,Math.min(7680,Number(data.sequenceHeight)||1080)); S.fitMode=data.fitMode==="cover"?"cover":"contain"; S.inPoint=data.inPoint==null?null:(Number.isFinite(Number(data.inPoint))?Number(data.inPoint):null); S.outPoint=data.outPoint==null?null:(Number.isFinite(Number(data.outPoint))?Number(data.outPoint):null); if($("stSeqW"))$("stSeqW").value=String(S.sequenceWidth); if($("stSeqH"))$("stSeqH").value=String(S.sequenceHeight); if($("stFitMode"))$("stFitMode").value=S.fitMode;
       if ($("stProjectName") && data.projectName) $("stProjectName").value = data.projectName;
       S.exportQuality = [480,720,1080].includes(Number(data.exportQuality)) ? Number(data.exportQuality) : 720;
       S.exportFps = [24,30,60].includes(Number(data.exportFps)) ? Number(data.exportFps) : 30;
