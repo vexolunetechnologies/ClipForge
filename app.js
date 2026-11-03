@@ -1681,7 +1681,7 @@ function timeline(){
   const lane=document.createElement('div');lane.className='st-lane st-pro-lane';lane.dataset.laneKind=spec.kind;lane.dataset.track=String(spec.track||0);
   const label=document.createElement('div');label.className='st-track-label';label.textContent=spec.label;
   const content=document.createElement('div');content.className='st-lane-content';content.dataset.laneKind=spec.kind;content.dataset.track=String(spec.track||0);
-  content.innerHTML=spec.items.map(c=>block(c,spec.kind==='video'?'video':spec.kind==='audio'?'audio':spec.kind==='overlay'?'overlay':(S.titles.includes(c)?'title':'caption'))).join('');
+  content.innerHTML=spec.items.map(c=>block(c,spec.kind==='video'?'video':spec.kind==='audio'?'audio':spec.kind==='overlay'?'overlay':spec.kind==='adjustment'?'adjustment':(S.titles.includes(c)?'title':'caption'))).join('');
   lane.append(label,content);
   content.addEventListener('dragover',e=>{if(e.dataTransfer?.types?.includes('application/x-clipforge-media')||e.dataTransfer?.types?.includes('text/plain'))e.preventDefault()});
   content.addEventListener('drop',e=>{
