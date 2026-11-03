@@ -74,6 +74,8 @@
     $("stSticker").onclick = () => addOverlay("sticker");
     $("stCaption").onclick = () => addCaption("Your caption");
     $("stSnap").onchange = e => { S.snapEnabled = e.target.checked; };
+    $("stQuality").onchange = e => { S.exportQuality = Number(e.target.value); say("Export resolution set to " + e.target.value + "p."); };
+    $("stFps").onchange = e => { S.exportFps = Number(e.target.value); say("Export frame rate set to " + e.target.value + " FPS."); };
     $("stSubFile").onchange = importSubtitles;
     $("stProjectSave").onclick = saveProject;
     $("stProjectLoad").onchange = loadProject;
@@ -209,8 +211,62 @@
     }
   }
 
+
+  function inspectClip() {
+    const x = S.clips.find(y => y.id === S.sel);
+    const audio = (S.audioTracks || []).find(y => y.id === S.sel);
+    const title = S.titles.find(y => y.id === S.sel);
+    const panel = $("stInspector");
+    if (!panel) return;
+    if (x) {
+      panel.insertAdjacentHTML("beforeend",
+        '<div class="st-prop"><label>PLAYBACK SPEED</label><select id="exSpeed"><option value=".25">0.25×</option><option value=".5">0.5×</option><option value="1">1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></div>'
+        + '<div class="st-prop"><label>HORIZONTAL POSITION</label><input id="exX" type="range" min="0" max="100" value="' + (x.x ?? 50) + '"></div>'
+        + '<div class="st-prop"><label>VERTICAL POSITION</label><input id="exY" type="range" min="0" max="100" value="' + (x.y ?? 50) + '"></div>'
+        + '<div class="st-prop"><label>CROP / SCALE</label><input id="exScale" type="range" min="25" max="250" value="' + (x.scale || 100) + '"></div>'
+        + '<div class="st-prop"><label>TRANSITION</label><select id="exTransition"><option value="none">None</option><option value="fade">Fade in / out</option></select></div>'
+        + '<button class="st-tool" id="exFreeze">＋ Create freeze-frame image</button>');
+      $("exSpeed").value = String(x.speed || 1);
+      $("exTransition").value = x.transition || "none";
+      [["exSpeed","speed"],["exX","x"],["exY","y"],["exScale","scale"],["exTransition","transition"]].forEach(([id,key]) => {
+        $(id).onchange = e => { snapshot(); x[key] = ["exX","exY","exScale"].includes(id) ? Number(e.target.value) : id === "exSpeed" ? Number(e.target.value) : e.target.value; api.render(); };
+      });
+      $("exFreeze").onclick = () => {
+        if (!x.video || x.video.readyState < 2) { say("Move the playhead onto a loaded video frame first."); return; }
+        const canvas = document.createElement("canvas");
+        canvas.width = x.video.videoWidth; canvas.height = x.video.videoHeight;
+        canvas.getContext("2d").drawImage(x.video,0,0);
+        canvas.toBlob(blob => {
+          if (!blob) { say("Could not capture this frame."); return; }
+          const url = URL.createObjectURL(blob), image = new Image();
+          image.onload = () => {
+            S.media.push({id:uid(),name:"Freeze frame",url,kind:"image",image,duration:3});
+            api.render(); say("Freeze frame added to the media library.");
+          };
+          image.src = url;
+        });
+      };
+    } else if (audio) {
+      panel.insertAdjacentHTML("beforeend",
+        '<div class="st-prop"><label>FADE IN (SECONDS)</label><input id="exFadeIn" type="number" min="0" max="10" step=".1" value="' + (audio.fadeIn || 0) + '"></div>'
+        + '<div class="st-prop"><label>FADE OUT (SECONDS)</label><input id="exFadeOut" type="number" min="0" max="10" step=".1" value="' + (audio.fadeOut || 0) + '"></div>');
+      [["exFadeIn","fadeIn"],["exFadeOut","fadeOut"]].forEach(([id,key]) => {
+        $(id).onchange = e => { snapshot(); audio[key] = Math.max(0,Number(e.target.value)||0); };
+      });
+    } else if (title) {
+      panel.insertAdjacentHTML("beforeend",
+        '<div class="st-prop"><label>FONT FAMILY</label><select id="exFont"><option value="system-ui">Modern sans</option><option value="Georgia">Editorial serif</option><option value="monospace">Mono</option></select></div>'
+        + '<div class="st-prop"><label>TEXT POSITION</label><input id="exTextY" type="range" min="10" max="95" value="' + (title.positionY || 82) + '"></div>'
+        + '<div class="st-prop"><label>STROKE COLOR</label><input id="exStroke" type="color" value="' + (title.stroke || "#000000") + '"></div>');
+      $("exFont").value = title.fontFamily || "system-ui";
+      [["exFont","fontFamily"],["exTextY","positionY"],["exStroke","stroke"]].forEach(([id,key]) => {
+        $(id).onchange = e => { snapshot(); title[key] = id === "exTextY" ? Number(e.target.value) : e.target.value; api.render(); };
+      });
+    }
+  }
+
   const originalRender = api.render;
-  api.render = function() { originalRender(); renderLanes(); actions(); inspectExtra(); };
+  api.render = function() { originalRender(); renderLanes(); actions(); inspectExtra(); inspectClip(); };
   api.drawExtras = drawExtras;
   window.addEventListener("clipforge:image-imported", event => {
     const a = event.detail;
