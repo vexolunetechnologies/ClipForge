@@ -4,7 +4,8 @@
   const api = window.ClipForgeEditor;
   if (!api || !api.state) return;
   const S = api.state;
-  S.overlays = S.overlays || [];\n  S.adjustments = S.adjustments || [];
+  S.overlays = S.overlays || [];
+  S.adjustments = S.adjustments || [];
   S.captions = S.captions || [];
   S.snapEnabled = true;
   const $ = (id) => document.getElementById(id);
@@ -94,7 +95,8 @@
     panel.id = "stCreativeTools";
     panel.className = "st-advanced-tools";
     panel.innerHTML = '<div class="st-panel-title">CREATIVE TOOLS</div>'
-      + '<button class="st-tool" id="stShape">＋ Add shape</button>'\n      + '<button class="st-tool" id="stAddAdjustment">＋ Add adjustment layer</button>'
+      + '<button class="st-tool" id="stShape">＋ Add shape</button>'
+      + '<button class="st-tool" id="stAddAdjustment">＋ Add adjustment layer</button>'
       + '<button class="st-tool" id="stSticker">＋ Add sticker</button>'
       + '<button class="st-tool" id="stCaption">＋ Add caption</button>'
       + '<button class="st-tool" id="stAddVideoTrack">＋ Add video track</button>'
@@ -107,7 +109,8 @@
       + '<label class="st-tool st-file-action">Load project file<input id="stProjectLoad" type="file" accept=".clipforge,.json,application/json" hidden></label>'
       + '<small class="st-hint">Project files store edit decisions only. Import original media first, then load the project file. Nothing is uploaded or autosaved.</small>';
     document.querySelector(".st-assets")?.append(panel);
-    $("stShape").onclick = () => addOverlay("rect");\n    $("stAddAdjustment").onclick = addAdjustment;
+    $("stShape").onclick = () => addOverlay("rect");
+    $("stAddAdjustment").onclick = addAdjustment;
     $("stSticker").onclick = () => addOverlay("sticker");
     $("stCaption").onclick = () => addCaption("Your caption");
     $("stAddVideoTrack").onclick = () => { const current = Math.min(8, Math.max(4, Number(S.videoTrackCount) || 4)); if (current >= 8) { say("Studio supports up to 8 video tracks."); $("stAddVideoTrack").disabled = true; return; } snapshot(); S.videoTrackCount = current + 1; api.render(); $("stAddVideoTrack").disabled = S.videoTrackCount >= 8; say("Video track " + S.videoTrackCount + " added. Drag a clip onto the new lane."); };
@@ -128,7 +131,13 @@
     say("Overlay added. Select it to adjust its position, size and color.");
   }
 
-  function addAdjustment() {\n    snapshot();\n    const x={id:uid(),name:"Adjustment Layer",start:S.time,duration:Math.max(1,Math.min(10,api.total()-S.time||4)),brightness:100,contrast:100,saturation:100,hue:0,blur:0,vignette:0,opacity:100,blendMode:"source-over"};\n    S.adjustments.push(x);S.sel=x.id;api.render();say("Adjustment layer added. Extend or trim it on the timeline, then adjust its effect controls.");\n  }\n\n  function addCaption(text) {
+  function addAdjustment() {
+    snapshot();
+    const x={id:uid(),name:"Adjustment Layer",start:S.time,duration:Math.max(1,Math.min(10,api.total()-S.time||4)),brightness:100,contrast:100,saturation:100,hue:0,blur:0,vignette:0,opacity:100,blendMode:"source-over"};
+    S.adjustments.push(x);S.sel=x.id;api.render();say("Adjustment layer added. Extend or trim it on the timeline, then adjust its effect controls.");
+  }
+
+  function addCaption(text) {
     snapshot();
     const x = { id:uid(), name:"Caption", text, start:S.time, duration:3, color:"#ffffff" };
     S.captions.push(x); S.sel = x.id; api.render();
@@ -191,7 +200,8 @@
         return [{...saved,id:uid(),file:m.file || null,track:Math.min(8,Math.max(1,Number(saved.track)||1)),video:m.video || null,image:m.image || null,url:m.url,kind:m.kind}];
       });
       S.titles = (data.titles || []).map(x => ({...x,id:uid()}));
-      S.overlays = (data.overlays || []).map(x => ({...x,id:uid()}));\n      S.adjustments = (data.adjustments || []).map(x => ({...x,id:uid()}));
+      S.overlays = (data.overlays || []).map(x => ({...x,id:uid()}));
+      S.adjustments = (data.adjustments || []).map(x => ({...x,id:uid()}));
       S.captions = (data.captions || []).map(x => ({...x,id:uid()}));
       const savedAudio = data.audioTracks || (data.audio ? [data.audio] : []);
       S.audioTracks = savedAudio.flatMap(saved => {
