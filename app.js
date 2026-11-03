@@ -1682,7 +1682,7 @@ $('stExport').onclick=async()=>{
  if(!S.clips.length){msg('Import a video before exporting.');return}
  if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){msg('Browser export is unavailable. Use a current Chrome or Edge.');return}
  stop();
- S.exportCancel=false;S.exporting=true;
+ S.exportCancel=false;S.exporting=true;root.classList.add('is-exporting');
  const stream=$('stCanvas').captureStream(S.exportFps||30);
  let audioCtx=null,audioDest=null,rec=null;
  const audioItems=(S.audioTracks||[S.audio]).filter(Boolean).filter(a=>a.audio);
@@ -1696,7 +1696,7 @@ $('stExport').onclick=async()=>{
    routedMedia.forEach(media=>{const source=window.__clipForgeStudioAudioSources?.get(media);if(source){source.disconnect();source.connect(audioCtx.destination)}});
    audioDest.stream.getTracks().forEach(t=>t.stop());
   }
-  S.exporting=false;S.exportRaf=0;
+  S.exporting=false;S.exportRaf=0;root.classList.remove('is-exporting');
   $('stExport').disabled=false;
   const cancel=$('stAppCancel');if(cancel)cancel.hidden=true;
  };
