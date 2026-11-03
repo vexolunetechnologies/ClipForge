@@ -58,7 +58,7 @@
   <span class="hero-eyebrow"><i></i> THE CREATIVE STUDIO BY VEXOLUNE</span>
   <h1>Every idea deserves<br><span> a better frame.</span></h1>
   <p>One workspace to create shorts, trailers, animated visuals and polished video edits — with powerful tools that run right in your browser.</p>
-  <div class="hero-actions"><a class="hero-primary" href="#tools">Explore creative tools <b>↗</b></a><a class="hero-secondary" href="#editor">Open Studio Editor</a></div>
+  <div class="hero-actions"><a class="hero-primary" href="#editor">Open Studio Editor <b>↗</b></a><a class="hero-secondary" href="#tools">Explore all tools</a></div>
   <div class="hero-proof"><span>✓ No account required</span><span>✓ Your media stays on your device</span><span>✓ Built for creators</span></div>
  </div>
  <div class="hero-visual" aria-label="Illustration of a video editing timeline">
@@ -66,6 +66,20 @@
    <div class="hero-screen"><div class="hero-screen-glow"></div><div class="hero-screen-play">▶</div><div class="hero-screen-caption">MAKE EVERY FRAME COUNT</div></div>
    <div class="hero-track-label">TIMELINE</div><div class="hero-track"><i></i><i></i><i></i><i></i><i></i></div><div class="hero-track audio"><i></i><i></i><i></i></div>
   </div><div class="hero-float">✦ <b>Creative freedom</b><small>All in one place</small></div>
+ </div>
+</section>
+<section class="studio-spotlight" id="studioSpotlight">
+ <div class="studio-spotlight-copy">
+  <span class="hero-eyebrow"><i></i> FLAGSHIP CREATIVE WORKSPACE</span>
+  <h2>Meet your new <span>editing desk.</span></h2>
+  <p>A full-screen, multi-track video editor for precise cuts, layered visuals, captions and sound — right in your browser.</p>
+  <div class="studio-spotlight-points"><span>✦ Frame-level timeline controls</span><span>✦ Multi-track video and audio</span><span>✦ Local-first editing and export</span></div>
+  <a class="studio-spotlight-cta" href="#editor">Launch ClipForge Studio <b>↗</b></a>
+ </div>
+ <div class="studio-spotlight-preview" aria-label="Illustration of the ClipForge Studio editing workspace">
+  <div class="ss-top"><span class="ss-mark">▶</span><b>CLIPFORGE <i>STUDIO</i></b><span class="ss-project">UNTITLED PROJECT</span><span class="ss-export">EXPORT</span></div>
+  <div class="ss-body"><div class="ss-rail"><i>▦</i><i>♫</i><i>T</i><i>✧</i><i>▤</i></div><div class="ss-stage"><div class="ss-frame"><span>PREVIEW</span><b>YOUR NEXT<br>GREAT EDIT</b><small>16:9 · 1080p</small></div><div class="ss-inspector"><b>INSPECTOR</b><i></i><i></i><i></i><i></i></div></div></div>
+  <div class="ss-timeline"><div class="ss-ruler"><span>00:00</span><span>00:05</span><span>00:10</span><span>00:15</span><span>00:20</span></div><div class="ss-track"><b>VIDEO 1</b><i></i><i></i><i></i></div><div class="ss-track audio"><b>AUDIO</b><i></i><i></i></div><div class="ss-track text"><b>TEXT</b><i></i></div></div>
  </div>
 </section>
 <!-- ===== CREATIVE WORKSPACES: all ClipForge tools ===== -->
@@ -255,6 +269,7 @@
   var body=document.body;
   body.dataset.page=page;
   body.classList.toggle('solo',page==='workspace');
+  body.classList.toggle('studio-app',page==='workspace'&&hash==='editor');
   body.dataset.tool=tools.indexOf(hash)>=0?hash:'shorts';
   var section=document.getElementById('tools');
   if(section)section.style.setProperty('display',page==='tools'?'block':'none','important');
