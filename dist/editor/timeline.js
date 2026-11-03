@@ -4,17 +4,17 @@
   const api = window.ClipForgeEditor;
   if (!api || !api.state) return;
   const S = api.state;
-  S.overlays = S.overlays || [];
+  S.overlays = S.overlays || [];\n  S.adjustments = S.adjustments || [];
   S.captions = S.captions || [];
   S.snapEnabled = true;
   const $ = (id) => document.getElementById(id);
   const uid = () => crypto.randomUUID();
   const say = (message) => { if ($("stStatus")) $("stStatus").textContent = message; };
   const safe = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-  const getClip = (id) => S.clips.find(x => x.id === id) || S.titles.find(x => x.id === id) || S.overlays.find(x => x.id === id) || S.captions.find(x => x.id === id) || (S.audioTracks || []).find(x => x.id === id) || (S.audio && S.audio.id === id ? S.audio : null);
+  const getClip = (id) => S.clips.find(x => x.id === id) || S.titles.find(x => x.id === id) || S.overlays.find(x => x.id === id) || S.adjustments.find(x => x.id === id) || S.captions.find(x => x.id === id) || (S.audioTracks || []).find(x => x.id === id) || (S.audio && S.audio.id === id ? S.audio : null);
   const len = (x) => Math.max(.1, Number(x.duration) || .1);
   const timelineItems = () => [
-    ...S.clips, ...S.titles, ...S.overlays, ...S.captions,
+    ...S.clips, ...S.titles, ...S.overlays, ...S.adjustments, ...S.captions,
     ...(S.audioTracks || []), ...(S.audio && !(S.audioTracks || []).some(a => a.id === S.audio.id) ? [S.audio] : [])
   ];
   function snapTime(time, moving) {
@@ -35,7 +35,7 @@
   function snapshot() {
     S.undo.push({
       videoTrackCount:Math.max(4,Math.min(8,Number(S.videoTrackCount)||4)), clips: S.clips.map(x => ({...x,keyframes:(x.keyframes || []).map(k => ({...k}))})), titles: S.titles.map(x => ({...x})),
-      overlays: S.overlays.map(x => ({...x})), captions: S.captions.map(x => ({...x})),
+      overlays: S.overlays.map(x => ({...x})), adjustments:S.adjustments.map(x => ({...x})), captions: S.captions.map(x => ({...x})),
       audio: S.audio ? {...S.audio} : null,
       audioTracks: (S.audioTracks || []).map(x => ({...x}))
     });
@@ -94,7 +94,7 @@
     panel.id = "stCreativeTools";
     panel.className = "st-advanced-tools";
     panel.innerHTML = '<div class="st-panel-title">CREATIVE TOOLS</div>'
-      + '<button class="st-tool" id="stShape">＋ Add shape</button>'
+      + '<button class="st-tool" id="stShape">＋ Add shape</button>'\n      + '<button class="st-tool" id="stAddAdjustment">＋ Add adjustment layer</button>'
       + '<button class="st-tool" id="stSticker">＋ Add sticker</button>'
       + '<button class="st-tool" id="stCaption">＋ Add caption</button>'
       + '<button class="st-tool" id="stAddVideoTrack">＋ Add video track</button>'
@@ -107,7 +107,7 @@
       + '<label class="st-tool st-file-action">Load project file<input id="stProjectLoad" type="file" accept=".clipforge,.json,application/json" hidden></label>'
       + '<small class="st-hint">Project files store edit decisions only. Import original media first, then load the project file. Nothing is uploaded or autosaved.</small>';
     document.querySelector(".st-assets")?.append(panel);
-    $("stShape").onclick = () => addOverlay("rect");
+    $("stShape").onclick = () => addOverlay("rect");\n    $("stAddAdjustment").onclick = addAdjustment;
     $("stSticker").onclick = () => addOverlay("sticker");
     $("stCaption").onclick = () => addCaption("Your caption");
     $("stAddVideoTrack").onclick = () => { const current = Math.min(8, Math.max(4, Number(S.videoTrackCount) || 4)); if (current >= 8) { say("Studio supports up to 8 video tracks."); $("stAddVideoTrack").disabled = true; return; } snapshot(); S.videoTrackCount = current + 1; api.render(); $("stAddVideoTrack").disabled = S.videoTrackCount >= 8; say("Video track " + S.videoTrackCount + " added. Drag a clip onto the new lane."); };
@@ -128,7 +128,7 @@
     say("Overlay added. Select it to adjust its position, size and color.");
   }
 
-  function addCaption(text) {
+  function addAdjustment() {\n    snapshot();\n    const x={id:uid(),name:"Adjustment Layer",start:S.time,duration:Math.max(1,Math.min(10,api.total()-S.time||4)),brightness:100,contrast:100,saturation:100,hue:0,blur:0,vignette:0,opacity:100,blendMode:"source-over"};\n    S.adjustments.push(x);S.sel=x.id;api.render();say("Adjustment layer added. Extend or trim it on the timeline, then adjust its effect controls.");\n  }\n\n  function addCaption(text) {
     snapshot();
     const x = { id:uid(), name:"Caption", text, start:S.time, duration:3, color:"#ffffff" };
     S.captions.push(x); S.sel = x.id; api.render();
@@ -166,7 +166,7 @@
       format:"clipforge-project", version:3, projectName:$("stProjectName")?.value || "Untitled Project", ratio:$("stRatio")?.value || "source", sequenceWidth:S.sequenceWidth || 1920, sequenceHeight:S.sequenceHeight || 1080, fitMode:S.fitMode || "contain", inPoint:S.inPoint, outPoint:S.outPoint, videoTrackCount:S.videoTrackCount || 4, exportQuality:S.exportQuality || 720, exportFps:S.exportFps || 30, zoom:S.zoom || 80, snapEnabled:$("stSnap")?.checked !== false,
       clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,sourceDuration:x.sourceDuration || x.video?.duration || x.out,sourceSize:x.file?.size || x.sourceSize || null,sourceLastModified:x.file?.lastModified || x.sourceLastModified || null,sourceType:x.file?.type || x.sourceType || null,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,exposure:x.exposure,temperature:x.temperature,tint:x.tint,vibrance:x.vibrance,highlights:x.highlights,shadows:x.shadows,blur:x.blur,vignette:x.vignette,hue:x.hue,blendMode:x.blendMode,scale:x.scale,rotation:x.rotation,speed:x.speed,audioVolume:x.audioVolume,audioFadeIn:x.audioFadeIn,audioFadeOut:x.audioFadeOut,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
       titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation,fontFamily:x.fontFamily,positionY:x.positionY,stroke:x.stroke,shadowColor:x.shadowColor,shadow:x.shadow})),
-      overlays:S.overlays.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
+      overlays:S.overlays.map(x => ({...x})), adjustments:S.adjustments.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
       audio:S.audio ? {name:S.audio.name,start:S.audio.start,in:S.audio.in,out:S.audio.out,duration:S.audio.duration,volume:S.audio.volume,fadeIn:S.audio.fadeIn,fadeOut:S.audio.fadeOut} : null,
       audioTracks:(S.audioTracks || []).map(x => ({name:x.name,start:x.start,in:x.in,out:x.out,duration:x.duration,sourceDuration:x.sourceDuration || x.audio?.duration || x.out,sourceSize:x.file?.size || x.sourceSize || null,sourceLastModified:x.file?.lastModified || x.sourceLastModified || null,sourceType:x.file?.type || x.sourceType || null,volume:x.volume,fadeIn:x.fadeIn,fadeOut:x.fadeOut,track:x.track}))
     };
@@ -191,7 +191,7 @@
         return [{...saved,id:uid(),file:m.file || null,track:Math.min(8,Math.max(1,Number(saved.track)||1)),video:m.video || null,image:m.image || null,url:m.url,kind:m.kind}];
       });
       S.titles = (data.titles || []).map(x => ({...x,id:uid()}));
-      S.overlays = (data.overlays || []).map(x => ({...x,id:uid()}));
+      S.overlays = (data.overlays || []).map(x => ({...x,id:uid()}));\n      S.adjustments = (data.adjustments || []).map(x => ({...x,id:uid()}));
       S.captions = (data.captions || []).map(x => ({...x,id:uid()}));
       const savedAudio = data.audioTracks || (data.audio ? [data.audio] : []);
       S.audioTracks = savedAudio.flatMap(saved => {
@@ -254,7 +254,7 @@
       [["oxShape","shape"],["oxText","text"],["oxColor","color"],["oxX","x"],["oxY","y"],["oxSize","size"],["oxStart","start"],["oxDuration","duration"]].forEach(([id,key]) => {
         $(id).onchange = e => { snapshot(); x[key] = ["oxX","oxY","oxSize","oxStart","oxDuration"].includes(id) ? Number(e.target.value) : e.target.value; api.render(); };
       });
-      $("oxDelete").onclick = () => { snapshot(); S.overlays = S.overlays.filter(y => y.id !== x.id); S.sel=null; api.render(); };
+      $("oxDelete").onclick = () => { snapshot(); S.overlays = S.overlays.filter(y => y.id !== x.id); S.adjustments = S.adjustments.filter(y => y.id !== x.id); S.sel=null; api.render(); };
     } else if (S.captions.includes(x)) {
       panel.innerHTML = '<div class="st-inspector-name">Caption</div><div class="st-prop"><label>TEXT</label><textarea id="cxText">'+safe(x.text)+'</textarea></div>'
         + '<div class="st-prop"><label>START</label><input id="cxStart" type="number" step=".1" value="'+x.start+'"></div>'
