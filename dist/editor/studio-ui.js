@@ -167,7 +167,6 @@
       item.classList.add("is-dragging");
     });
     assets.addEventListener("dragend", event => event.target.closest(".st-media-item")?.classList.remove("is-dragging"));
-    tagMedia();
     let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceButton = null;
     async function toggleVoiceover(button) {
       if (voiceRecorder && voiceRecorder.state !== "inactive") {
@@ -248,6 +247,7 @@
       });
       filterMedia();
     };
+    tagMedia();
     new MutationObserver(tagMedia).observe($("stMedia"), {childList:true,subtree:true});
     shelf.addEventListener("click", event => {
       const tab = event.target.closest("[data-st-tab]");
