@@ -1677,7 +1677,82 @@ $('stDelete').onclick=()=>{const c=current();if(!c)return;snap();S.clips=S.clips
 $('stZoom').oninput=e=>{S.zoom=Number(e.target.value);timeline()};$('stZoomIn').onclick=()=>{$('stZoom').value=Math.min(180,Number($('stZoom').value)+10);$('stZoom').oninput({target:$('stZoom')})};$('stZoomOut').onclick=()=>{$('stZoom').value=Math.max(30,Number($('stZoom').value)-10);$('stZoom').oninput({target:$('stZoom')})};
 $('stUndo').onclick=()=>{if(!S.undo.length)return;S.redo.push({clips:S.clips.map(c=>({...c})),titles:S.titles.map(c=>({...c})),overlays:(S.overlays||[]).map(c=>({...c})),captions:(S.captions||[]).map(c=>({...c})),audio:S.audio?{...S.audio}:null,audioTracks:(S.audioTracks||[]).map(a=>({...a}))});const x=S.undo.pop();S.clips=x.clips;S.titles=x.titles;S.overlays=x.overlays||[];S.captions=x.captions||[];S.audio=x.audio;S.audioTracks=x.audioTracks||[];window.ClipForgeEditor?.render?.()||render()};$('stRedo').onclick=()=>{if(!S.redo.length)return;S.undo.push({clips:S.clips.map(c=>({...c})),titles:S.titles.map(c=>({...c})),overlays:(S.overlays||[]).map(c=>({...c})),captions:(S.captions||[]).map(c=>({...c})),audio:S.audio?{...S.audio}:null,audioTracks:(S.audioTracks||[]).map(a=>({...a}))});const x=S.redo.pop();S.clips=x.clips;S.titles=x.titles;S.overlays=x.overlays||[];S.captions=x.captions||[];S.audio=x.audio;S.audioTracks=x.audioTracks||[];window.ClipForgeEditor?.render?.()||render()};
 $('stInner').onclick=e=>{if(e.target.closest('[data-id]'))return;const r=$('stInner').getBoundingClientRect();stop();seek(Math.max(0,(e.clientX-r.left-150)/S.zoom))};
-$('stExport').onclick=async()=>{if(!S.clips.length){msg('Import a video before exporting.');return}if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){msg('Browser export is unavailable. Use a current Chrome or Edge.');return}stop();const stream=$('stCanvas').captureStream(S.exportFps||30);let audioCtx=null,audioDest=null;const audioItems=(S.audioTracks||[S.audio]).filter(Boolean).filter(a=>a.audio);if(audioItems.length){try{audioCtx=window.__clipForgeStudioAudioContext||(window.__clipForgeStudioAudioContext=new AudioContext());window.__clipForgeStudioAudioSources=window.__clipForgeStudioAudioSources||new WeakMap();audioDest=audioCtx.createMediaStreamDestination();audioItems.forEach(a=>{let source=window.__clipForgeStudioAudioSources.get(a.audio);if(!source){source=audioCtx.createMediaElementSource(a.audio);window.__clipForgeStudioAudioSources.set(a.audio,source)}source.disconnect();source.connect(audioCtx.destination);source.connect(audioDest);a.audio.currentTime=a.in||0;a.audio.volume=(a.volume||80)/100});audioDest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));await audioCtx.resume()}catch(e){msg('One or more audio tracks could not be attached; continuing with available audio.')}}const mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));let rec;try{rec=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:(S.exportQuality||720)*9000}:{videoBitsPerSecond:(S.exportQuality||720)*9000})}catch(e){msg('The browser encoder could not start.');return}const chunks=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};rec.onstop=()=>{(S.audioTracks||[S.audio]).filter(Boolean).forEach(a=>a.audio?.pause());const url=URL.createObjectURL(new Blob(chunks,{type:rec.mimeType||'video/webm'})),a=document.createElement('a');a.href=url;const projectName=(document.getElementById('stProjectName')?.value||'clipforge-edit').trim().replace(/[^a-z0-9-_]+/gi,'-').replace(/^-+|-+$/g,'')||'clipforge-edit';a.download=projectName+'.'+(rec.mimeType&&rec.mimeType.includes('mp4')?'mp4':'webm');a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);stream.getTracks().forEach(t=>t.stop());if(audioDest){audioItems.forEach(a=>window.__clipForgeStudioAudioSources?.get(a.audio)?.disconnect(audioDest));audioDest.stream.getTracks().forEach(t=>t.stop())}msg('Export downloaded as '+(rec.mimeType&&rec.mimeType.includes('mp4')?'MP4':'WebM')+'.');$('stExport').disabled=false};$('stExport').disabled=true;msg('Rendering… keep this tab open.');let t=0,last=performance.now();rec.start(200);const frame=()=>{const now=performance.now();t+=(now-last)/1000;last=now;seek(t);msg('Rendering… '+Math.min(100,Math.round(t/Math.max(1,total())*100))+'%');const active=S.clips.filter(x=>t>=x.start&&t<x.start+x.duration);active.forEach(c=>{if(!c.video)return;const p=c.in+t-c.start;if(Math.abs(c.video.currentTime-p)>.3)c.video.currentTime=p;c.video.playbackRate=c.speed||1;c.video.play().catch(()=>{})});(S.audioTracks||[S.audio]).filter(Boolean).forEach(a=>{if(!a.audio)return;if(t>=a.start&&t<a.start+a.duration){const p=a.in+t-a.start;if(Math.abs(a.audio.currentTime-p)>.3)a.audio.currentTime=p;a.audio.volume=(a.volume||80)/100*(a.fadeIn?Math.min(1,Math.max(0,(t-a.start)/a.fadeIn)):1)*(a.fadeOut?Math.min(1,Math.max(0,(a.start+a.duration-t)/a.fadeOut)):1);a.audio.play().catch(()=>{})}else a.audio.pause()});if(t>=total()){rec.stop();return}requestAnimationFrame(frame)};frame()};
+$('stExport').onclick=async()=>{
+ if(!S.clips.length){msg('Import a video before exporting.');return}
+ if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){msg('Browser export is unavailable. Use a current Chrome or Edge.');return}
+ stop();
+ S.exportCancel=false;S.exporting=true;
+ const stream=$('stCanvas').captureStream(S.exportFps||30);
+ let audioCtx=null,audioDest=null,rec=null;
+ const audioItems=(S.audioTracks||[S.audio]).filter(Boolean).filter(a=>a.audio);
+ const cleanup=()=>{
+  S.clips.forEach(c=>c.video?.pause());
+  audioItems.forEach(a=>a.audio?.pause());
+  if(stream)stream.getTracks().forEach(t=>t.stop());
+  if(audioDest){
+   audioItems.forEach(a=>window.__clipForgeStudioAudioSources?.get(a.audio)?.disconnect(audioDest));
+   audioDest.stream.getTracks().forEach(t=>t.stop());
+  }
+  S.exporting=false;S.exportRaf=0;
+  $('stExport').disabled=false;
+  const cancel=$('stAppCancel');if(cancel)cancel.hidden=true;
+ };
+ if(audioItems.length){
+  try{
+   audioCtx=window.__clipForgeStudioAudioContext||(window.__clipForgeStudioAudioContext=new AudioContext());
+   window.__clipForgeStudioAudioSources=window.__clipForgeStudioAudioSources||new WeakMap();
+   audioDest=audioCtx.createMediaStreamDestination();
+   audioItems.forEach(a=>{
+    let source=window.__clipForgeStudioAudioSources.get(a.audio);
+    if(!source){source=audioCtx.createMediaElementSource(a.audio);window.__clipForgeStudioAudioSources.set(a.audio,source)}
+    source.disconnect();source.connect(audioCtx.destination);source.connect(audioDest);
+    a.audio.currentTime=a.in||0;a.audio.volume=(a.volume||80)/100;
+   });
+   audioDest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
+   await audioCtx.resume();
+  }catch(e){msg('One or more audio tracks could not be attached; continuing with available audio.')}
+ }
+ const mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
+ try{rec=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:(S.exportQuality||720)*9000}:{videoBitsPerSecond:(S.exportQuality||720)*9000})}
+ catch(e){cleanup();msg('The browser encoder could not start.');return}
+ const chunks=[];
+ rec.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
+ rec.onstop=()=>{
+  const cancelled=!!S.exportCancel;
+  if(cancelled){cleanup();S.exportCancel=false;msg('Export cancelled. Your original media and edit remain in this session.');return}
+  const blob=new Blob(chunks,{type:rec.mimeType||'video/webm'});
+  if(blob.size<1500){cleanup();msg('Export output was empty. Try a shorter clip or another browser.');return}
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;
+  const projectName=(document.getElementById('stProjectName')?.value||'clipforge-edit').trim().replace(/[^a-z0-9-_]+/gi,'-').replace(/^-+|-+$/g,'')||'clipforge-edit';
+  a.download=projectName+'.'+(rec.mimeType&&rec.mimeType.includes('mp4')?'mp4':'webm');a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  cleanup();msg('Export downloaded as '+(rec.mimeType&&rec.mimeType.includes('mp4')?'MP4':'WebM')+'.');
+ };
+ rec.onerror=()=>{S.exportCancel=true;try{if(rec.state!=='inactive')rec.stop()}catch(e){cleanup();msg('Video export failed.')}};
+ $('stExport').disabled=true;
+ const cancelButton=$('stAppCancel');if(cancelButton)cancelButton.hidden=false;
+ msg('Rendering… keep this tab open. You can cancel the export at any time.');
+ let t=0,last=performance.now();
+ rec.start(200);
+ const frame=()=>{
+  if(S.exportCancel){if(rec.state!=='inactive')rec.stop();return}
+  const now=performance.now();t+=(now-last)/1000;last=now;seek(t);
+  msg('Rendering… '+Math.min(100,Math.round(t/Math.max(1,total())*100))+'%');
+  const active=S.clips.filter(x=>t>=x.start&&t<x.start+x.duration);
+  active.forEach(c=>{if(!c.video)return;const p=c.in+t-c.start;if(Math.abs(c.video.currentTime-p)>.3)c.video.currentTime=p;c.video.playbackRate=c.speed||1;c.video.play().catch(()=>{})});
+  (S.audioTracks||[S.audio]).filter(Boolean).forEach(a=>{
+   if(!a.audio)return;
+   if(t>=a.start&&t<a.start+a.duration){
+    const p=a.in+t-a.start;if(Math.abs(a.audio.currentTime-p)>.3)a.audio.currentTime=p;
+    a.audio.volume=(a.volume||80)/100*(a.fadeIn?Math.min(1,Math.max(0,(t-a.start)/a.fadeIn)):1)*(a.fadeOut?Math.min(1,Math.max(0,(a.start+a.duration-t)/a.fadeOut)):1);
+    a.audio.play().catch(()=>{});
+   }else a.audio.pause();
+  });
+  if(t>=total()){rec.stop();return}
+  S.exportRaf=requestAnimationFrame(frame);
+ };
+ frame();
+};
 window.ClipForgeEditor={state:S,render,seek,stop,snap,total,current,draw,timeline,inspector,addToTimeline,msg,format:fmt};render();window.addEventListener('beforeunload',()=>S.media.forEach(m=>URL.revokeObjectURL(m.url)));
 })();
 
