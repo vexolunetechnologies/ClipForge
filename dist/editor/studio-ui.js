@@ -158,7 +158,7 @@
         item.hidden = mediaFilter !== "all" && item.dataset.kind !== mediaFilter;
       });
     }
-    new MutationObserver(tagMedia).observe($("stMedia"), {childList:true,subtree:true});
+
     assets.addEventListener("dragstart", event => {
       const item = event.target.closest(".st-media-item[data-mid]");
       if (!item || !event.dataTransfer) return;
@@ -248,6 +248,7 @@
       });
       filterMedia();
     };
+    new MutationObserver(tagMedia).observe($("stMedia"), {childList:true,subtree:true});
     shelf.addEventListener("click", event => {
       const tab = event.target.closest("[data-st-tab]");
       if (tab) { setTab(tab.dataset.stTab); return; }
