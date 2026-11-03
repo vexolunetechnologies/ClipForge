@@ -400,9 +400,32 @@
       activateLeftTab("source");
       sourceView.replaceChildren();
       sourcePanel.querySelector(".st-source-meta").textContent = media.name;
-      if (media.kind === "image") { const image = document.createElement("img"); image.src = media.url; image.alt = media.name; sourceView.append(image); }
-      else if (media.kind === "audio") { const audio = document.createElement("audio"); audio.src = media.url; audio.controls = true; audio.preload = "metadata"; sourceView.append(audio); }
-      else { const video = document.createElement("video"); video.src = media.url; video.controls = true; video.preload = "metadata"; video.playsInline = true; video.muted = true; sourceView.append(video); }
+      if (media.kind === "image") {
+        const image = document.createElement("img"); image.src = media.url; image.alt = media.name; sourceView.append(image);
+      } else if (media.kind === "audio") {
+        const audio = document.createElement("audio"); audio.src = media.url; audio.controls = true; audio.preload = "metadata"; audio.style.width = "100%"; sourceView.append(audio);
+      } else {
+        const video = document.createElement("video");
+        video.src = media.url; video.preload = "auto"; video.playsInline = true; video.muted = false;
+        video.controls = false; video.disablePictureInPicture = false; video.style.width = "100%"; video.style.height = "100%";
+        const transport = document.createElement("div"); transport.className = "st-source-transport";
+        const play = document.createElement("button"); play.type = "button"; play.className = "st-source-play"; play.textContent = "▶"; play.title = "Play / Pause source";
+        const current = document.createElement("span"); current.textContent = "00:00";
+        const scrub = document.createElement("input"); scrub.type = "range"; scrub.min = "0"; scrub.max = "1000"; scrub.value = "0"; scrub.setAttribute("aria-label","Source position");
+        const duration = document.createElement("span"); duration.textContent = "00:00";
+        const clock = value => { const n=Math.max(0,Number(value)||0); return String(Math.floor(n/60)).padStart(2,"0")+":"+String(Math.floor(n%60)).padStart(2,"0"); };
+        play.addEventListener("click", async () => {
+          if (video.paused) { try { await video.play(); } catch (_) { sourcePanel.querySelector(".st-source-meta").textContent = "Playback blocked — press Play again"; } }
+          else video.pause();
+        });
+        video.addEventListener("play",()=>{play.textContent="Ⅱ";});
+        video.addEventListener("pause",()=>{play.textContent="▶";});
+        video.addEventListener("loadedmetadata",()=>{duration.textContent=clock(video.duration);});
+        video.addEventListener("timeupdate",()=>{current.textContent=clock(video.currentTime);if(Number.isFinite(video.duration)&&video.duration>0)scrub.value=String(Math.round(video.currentTime/video.duration*1000));});
+        scrub.addEventListener("input",()=>{if(Number.isFinite(video.duration)&&video.duration>0)video.currentTime=Number(scrub.value)/1000*video.duration;});
+        transport.append(play,current,scrub,duration);
+        sourceView.append(video,transport);
+      }
       sourcePanel.dataset.loaded = "true";
     };
     root.addEventListener("click", event => {
