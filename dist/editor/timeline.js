@@ -163,7 +163,7 @@
 
   function saveProject() {
     const data = {
-      format:"clipforge-project", version:2, projectName:$("stProjectName")?.value || "Untitled Project", ratio:$("stRatio")?.value || "16:9", videoTrackCount:S.videoTrackCount || 4, exportQuality:S.exportQuality || 720, exportFps:S.exportFps || 30, zoom:S.zoom || 80, snapEnabled:$("stSnap")?.checked !== false,
+      format:"clipforge-project", version:3, projectName:$("stProjectName")?.value || "Untitled Project", ratio:$("stRatio")?.value || "source", sequenceWidth:S.sequenceWidth || 1920, sequenceHeight:S.sequenceHeight || 1080, fitMode:S.fitMode || "contain", inPoint:S.inPoint, outPoint:S.outPoint, videoTrackCount:S.videoTrackCount || 4, exportQuality:S.exportQuality || 720, exportFps:S.exportFps || 30, zoom:S.zoom || 80, snapEnabled:$("stSnap")?.checked !== false,
       clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,sourceDuration:x.sourceDuration || x.video?.duration || x.out,sourceSize:x.file?.size || x.sourceSize || null,sourceLastModified:x.file?.lastModified || x.sourceLastModified || null,sourceType:x.file?.type || x.sourceType || null,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,exposure:x.exposure,temperature:x.temperature,tint:x.tint,vibrance:x.vibrance,highlights:x.highlights,shadows:x.shadows,scale:x.scale,rotation:x.rotation,speed:x.speed,audioVolume:x.audioVolume,audioFadeIn:x.audioFadeIn,audioFadeOut:x.audioFadeOut,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
       titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation,fontFamily:x.fontFamily,positionY:x.positionY,stroke:x.stroke,shadowColor:x.shadowColor,shadow:x.shadow})),
       overlays:S.overlays.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
@@ -200,7 +200,7 @@
         return [{...saved,id:uid(),file:m.file || null,audio:m.audio,url:m.url,waveform:m.waveform || null}];
       });
       S.audio = S.audioTracks[0] || null;
-      if ($("stRatio") && data.ratio) $("stRatio").value = data.ratio;
+      if ($("stRatio") && data.ratio) $("stRatio").value = data.ratio; S.sequenceWidth=Math.max(16,Math.min(7680,Number(data.sequenceWidth)||1920)); S.sequenceHeight=Math.max(16,Math.min(7680,Number(data.sequenceHeight)||1080)); S.fitMode=data.fitMode==="cover"?"cover":"contain"; S.inPoint=Number.isFinite(Number(data.inPoint))?Number(data.inPoint):null; S.outPoint=Number.isFinite(Number(data.outPoint))?Number(data.outPoint):null; if($("stSeqW"))$("stSeqW").value=String(S.sequenceWidth); if($("stSeqH"))$("stSeqH").value=String(S.sequenceHeight); if($("stFitMode"))$("stFitMode").value=S.fitMode;
       if ($("stProjectName") && data.projectName) $("stProjectName").value = data.projectName;
       S.exportQuality = [480,720,1080].includes(Number(data.exportQuality)) ? Number(data.exportQuality) : 720;
       S.exportFps = [24,30,60].includes(Number(data.exportFps)) ? Number(data.exportFps) : 30;
