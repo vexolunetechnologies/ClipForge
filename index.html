@@ -252,9 +252,10 @@
  function route(){
   var hash=(location.hash||'#top').slice(1);
   var page=tools.indexOf(hash)>=0?'workspace':hash==='tools'?'tools':hash==='features'?'features':hash==='faq'?'faq':'home';
-  document.body.dataset.page=page;
-  document.body.classList.toggle('solo',page==='workspace');
-  document.body.dataset.tool=tools.indexOf(hash)>=0?hash:'shorts';
+  var body=document.body;
+  body.dataset.page=page;
+  body.classList.toggle('solo',page==='workspace');
+  body.dataset.tool=tools.indexOf(hash)>=0?hash:'shorts';
   var section=document.getElementById('tools');
   if(section)section.style.setProperty('display',page==='tools'?'block':'none','important');
   document.querySelectorAll('[data-tool-route]').forEach(function(a){
@@ -263,11 +264,12 @@
    if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
   });
   document.querySelectorAll('[data-route]').forEach(function(a){
-   var active=a.getAttribute('data-route')===page || (page==='home'&&a.getAttribute('data-route')==='home');
+   var active=a.getAttribute('data-route')===page;
    a.classList.toggle('active',active);
    if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
   });
-  document.title=page==='tools'?'All Creative Tools – ClipForge Studio':page==='workspace'?'ClipForge Studio – '+hash:page==='home'?'ClipForge Studio – Creative Workspace':'ClipForge Studio';
+  document.title=page==='tools'?'All Creative Tools – ClipForge Studio':page==='workspace'?'ClipForge Studio – '+(hash==='animator'?'Picture to Video':hash==='reverse'?'Reverse Video':hash==='montage'?'Video Montage Maker':hash==='editor'?'Studio Editor':hash==='trailer'?'Trailer Maker':'Video to Shorts'):page==='home'?'ClipForge Studio – Creative Workspace':'ClipForge Studio';
+  if(page==='workspace')window.scrollTo(0,0);
  }
  window.addEventListener('hashchange',route);
  window.addEventListener('pageshow',route);
