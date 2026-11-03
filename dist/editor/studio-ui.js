@@ -69,7 +69,7 @@
         <button type="button" data-st-tab="tracks" role="tab" aria-selected="false">Tracks</button>
       </div>
       <div class="st-tool-pane" data-st-pane="media">
-        <p>Import video, audio and images. Select an asset to add it to the timeline.</p>
+        <p>Click an asset to add it at the end, or drag it onto a track to place it precisely.</p>
         <div class="st-media-filters"><button type="button" data-st-filter="all" class="active">All</button><button type="button" data-st-filter="video">Video</button><button type="button" data-st-filter="audio">Audio</button><button type="button" data-st-filter="image">Images</button></div>
       </div>
       <div class="st-tool-pane" data-st-pane="audio" hidden>
