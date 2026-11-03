@@ -47,7 +47,7 @@
     return '<button type="button" class="st-clip-block ' + kind + (S.sel === x.id ? ' is-selected' : '')
       + '" data-id="' + safe(x.id) + '" style="left:' + (x.start * S.zoom) + 'px;width:' + Math.max(46, len(x) * S.zoom) + 'px">'
       + '<span class="st-trim-handle left" data-trim="left"></span><b>' + safe(x.name || x.text || kind)
-      + '</b><small>' + len(x).toFixed(1) + 's</small><span class="st-trim-handle right" data-trim="right"></span></button>';
+      + '</b><small>' + len(x).toFixed(1) + 's</small>' + (kind === "audio" && Array.isArray(x.waveform) ? '<span class="st-waveform">' + x.waveform.map(v => '<i style="height:' + Math.max(8,Math.min(100,Math.round(v*100))) + '%"></i>').join("") + '</span>' : "") + '<span class="st-trim-handle right" data-trim="right"></span></button>';
   }
 
   function lane(id, label, after, items, kind) {
@@ -255,7 +255,7 @@
         + '<div class="st-prop"><label>HORIZONTAL POSITION</label><input id="exX" type="range" min="0" max="100" value="' + (x.x ?? 50) + '"></div>'
         + '<div class="st-prop"><label>VERTICAL POSITION</label><input id="exY" type="range" min="0" max="100" value="' + (x.y ?? 50) + '"></div>'
         + '<div class="st-prop"><label>CROP / SCALE</label><input id="exScale" type="range" min="25" max="250" value="' + (x.scale || 100) + '"></div>'
-        + '<div class="st-prop"><label>TRANSITION</label><select id="exTransition"><option value="none">None</option><option value="fade">Fade in / out</option></select></div>'
+        + '<div class="st-prop"><label>TRANSITION</label><select id="exTransition"><option value="none">None</option><option value="fade">Fade in / out</option><option value="wipe-left">Wipe from left</option><option value="wipe-right">Wipe from right</option><option value="zoom">Zoom reveal</option></select></div>'
         + '<button class="st-tool" id="exFreeze">＋ Create freeze-frame image</button>');
       $("exSpeed").value = String(x.speed || 1);
       $("exTransition").value = x.transition || "none";
