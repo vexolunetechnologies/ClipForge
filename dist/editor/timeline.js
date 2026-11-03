@@ -291,7 +291,7 @@
     const delta=(event.clientX-pointer.px)/Math.max(10,S.zoom), x=pointer.x;
     if (pointer.mode==="left") { const shift=Math.max(-Number(x.in||0),Math.min(pointer.duration-.1,delta)); x.start=Math.max(0,pointer.start+shift); x.in=Math.max(0,Number(x.in||0)+x.start-pointer.start); x.duration=Math.max(.1,pointer.duration-(x.start-pointer.start)); }
     else if (pointer.mode==="right") x.duration=Math.max(.1,pointer.duration+delta);
-    else { x.start=Math.max(0,pointer.start+delta); const row=event.target.closest(".st-lane"); const label=row?.querySelector(".st-track-label")?.textContent || ""; if(x.video || x.kind==="image"){ if(label.includes("VIDEO 3"))x.track=3; else if(label.includes("VIDEO 2"))x.track=2; else if(label.includes("VIDEO 1"))x.track=1; } }
+    else { x.start=snapTime(pointer.start+delta,x); const hit=document.elementFromPoint(event.clientX,event.clientY); const row=hit?.closest(".st-lane"); const label=row?.querySelector(".st-track-label")?.textContent || ""; if(x.video || x.kind==="image"){ if(label.includes("VIDEO 3"))x.track=3; else if(label.includes("VIDEO 2"))x.track=2; else if(label.includes("VIDEO 1"))x.track=1; } }
     const node=document.querySelector('[data-id="'+CSS.escape(pointer.id)+'"]');
     if (node) { node.style.left=(x.start*S.zoom)+"px"; node.style.width=Math.max(46,x.duration*S.zoom)+"px"; }
   });
