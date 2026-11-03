@@ -76,7 +76,7 @@ function mountEditorLayout() {
                 "<li>Trim, split, drag, snap, reorder and keyframe clips</li>" +
                 "<li>Color looks, motion, titles, subtitles and transitions</li>" +
                 "<li>Local project files and browser-based video export</li>" +
-                "</ul><span class=\\"go\\">Open ClipForge Studio ↗</span>";
+                "</ul><span class="go">Open ClipForge Studio ↗</span>";
     }
     const input = byId("#stImport");
     const label = byId('label[for="stImport"]');
