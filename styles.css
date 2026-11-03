@@ -1292,3 +1292,7 @@ body.studio-app #editorTool .st-playhead{z-index:12;box-shadow:0 0 9px rgba(255,
 .st-media-item.is-dragging{opacity:.42}
 .st-lane.st-drop-target .st-lane-content{background:rgba(139,124,255,.13);outline:1px dashed rgba(139,124,255,.75);outline-offset:-2px}
 .st-lane.st-drop-target .st-track-label{color:#b9b0ff}
+
+.st-app-status{max-width:min(24vw,260px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8fa3c1;font-size:10px;font-weight:700}
+body.solo[data-tool="editor"] #editorTool.is-exporting .st-app-status{color:#b6aaff}
+@media(max-width:700px){.st-app-status{display:none}}
