@@ -156,6 +156,7 @@
     if (importInput) projectPane.append(importInput);
     if (mediaList) projectPane.append(mediaList);
     toolsPane.append(shelf);
+    assets.querySelectorAll(".st-spaced, #stAddText, .st-project-note").forEach(node => toolsPane.append(node));
     assets.append(projectPane, toolsPane, browserPane, librariesPane, infoPane);
     const setProjectPanel = tab => {
       panelTabs.querySelectorAll("[data-project-tab]").forEach(button => {
