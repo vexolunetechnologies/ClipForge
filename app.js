@@ -845,8 +845,8 @@ async function semanticShortPlan(tok,dur){
  const response=await guard(fetch(SEMANTIC_ENDPOINT,{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({duration:dur,targetLength:PL,count:wanted,language:S.lang,segments})}),120000,'AI dialogue analysis');
  const responseText=await response.text();alive(tok);
  let data=null;try{data=JSON.parse(responseText)}catch(e){
-  const preview=String(responseText||'').replace(/\\s+/g,' ').slice(0,160);
-  if(/<\\s*!doctype|<\\s*html/i.test(responseText))throw new Error('The AI API returned an HTML page instead of JSON. The live Worker route or deployment is not serving this API response. Please check the Cloudflare Pages deployment.');
+  const preview=String(responseText||'').replace(/\s+/g,' ').slice(0,160);
+  if(/<\s*!doctype|<\s*html/i.test(responseText))throw new Error('The AI API returned an HTML page instead of JSON. The live Worker route or deployment is not serving this API response. Please check the Cloudflare Pages deployment.');
   throw new Error('The AI API returned an unreadable response ('+response.status+'): '+(preview||'empty response'));
  }
  if(!response.ok)throw new Error(data.error||('AI analysis failed ('+response.status+').'));
