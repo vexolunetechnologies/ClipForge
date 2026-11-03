@@ -383,10 +383,12 @@
       inner.dataset.mediaDropReady = "1";
       inner.addEventListener("dragover", event => {
         if (event.dataTransfer?.types?.includes("application/x-clipforge-media")) {
-          event.preventDefault(); event.dataTransfer.dropEffect = "copy";
+          event.preventDefault(); event.dataTransfer.dropEffect = "copy"; event.target.closest(".st-lane")?.classList.add("st-drop-target");
         }
       });
+      inner.addEventListener("dragleave", event => { const lane=event.target.closest(".st-lane"); if (lane && (!event.relatedTarget || !lane.contains(event.relatedTarget))) lane.classList.remove("st-drop-target"); });
       inner.addEventListener("drop", event => {
+        inner.querySelectorAll(".st-drop-target").forEach(lane => lane.classList.remove("st-drop-target"));
         const mediaId = event.dataTransfer?.getData("application/x-clipforge-media");
         if (!mediaId) return;
         event.preventDefault();
