@@ -33,6 +33,21 @@
   $("stAppOpen").onclick = () => $("stProjectLoad")?.click();
   $("stAppSave").onclick = () => $("stProjectSave")?.click();
   $("stAppExport").onclick = () => $("stExport")?.click();
+  const syncToolbar = () => {
+    const exporting = root.classList.contains("is-exporting");
+    $("stAppUndo").disabled = exporting || !!$("stUndo")?.disabled;
+    $("stAppRedo").disabled = exporting || !!$("stRedo")?.disabled;
+    $("stAppOpen").disabled = exporting;
+    $("stAppSave").disabled = exporting;
+    $("stAppExport").disabled = exporting;
+    $("stProjectName").disabled = exporting;
+    $("stAppCancel").disabled = !exporting;
+  };
+  ["stUndo","stRedo"].forEach(id => {
+    if ($(id)) new MutationObserver(syncToolbar).observe($(id), {attributes:true,attributeFilter:["disabled"]});
+  });
+  new MutationObserver(syncToolbar).observe(root, {attributes:true,attributeFilter:["class"]});
+  syncToolbar();
   $("stAppCancel").onclick = () => { if (!state.exporting) return; state.exportCancel = true; api.msg("Stopping export…"); };
 
   // A real tool rail: each tab changes the visible media filter or exposes
