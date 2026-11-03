@@ -164,7 +164,7 @@
   function saveProject() {
     const data = {
       format:"clipforge-project", version:2, projectName:$("stProjectName")?.value || "Untitled Project", ratio:$("stRatio")?.value || "16:9", videoTrackCount:S.videoTrackCount || 4,
-      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed,audioVolume:x.audioVolume,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
+      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,sourceDuration:x.sourceDuration || x.video?.duration || x.out,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed,audioVolume:x.audioVolume,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
       titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation,fontFamily:x.fontFamily,positionY:x.positionY,stroke:x.stroke,shadowColor:x.shadowColor,shadow:x.shadow})),
       overlays:S.overlays.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
       audio:S.audio ? {name:S.audio.name,start:S.audio.start,in:S.audio.in,out:S.audio.out,duration:S.audio.duration,volume:S.audio.volume,fadeIn:S.audio.fadeIn,fadeOut:S.audio.fadeOut} : null,
@@ -337,7 +337,7 @@
     if (!pointer) return;
     const delta=(event.clientX-pointer.px)/Math.max(10,S.zoom), x=pointer.x;
     if (pointer.mode==="left") { const speed=Number(x.speed)||1,shift=Math.max(-Number(x.in||0)/speed,Math.min(pointer.duration-.1,delta)); x.start=Math.max(0,pointer.start+shift); x.in=Math.max(0,Number(x.in||0)+(x.start-pointer.start)*speed); x.duration=Math.max(.1,pointer.duration-(x.start-pointer.start)); }
-    else if (pointer.mode==="right") { const speed=Number(x.speed)||1,maxDuration=x.video&&Number.isFinite(x.video.duration)?Math.max(.1,(x.video.duration-Number(x.in||0))/speed):Infinity; x.duration=Math.min(maxDuration,Math.max(.1,pointer.duration+delta)); if (Number.isFinite(Number(x.in))) x.out=Number(x.in||0)+x.duration*speed; }
+    else if (pointer.mode==="right") { const speed=Number(x.speed)||1,sourceMax=Number(x.video?.duration||x.sourceDuration||Infinity),maxDuration=Number.isFinite(sourceMax)?Math.max(.1,(sourceMax-Number(x.in||0))/speed):Infinity; x.duration=Math.min(maxDuration,Math.max(.1,pointer.duration+delta)); if (Number.isFinite(Number(x.in))) x.out=Number(x.in||0)+x.duration*speed; }
     else { x.start=snapTime(pointer.start+delta,x); const hit=document.elementFromPoint(event.clientX,event.clientY); const row=hit?.closest(".st-lane"); const label=row?.querySelector(".st-track-label")?.textContent || ""; if(x.video || x.kind==="image"){ const trackMatch=label.match(/^VIDEO (\d+)$/);if(trackMatch)x.track=Number(trackMatch[1]); } }
     const node=document.querySelector('[data-id="'+CSS.escape(pointer.id)+'"]');
     if (node) { node.style.left=(x.start*S.zoom)+"px"; node.style.width=Math.max(46,x.duration*S.zoom)+"px"; }
