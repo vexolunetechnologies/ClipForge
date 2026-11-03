@@ -1349,7 +1349,7 @@ const brand=$('header .brand');
 if(brand)brand.innerHTML='<svg width="34" height="34" viewBox="0 0 36 36" aria-hidden="true"><defs><linearGradient id="cfmark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8b7cff"/><stop offset="1" stop-color="#4dd8e8"/></linearGradient></defs><rect x="1" y="1" width="34" height="34" rx="11" fill="url(#cfmark)"/><path d="M14 10.5 26 18l-12 7.5z" fill="#fff"/></svg><span>ClipForge<small style="display:block;font-size:9px;letter-spacing:.12em;color:var(--muted);font-weight:700;text-transform:uppercase">by Vexolune Technologies</small></span>';
 const hero=$('.hero');
 if(hero){hero.innerHTML='<h1>Make every frame<br><span style="background:linear-gradient(100deg,var(--accent),var(--accent-2));background-clip:text;-webkit-background-clip:text;color:transparent">count.</span></h1><p>One creative workspace for shorts, trailers, animated visuals and professional video edits. Built by Vexolune Technologies.</p>'}
-const oldCards=$('.toolcard');
+const oldCards=$$('.toolcard');
 oldCards.forEach(a=>{
  const h=a.querySelector('h3');
  if(h&&/Image Animator/i.test(h.textContent)){
