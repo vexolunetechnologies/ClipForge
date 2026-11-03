@@ -164,11 +164,11 @@
   function saveProject() {
     const data = {
       format:"clipforge-project", version:2, projectName:$("stProjectName")?.value || "Untitled Project", ratio:$("stRatio")?.value || "16:9", videoTrackCount:S.videoTrackCount || 4,
-      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,sourceDuration:x.sourceDuration || x.video?.duration || x.out,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed,audioVolume:x.audioVolume,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
+      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,sourceDuration:x.sourceDuration || x.video?.duration || x.out,sourceSize:x.file?.size || x.sourceSize || null,sourceLastModified:x.file?.lastModified || x.sourceLastModified || null,sourceType:x.file?.type || x.sourceType || null,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed,audioVolume:x.audioVolume,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
       titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation,fontFamily:x.fontFamily,positionY:x.positionY,stroke:x.stroke,shadowColor:x.shadowColor,shadow:x.shadow})),
       overlays:S.overlays.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
       audio:S.audio ? {name:S.audio.name,start:S.audio.start,in:S.audio.in,out:S.audio.out,duration:S.audio.duration,volume:S.audio.volume,fadeIn:S.audio.fadeIn,fadeOut:S.audio.fadeOut} : null,
-      audioTracks:(S.audioTracks || []).map(x => ({name:x.name,start:x.start,in:x.in,out:x.out,duration:x.duration,volume:x.volume,fadeIn:x.fadeIn,fadeOut:x.fadeOut,track:x.track}))
+      audioTracks:(S.audioTracks || []).map(x => ({name:x.name,start:x.start,in:x.in,out:x.out,duration:x.duration,sourceSize:x.file?.size || x.sourceSize || null,sourceLastModified:x.file?.lastModified || x.sourceLastModified || null,sourceType:x.file?.type || x.sourceType || null,volume:x.volume,fadeIn:x.fadeIn,fadeOut:x.fadeOut,track:x.track}))
     };
     const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:"application/json"}));
     const a = document.createElement("a"); a.href=url; const projectName = (document.getElementById("stProjectName")?.value || "clipforge-project").trim().replace(/[^a-z0-9-_]+/gi,"-").replace(/^-+|-+$/g,"") || "clipforge-project"; a.download=projectName+".clipforge"; a.click();
@@ -183,21 +183,21 @@
       const data = JSON.parse(await file.text());
       if (data.format !== "clipforge-project" || !Array.isArray(data.clips)) throw new Error("Invalid ClipForge project file.");
       snapshot();
-      const assets = new Map(S.media.map(x => [x.name,x]));
+      const findAsset = saved => S.media.find(m => m.name === saved.name && (!saved.sourceSize || m.file?.size === saved.sourceSize) && (!saved.sourceLastModified || m.file?.lastModified === saved.sourceLastModified) && (!saved.sourceType || m.file?.type === saved.sourceType)) || S.media.find(m => m.name === saved.name);
       const missing = [];
       S.clips = data.clips.flatMap(saved => {
-        const m = assets.get(saved.name);
+        const m = findAsset(saved);
         if (!m) { missing.push(saved.name); return []; }
-        return [{...saved,id:uid(),track:Math.min(8,Math.max(1,Number(saved.track)||1)),video:m.video || null,image:m.image || null,url:m.url,kind:m.kind}];
+        return [{...saved,id:uid(),file:m.file || null,track:Math.min(8,Math.max(1,Number(saved.track)||1)),video:m.video || null,image:m.image || null,url:m.url,kind:m.kind}];
       });
       S.titles = (data.titles || []).map(x => ({...x,id:uid()}));
       S.overlays = (data.overlays || []).map(x => ({...x,id:uid()}));
       S.captions = (data.captions || []).map(x => ({...x,id:uid()}));
       const savedAudio = data.audioTracks || (data.audio ? [data.audio] : []);
       S.audioTracks = savedAudio.flatMap(saved => {
-        const m = assets.get(saved.name);
+        const m = findAsset(saved);
         if (!m || !m.audio) { if (saved.name) missing.push(saved.name); return []; }
-        return [{...saved,id:uid(),audio:m.audio,url:m.url}];
+        return [{...saved,id:uid(),file:m.file || null,audio:m.audio,url:m.url}];
       });
       S.audio = S.audioTracks[0] || null;
       if ($("stRatio") && data.ratio) $("stRatio").value = data.ratio;
