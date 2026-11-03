@@ -1680,3 +1680,98 @@ body.solo[data-tool="editor"] #editorTool .st-timeline-foot { border-top: 1px so
   body.solo[data-tool="editor"] #editorTool .st-inspector { min-height: 260px !important; }
   body.solo[data-tool="editor"] #editorTool .st-timeline-panel { min-height: 300px !important; }
 }
+
+
+/* Final NLE panel geometry — match the familiar Premiere editing workspace. */
+body.solo[data-tool="editor"] #editorTool .st-pro-main {
+  display:grid!important;
+  grid-template-columns:38px minmax(260px,31%) minmax(0,1fr)!important;
+  grid-template-rows:minmax(260px,54%) minmax(230px,46%)!important;
+  gap:7px!important;
+  height:calc(100dvh - 101px)!important;
+  min-height:0!important;
+  padding:7px!important;
+  box-sizing:border-box!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-pro-stage,
+body.solo[data-tool="editor"] #editorTool .st-monitor-pair { display:contents!important; }
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail {
+  grid-column:1!important;grid-row:2!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  gap:7px!important;padding:8px 3px!important;min-height:0!important;
+  background:#111820!important;border:1px solid #303b48!important;border-radius:3px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail button {
+  width:30px!important;height:30px!important;display:grid!important;place-items:center!important;
+  padding:0!important;border:1px solid #3a4653!important;border-radius:3px!important;
+  background:#202a35!important;color:#c8d0d9!important;font-size:14px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail button.active {
+  background:#284b70!important;border-color:#5793d0!important;color:#fff!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-rail-brand {padding:4px 0 8px!important;color:#75c5f3!important}
+body.solo[data-tool="editor"] #editorTool .st-assets {
+  grid-column:2!important;grid-row:2!important;
+  width:auto!important;height:100%!important;min-height:0!important;max-height:none!important;
+  overflow:auto!important;padding:9px!important;
+  background:#171b20!important;border:1px solid #343b43!important;border-radius:3px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-panel {
+  grid-column:2!important;grid-row:1!important;
+  display:flex!important;flex-direction:column!important;gap:5px!important;
+  min-width:0!important;min-height:0!important;height:100%!important;max-height:none!important;
+  padding:8px!important;background:#171b20!important;border:1px solid #343b43!important;border-radius:3px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-preview-panel {
+  grid-column:3!important;grid-row:1!important;
+  display:flex!important;flex-direction:column!important;
+  min-width:0!important;min-height:0!important;height:100%!important;max-height:none!important;
+  padding:8px!important;background:#171b20!important;border:1px solid #343b43!important;border-radius:3px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-view {
+  flex:1 1 0!important;min-height:100px!important;max-height:none!important;
+  background:#080a0d!important;border:1px solid #343b43!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-inspector {
+  display:flex!important;flex:0 1 44%!important;flex-direction:column!important;
+  min-height:95px!important;max-height:44%!important;overflow:hidden!important;
+  padding:7px!important;border-top:1px solid #3b4651!important;background:#171b20!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-inspector-body {
+  min-height:0!important;overflow:auto!important;display:block!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-inspector-tabs {flex:0 0 auto!important}
+body.solo[data-tool="editor"] #editorTool .st-timeline-panel {
+  grid-column:3!important;grid-row:2!important;
+  width:auto!important;height:100%!important;min-width:0!important;min-height:0!important;
+  max-height:none!important;overflow:hidden!important;
+  padding:7px!important;background:#111820!important;border:1px solid #343b43!important;border-radius:3px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-timeline-top {flex:0 0 34px!important;min-height:34px!important}
+body.solo[data-tool="editor"] #editorTool .st-timeline-scroll {flex:1 1 0!important;min-height:0!important;max-height:none!important;overflow:auto!important}
+body.solo[data-tool="editor"] #editorTool .st-track-label {min-width:82px!important}
+body.solo[data-tool="editor"] #editorTool .st-panel-title {color:#c1cbd5!important;font-size:10px!important;letter-spacing:.045em!important}
+body.solo[data-tool="editor"] #editorTool .st-tool-shelf {margin:7px 0!important}
+body.solo[data-tool="editor"] #editorTool .st-tool-tabs {grid-template-columns:repeat(2,minmax(0,1fr))!important}
+body.solo[data-tool="editor"] #editorTool .st-import {min-height:48px!important}
+body.solo[data-tool="editor"] #editorTool .st-media {max-height:calc(100% - 210px)!important;overflow:auto!important}
+body.solo[data-tool="editor"] #editorTool .st-canvas-wrap {flex:1 1 0!important;min-height:0!important;max-height:none!important;background:#080a0d!important}
+body.solo[data-tool="editor"] #editorTool .st-transport {flex:0 0 34px!important;min-height:34px!important}
+body.solo[data-tool="editor"] #editorTool .st-clip-block {border-radius:2px!important}
+@media(max-width:1050px) and (min-width:761px) {
+ body.solo[data-tool="editor"] #editorTool .st-pro-main {grid-template-columns:32px minmax(210px,30%) minmax(0,1fr)!important;grid-template-rows:minmax(240px,52%) minmax(230px,48%)!important}
+ body.solo[data-tool="editor"] #editorTool .st-inspector {max-height:40%!important}
+}
+@media(max-width:760px) {
+ body.solo[data-tool="editor"] #editorTool {height:auto!important;min-height:100dvh!important;overflow:visible!important}
+ body.solo[data-tool="editor"] #editorTool .st-pro-main {display:flex!important;flex-direction:column!important;height:auto!important;min-height:0!important}
+ body.solo[data-tool="editor"] #editorTool .st-pro-stage,
+ body.solo[data-tool="editor"] #editorTool .st-monitor-pair {display:contents!important}
+ body.solo[data-tool="editor"] #editorTool .st-vertical-rail {grid-column:auto!important;grid-row:auto!important;flex-direction:row!important;overflow-x:auto!important}
+ body.solo[data-tool="editor"] #editorTool .st-assets,
+ body.solo[data-tool="editor"] #editorTool .st-source-panel,
+ body.solo[data-tool="editor"] #editorTool .st-preview-panel,
+ body.solo[data-tool="editor"] #editorTool .st-timeline-panel {width:100%!important;min-height:260px!important;height:auto!important;max-height:none!important}
+ body.solo[data-tool="editor"] #editorTool .st-inspector {max-height:360px!important}
+ body.solo[data-tool="editor"] #editorTool .st-source-view {min-height:160px!important}
+}
