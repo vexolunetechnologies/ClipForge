@@ -326,7 +326,10 @@
   }
 
   const originalRender = api.render;
-  api.render = function() { originalRender(); renderLanes(); actions(); inspectExtra(); inspectClip(); };
+  // app.js owns the single authoritative NLE timeline. The legacy lane
+  // renderer duplicated every track and distorted sequence layout, so only
+  // retain its inspector extensions and creative tools.
+  api.render = function() { originalRender(); actions(); inspectExtra(); inspectClip(); };
   api.drawExtras = drawExtras;
   window.addEventListener("clipforge:image-imported", event => {
     const a = event.detail;
@@ -377,10 +380,8 @@
 
 
   actions();
-  renderLanes();
   const inner = $("stInner");
   if (inner) {
-    new MutationObserver(() => { renderLanes(); }).observe(inner, { childList:true, subtree:true });
     if (!inner.dataset.mediaDropReady) {
       inner.dataset.mediaDropReady = "1";
       inner.addEventListener("dragover", event => {
