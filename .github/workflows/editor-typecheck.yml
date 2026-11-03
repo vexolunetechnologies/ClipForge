@@ -3,6 +3,7 @@ name: ClipForge Editor TypeScript
 on:
   push:
     branches:
+      - main
       - feature/editor-phase-1-layout
   pull_request:
     branches:
