@@ -1101,3 +1101,33 @@ body[data-page="workspace"][data-tool="editor"] #editorTool{display:block!import
   #tools .toolcard{padding:18px!important}
 }
 /* ===== End complete tool-card content visibility pass ===== */
+
+
+/* ===== Flagship ClipForge Studio: dedicated full-screen editing app ===== */
+body.solo[data-tool="editor"]{overflow:hidden!important;background:#080d18!important}
+body.solo[data-tool="editor"] header{display:none!important}
+body.solo[data-tool="editor"] .wrap{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;height:100dvh!important;overflow:auto!important}
+body.solo[data-tool="editor"] #editorTool{display:block!important;width:100%!important;max-width:none!important;min-height:100dvh!important;margin:0!important;padding:0 22px 28px!important;box-sizing:border-box!important}
+body.solo[data-tool="editor"] #editorTool>.cf-studio-topbar{position:sticky;top:0;z-index:120;display:flex;align-items:center;gap:18px;min-height:58px;margin:0 -22px 18px;padding:0 24px;background:rgba(8,13,24,.96);border-bottom:1px solid rgba(148,163,184,.18);backdrop-filter:blur(16px)}
+.cf-studio-brand{display:flex;align-items:center;gap:10px;color:#f3f6ff!important;text-decoration:none;font-size:13px;font-weight:900;letter-spacing:.08em}
+.cf-studio-mark{display:grid;place-items:center;width:29px;height:29px;border-radius:9px;background:linear-gradient(135deg,#8b7cff,#42cfe0);color:white;font-size:13px}
+.cf-studio-brand b{color:#61dce7}
+.cf-studio-mode{padding:5px 9px;border:1px solid rgba(148,163,184,.2);border-radius:6px;color:#8fa1bf;font-size:9px;font-weight:800;letter-spacing:.16em}
+.cf-studio-exit{margin-left:auto;padding:8px 12px;border:1px solid rgba(148,163,184,.22);border-radius:8px;color:#dce5f7!important;text-decoration:none;font-size:11px;font-weight:750}
+.cf-studio-exit:hover{background:rgba(139,124,255,.16)}
+body.solo[data-tool="editor"] #editorTool>.cf-panel,
+body.solo[data-tool="editor"] #editorTool>.cf-grid{max-width:1600px;margin-left:auto;margin-right:auto}
+body.solo[data-tool="editor"] #editorTool>.cf-grid{grid-template-columns:minmax(0,1.55fr) minmax(280px,.75fr)!important;gap:16px!important}
+body.solo[data-tool="editor"] #editorTool .cf-preview{width:100%;max-height:58vh;object-fit:contain;background:#050812}
+body.solo[data-tool="editor"] #editorTool>.cf-muted{max-width:1600px;margin:14px auto;color:#8393ad}
+#tools .studio-toolcard{position:relative;border:1px solid rgba(139,124,255,.42)!important;background:radial-gradient(ellipse at 90% 0%,rgba(77,216,232,.13),transparent 48%),linear-gradient(145deg,#171d36,#101827)!important;box-shadow:0 18px 46px rgba(35,35,90,.18)!important}
+#tools .studio-toolcard:before{content:"FLAGSHIP EDITOR";display:inline-flex;align-self:flex-start;margin:0 0 12px;padding:5px 8px;border-radius:6px;background:linear-gradient(100deg,#8b7cff,#4d9ffb);color:#fff;font-size:9px;font-weight:900;letter-spacing:.12em}
+#tools .studio-toolcard .tool-icon{width:46px;height:46px;margin-bottom:10px;border-radius:13px;background:linear-gradient(135deg,#8b7cff,#4dd8e8);color:#07101c;font-size:23px}
+#tools .studio-toolcard h3{font-size:23px!important;letter-spacing:-.04em}
+@media(max-width:900px){
+ body.solo[data-tool="editor"] #editorTool{padding:0 12px 20px!important}
+ body.solo[data-tool="editor"] #editorTool>.cf-studio-topbar{margin:0 -12px 14px;padding:0 14px;min-height:54px}
+ body.solo[data-tool="editor"] #editorTool>.cf-grid{grid-template-columns:minmax(0,1fr)!important}
+ body.solo[data-tool="editor"] #editorTool .cf-preview{max-height:42vh}
+ .cf-studio-mode{display:none}
+}
