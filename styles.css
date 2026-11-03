@@ -913,3 +913,9 @@ footer .brand,footer p,footer a{color:var(--muted)!important}
 #tools h2{margin-top:12px}
 @media(max-width:800px){.hero-banner{grid-template-columns:1fr;gap:8px;min-height:unset}.hero-visual{max-width:520px;width:100%;margin:0 auto}.hero-screen{height:155px}.hero-window{transform:none}.hero-float{right:0}.capability-strip{grid-template-columns:repeat(2,1fr)}.capability-strip div:nth-child(2){border-right:0}.capability-strip div:nth-child(3){border-top:1px solid var(--line);padding-top:12px}.capability-strip div:nth-child(4){border-top:1px solid var(--line);padding-top:12px}}
 @media(max-width:480px){.hero-banner{padding:22px!important;border-radius:19px}.hero-banner h1{font-size:39px!important}.hero-proof{gap:8px;display:grid}.hero-visual{padding:8px 0 18px}.hero-screen{height:140px}.capability-strip{padding:10px}.capability-strip b{font-size:15px}.studio-toolcard{min-height:unset}}
+
+/* Keep the public creative homepage centered; no phantom sidebar gutter. */
+@media(min-width:901px){
+ .wrap{width:min(100% - 48px,1240px)!important;max-width:1240px!important;margin-left:auto!important;margin-right:auto!important}
+ .nav{max-width:1240px!important}
+}
