@@ -83,8 +83,7 @@
       </div>
       <div class="st-tool-pane" data-st-pane="transitions" hidden>
         <p>Choose a transition treatment for the selected video clip.</p>
-        <button type="button" class="st-tool-action" data-st-transition="fade">Fade in / out</button>
-        <button type="button" class="st-tool-action secondary" data-st-transition="none">No transition</button>
+        <div class="st-effect-grid"><button type="button" data-st-transition="fade">Fade</button><button type="button" data-st-transition="wipe-left">Wipe left</button><button type="button" data-st-transition="wipe-right">Wipe right</button><button type="button" data-st-transition="zoom">Zoom</button><button type="button" data-st-transition="none">None</button></div>
         <small class="st-hint">More transition types will be added after the core timeline and renderer are hardened.</small>
       </div>`;
     const mediaTitle = assets.querySelector(".st-panel-title");
