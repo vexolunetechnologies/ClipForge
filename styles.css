@@ -1287,3 +1287,8 @@ body.studio-app #editorTool .st-playhead{z-index:12;box-shadow:0 0 9px rgba(255,
 
 .st-appbar .st-btn:disabled{opacity:.38!important;cursor:not-allowed!important;filter:saturate(.4)}
 .st-project-name-wrap input:disabled{opacity:.65;cursor:default}
+
+.st-media-item[draggable="true"]{cursor:grab}
+.st-media-item.is-dragging{opacity:.42}
+.st-lane.st-drop-target .st-lane-content{background:rgba(139,124,255,.13);outline:1px dashed rgba(139,124,255,.75);outline-offset:-2px}
+.st-lane.st-drop-target .st-track-label{color:#b9b0ff}
