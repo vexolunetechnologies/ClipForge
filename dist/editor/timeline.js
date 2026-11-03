@@ -66,6 +66,8 @@
       + '<label class="st-tool st-file-action">Import subtitles (.srt / .vtt)<input id="stSubFile" type="file" accept=".srt,.vtt,text/vtt" hidden></label>'
       + '<div class="st-panel-title st-spaced">TIMELINE</div>'
       + '<label class="st-toggle"><input id="stSnap" type="checkbox" checked> Snap to clips</label>'
+      + '<label class="st-prop"><span>Export resolution</span><select id="stQuality"><option value="480">480p</option><option value="720" selected>720p</option><option value="1080">1080p</option></select></label>'
+      + '<label class="st-prop"><span>Frame rate</span><select id="stFps"><option value="24">24 FPS</option><option value="30" selected>30 FPS</option><option value="60">60 FPS</option></select></label>'
       + '<button class="st-tool" id="stProjectSave">↓ Export project file</button>'
       + '<label class="st-tool st-file-action">Load project file<input id="stProjectLoad" type="file" accept=".clipforge,.json,application/json" hidden></label>'
       + '<small class="st-hint">Project files store edit decisions only. Re-import original media after loading. Nothing is uploaded or autosaved.</small>';
