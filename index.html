@@ -2,7 +2,7 @@
 <!--
   ClipForge Studio: one single page (HTML + CSS + JavaScript in one file)
   Turns a long video into shorts, makes trailers, and animates pictures.
-  Everything runs inside the browser; videos never leave the device.
+  Video media stays on the device; dialogue transcripts are sent securely for AI moment selection.
 
   FILE MAP (search for these markers):
     1. HEAD    page title and fonts
@@ -84,7 +84,7 @@
 </section>
 <!-- ===== CREATIVE WORKSPACES: all ClipForge tools ===== -->
 <section id="tools"><div class="section-heading"><span class="hero-eyebrow"><i></i> PICK YOUR WORKFLOW</span><h2>One studio. Six ways to create.</h2><p>Start with a quick automated workflow or open the full editor when you need more control.</p></div><div class="grid tools">
- <a class="card toolcard" href="#shorts"><span class="ttag">9:16 · vertical</span><h3>Long Video → Shorts</h3><ul><li>Best moments spread across the whole video</li><li>Smart reframe that follows faces, steady per shot</li><li>Auto captions: English, Urdu, Hindi (Whisper, on device)</li><li>Dialogue-only trim: cuts the gaps between spoken lines</li><li>Skips scenes with logos and sponsor banners</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard" href="#shorts"><span class="ttag">9:16 · vertical</span><h3>Long Video → Shorts</h3><ul><li>AI understands dialogue and selects engaging moments</li><li>Smart reframe that follows faces, steady per shot</li><li>Auto captions: English, Urdu, Hindi (Whisper, on device)</li><li>Dialogue-only trim: cuts the gaps between spoken lines</li><li>Skips scenes with logos and sponsor banners</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
  <a class="card toolcard" href="#trailer"><span class="ttag">16:9 · wide or 9:16</span><h3>Trailer / Promo</h3><ul><li>45, 60 or 90 second trailer from the strongest moments</li><li>Title, tagline and “Releasing on” end card (your text)</li><li>Built-in sound effects: whooshes, impacts, riser</li><li>Review and remove parts before exporting</li><li>Skips logo and banner scenes, avoids end spoilers</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
  <a class="card toolcard" href="#animator"><span class="ttag">9:16 · 16:9 · 1:1</span><h3>Image Animator</h3><ul><li>Add many pictures and describe the camera motion in a prompt</li><li>Crossfades between pictures, 2 minutes or any length you ask for</li><li>Built-in music and sound effects, chosen from your prompt</li><li>Record your voice or add a voiceover file</li><li>MP4 export (WebM if your browser cannot make MP4)</li><li>Camera motion only: people and objects in a picture do not move</li></ul><span class="go">Open tool →</span></a>
  <a class="card toolcard" href="#reverse"><span class="ttag">Any size · MP4</span><h3>Reverse Video</h3><ul><li>Upload a video and get it back playing backwards</li><li>The sound can be reversed too, or removed</li><li>Pick the size: original, up to 1080p or up to 720p</li><li>Keeps your video's own frame rate</li><li>Everything stays on your device</li><li>Rebuilt frame by frame, so best for clips up to a few minutes</li></ul><span class="go">Open tool →</span></a>
@@ -99,6 +99,7 @@
 <div class="row" id="tooltabs" role="tablist" aria-label="Tool"><button type="button" class="chip on" data-tool="shorts" role="tab">Long Video → Shorts</button><button type="button" class="chip" data-tool="trailer" role="tab">Trailer / Promo</button></div>
 <!-- Step 1: choose a video file (tap or drag and drop) -->
 <label class="drop" id="drop"><input type="file" id="file" accept="video/*"><b>Choose a video</b>tap here or drop a file</label>
+<p class="note ai-privacy-note">Your video stays on your device. For AI dialogue selection, only the speech transcript and timestamps are sent to ClipForge’s Cloudflare AI service.</p>
 <!-- ...or paste a direct video link -->
 <div class="row" style="margin-top:10px"><input type="url" id="lnk" placeholder="…or paste a direct video link (.mp4)" style="flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit"><button class="sm" id="lgo">Load</button></div><p class="note" id="lmsg"></p>
 <!-- Work area: appears after a video is loaded -->
@@ -153,7 +154,7 @@
   <div id="logoTrailer" hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div>
   <p class="note">Checks sample frames for static logos, sponsor banners and still title cards, and replaces those shorts with other picks. It cannot recognise a brand product that appears inside a normal scene.</p></div>
 <!-- Main button: analyze the video and create the plan, with progress bar and Stop button -->
-  <button class="main" id="go">Analyze &amp; create plan</button>
+  <button class="main" id="go">Find AI-selected moments</button>
   <div class="bar hide" id="pbar"><i></i></div><button class="sm hide" id="stop" style="margin-top:8px">Stop</button><button class="sm" id="skipAlign2" hidden style="margin-top:8px;margin-left:8px">Skip dialogue alignment</button><p class="note" id="msg"></p>
  </div>
 <!-- Shorts result list (filled by JavaScript) -->
@@ -235,7 +236,7 @@
 <section id="faq"><h2>FAQ</h2>
 <details><summary>Why does export take as long as the clip?</summary><p>Clips are recorded in real time from the player, so a 30 second short takes about 30 seconds. Keep the page open and the screen on while exporting.</p></details>
 <details><summary>Why did it pick the same moments before?</summary><p>Older versions ranked by raw loudness, which favors theme music and intros. Now speech activity and peaks relative to the scene around them are used, intro and credits are skipped, and picks are spread across the video. Tap “Different picks” for a new set.</p></details>
-<details><summary>Is the analysis AI?</summary><p>It is signal analysis: speech activity, loudness peaks, motion and opening strength. It finds energetic moments, not meaning, so review the plan before exporting.</p></details>
+<details><summary>How does AI moment selection work?</summary><p>Whisper transcribes speech on your device. Cloudflare Workers AI analyses the transcript for context, strong hooks, emotional turns and memorable dialogue, then returns editable clip suggestions. The source video stays on your device; transcript text and timestamps are sent for analysis. AI suggestions can still need human review.</p></details>
 <details><summary>How does Smart reframe work?</summary><p>Before a short is recorded, a small face detector (downloaded once) scans it for faces and scene cuts. Each shot then gets one steady 9:16 crop that follows the speaker only when they really move, and it jumps exactly on cuts. If the detector cannot load, it falls back to motion.</p></details>
 <details><summary>Can I load a YouTube link?</summary><p>No. Browsers cannot download YouTube videos, and its terms do not allow it. Download your own video from YouTube Studio and choose the file. Direct .mp4 links work if the site allows it.</p></details>
 <details><summary>How do auto captions work?</summary><p>A Whisper speech model runs inside your browser, only on the shorts you pick. The first run downloads the model. Urdu accuracy is much better with the Better or Best model. For large files, the short's audio is captured while the clip plays once, so it adds the clip length to prep time. In Export all, the next short's captions are prepared while the current one records.</p></details>
