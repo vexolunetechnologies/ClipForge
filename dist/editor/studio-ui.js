@@ -462,7 +462,7 @@
     menu.setAttribute("aria-label", "Studio menus");
     menu.innerHTML = `
       <details><summary>File</summary><div class="st-menu-pop"><button data-pro-command="import">Import media…</button><button data-pro-command="open">Open project…</button><button data-pro-command="save">Save project as…</button><button data-pro-command="export">Export video…</button></div></details>
-      <details><summary>Edit</summary><div class="st-menu-pop"><button data-pro-command="undo">Undo <kbd>Ctrl Z</kbd></button><button data-pro-command="redo">Redo <kbd>Ctrl Shift Z</kbd></button><button data-pro-command="split">Split clip <kbd>S</kbd></button><button data-pro-command="delete">Delete selected</button></div></details>
+      <details><summary>Edit</summary><div class="st-menu-pop"><button data-pro-command="undo">Undo <kbd>Ctrl Z</kbd></button><button data-pro-command="redo">Redo <kbd>Ctrl Shift Z</kbd></button><button data-pro-command="split">Add Edit / Cut <kbd>C</kbd></button><button data-pro-command="delete">Delete selected</button></div></details>
       <details><summary>Clip</summary><div class="st-menu-pop"><button data-pro-command="text">New text layer</button><button data-pro-command="caption">New caption</button><button data-pro-command="sticker">Add graphic / sticker</button></div></details>
       <details><summary>Sequence</summary><div class="st-menu-pop"><button data-pro-command="fit">Fit timeline to sequence</button><button data-pro-command="ratio">Cycle preview ratio</button></div></details>
       <details><summary>View</summary><div class="st-menu-pop"><button data-pro-command="fit">Fit timeline</button><button data-pro-command="inspector">Toggle Effect Controls</button></div></details>
@@ -530,7 +530,7 @@
       } else if (command === "inspector") {
         inspector.hidden = !inspector.hidden;
       } else if (command === "shortcuts") {
-        api.msg("Shortcuts: Space = play/pause · S = split · Ctrl/Cmd+Z = undo · Ctrl/Cmd+Shift+Z = redo · Ctrl/Cmd+S = save project · ←/→ = frame step.");
+        api.msg("Premiere-style shortcuts: C = cut at playhead · Backspace/Delete = remove selected clip · Space = play/pause · J/K/L = reverse/stop/play · ←/→ = frame step · Home/End = sequence start/end · Ctrl/Cmd+K = Add Edit · Ctrl/Cmd+Z = undo · Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y = redo · Ctrl/Cmd+S = export project file · Ctrl/Cmd+I = import media · Ctrl/Cmd+Shift+E = export video.");
       } else if (commands[command]) {
         $(commands[command])?.click();
       }
@@ -551,22 +551,5 @@
     voiceStream?.getTracks().forEach(track => track.stop());
   });
 
-  // Keep keyboard commands predictable and connected to the same undo stack.
-  document.addEventListener("keydown", event => {
-    if (event.target.matches("input,textarea,select,[contenteditable=true]")) return;
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
-      event.preventDefault();
-      (event.shiftKey ? $("stRedo") : $("stUndo"))?.click();
-    } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
-      event.preventDefault(); $("stProjectSave")?.click();
-    } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "o") {
-      event.preventDefault(); $("stProjectLoad")?.click();
-    } else if (!event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "s") {
-      event.preventDefault(); $("stSplit")?.click();
-    } else if (!event.ctrlKey && !event.metaKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
-      event.preventDefault(); api.stop();
-      const step = 1 / Math.max(1,Number(state.exportFps)||30);
-      api.seek(state.time + (event.key === "ArrowRight" ? step : -step));
-    }
-  });
+  // Keyboard shortcuts are centralized in app.js for one consistent command path.
 })();
