@@ -388,7 +388,7 @@ async function learnLogo(tok,lo,hi){const P=28,T=[],F=[],W=LG.W,H=LG.H;
    out.zones.push({name,idx,tm})}}
  return out}
 // Check every chosen clip for the learned logo and swap out clips that show it.
-async function logoFilter(tok){const{lo,hi}=LAST;say('Looking for logos and banners…');
+async function logoFilter(tok){if(LAST&&LAST.semanticPool){LAST.logoNote='AI-selected dialogue moments are preserved. Review visible logos in the preview.';return 0}const{lo,hi}=LAST;say('Looking for logos and banners…');
  if(!LAST.logoL)LAST.logoL=await learnLogo(tok,lo,hi);const L=LAST.logoL;LAST.logoNote='';
  if(L.persist.length)LAST.logoNote='A logo shows on almost every frame ('+L.persist.join(', ')+'). It cannot be avoided by choosing other scenes; Smart reframe or center crop often removes a corner logo.';
  if(!L.zones.length){if(!L.persist.length)LAST.logoNote='No repeating logo was found in this video, so nothing was skipped.';return 0}
@@ -638,7 +638,7 @@ $('#go').onclick=async()=>{
  try{
   const dur=v.duration,D=Math.ceil(dur);LAST=null;
   if(S.len==='full'){clips=[{s:0,e:dur,score:null,tags:['Full video'],full:1,blob:null,pcm:null}];const mb=Math.round((S.res==='1080'?8:4)/8*dur);say('Full video: '+Math.round(dur/60)+' min of real-time export, roughly '+mb+' MB. Keep this screen on.')}
-  else if(S.mode==='even'){clips=evenPlan(dur,PL,S.n).map(x=>({...x,score:null,tags:[],blob:null,pcm:null}));say('Split into '+clips.length+' shorts.')}
+  else if(S.tool==='trailer'&&S.mode==='even'){clips=evenPlan(dur,PL,S.n).map(x=>({...x,score:null,tags:[],blob:null,pcm:null}));say('Split into '+clips.length+' trailer parts.')}
   else{
    let lo=0,hi=D;if(S.skip==='on'&&D>300){lo=Math.min(90,Math.round(D*.04));hi=D-Math.min(120,Math.round(D*.05))}
    let A=null,M=null;
@@ -649,7 +649,7 @@ $('#go').onclick=async()=>{
    else if(S.deep==='1'){say('Scanning motion…');M=(await probeScan(D,lo,hi,8,false,true,tok)).M}
    alive(tok);
    if(!A&&!M)throw new Error('Could not read audio or video frames from this file.');
-   LAST={D,lo,hi,dur,seen:[],C:comps(A,M,D)};clips=doPlan(false);
+   LAST={D,lo,hi,dur,seen:[],C:comps(A,M,D)};if(S.tool==='shorts'){say('Understanding dialogue with AI…');clips=await semanticShortPlan(tok,dur)}else clips=doPlan(false);
    if(S.logo==='on'&&v.videoWidth){try{const dn=await logoFilter(tok);$('#capnote').textContent=(dn?'Replaced '+dn+' short(s) that showed a logo. ':'')+(LAST.logoNote||'')}catch(e){if(e.message==='Stopped')throw e;$('#capnote').textContent='Logo check skipped: '+(e.message||e)}}
    if(!clips.length)throw new Error('No moments found. Try a shorter length.');
    say(clips.length<S.n?'Only '+clips.length+' non-overlapping shorts fit. Try a shorter length.':'Found '+clips.length+' moments spread across the video. Tap "Different picks" for another set.')}
@@ -657,13 +657,14 @@ $('#go').onclick=async()=>{
  }catch(e){if(e.message!=='Stopped'){say('Analysis failed: '+(e.message||e));err('Analysis failed: '+(e.message||e))}}
  if(tok===RUN){setTimeout(()=>$('#pbar').classList.add('hide'),600);busy=false;lock(false)}};
 // "Different picks" button: build a new plan with some random variety.
-$('#shuf').onclick=()=>{if(busy||!LAST)return;clips=doPlan(true);render();say('New set of picks.')};
+$('#shuf').onclick=()=>{if(busy||!LAST)return;if(LAST.semanticPool&&LAST.semanticPool.length){const pool=LAST.semanticPool,n=S.n==='auto'?Math.min(10,Math.max(3,Math.round((LAST.dur||180)/180))):Math.max(1,Math.min(50,+S.n||3)),start=LAST.semanticCursor||0;clips=Array.from({length:Math.min(n,pool.length)},(_,i)=>{const q=pool[(start+i)%pool.length];return{...q,tags:[...q.tags],blob:null,pcm:null,cap:false}});LAST.semanticCursor=(start+clips.length)%pool.length;render();say('Showing another set of AI-selected dialogue moments.')}else{clips=doPlan(true);render();say('New set of picks.')}};
 
 // Draw the list of shorts (thumbnail, score, tags, Export / Save buttons).
 function render(){
  const L=$('#list');L.innerHTML='';$('#rtitle').textContent=clips.length+' shorts';$('#shuf').classList.toggle('hide',!LAST);
  clips.forEach((c,i)=>{const r=document.createElement('div');r.className='clip';
   r.innerHTML='<video class="thumb" muted playsinline preload="metadata"></video><div class="info"><b>'+(c.full?'Full video':'Short '+(i+1))+(c.score!=null?' <span class="score">'+c.score+'</span>':'')+c.tags.map(t=>'<span class="tag">'+t+'</span>').join('')+'</b><span class="t">'+fmt(c.s)+' – '+fmt(c.e)+' ('+Math.round(c.e-c.s)+'s)</span><div class="bar"><i></i></div></div>';
+  if(c.ai&&c.reason){const why=document.createElement('span');why.className='ai-reason';why.textContent=c.reason;r.querySelector('.info').append(why)}
   const th=r.querySelector('.thumb');
   if(c.blob){th.src=URL.createObjectURL(c.blob);th.onclick=()=>th.paused?th.play():th.pause();r.querySelector('.bar i').style.width='100%'}else th.src=url+'#t='+(c.s+.1);
   const tr=document.createElement('div');tr.className='row';tr.style.marginTop='6px';
@@ -813,6 +814,31 @@ function loadASR(){const m=S.model;if(ASRP[m])return ASRP[m];
 async function transcribe(pcm){const p=await loadASR(),o={task:'transcribe',chunk_length_s:30,stride_length_s:5,return_timestamps:true};if(S.lang!=='auto')o.language=S.lang;
  const secs=pcm.length/16000;stat('cap','transcribing…');
  const r=await guard(p(pcm,o),120000+secs*10000,'Transcription');return r.chunks||[]}
+
+const SEMANTIC_ENDPOINT='/api/v1/shorts/semantic-plan';
+// Whisper runs locally; only transcript text and timestamps are sent for semantic ranking.
+async function semanticShortPlan(tok,dur){
+ if(!AUD||!AUD.length)throw new Error('AI dialogue analysis needs a full audio read. This file is too large for safe on-device transcription; try a shorter or smaller source video.');
+ const raw=await transcribe(AUD);alive(tok);
+ const segments=(raw||[]).map(q=>{
+  const st=Number(q.timestamp&&q.timestamp[0]),en=Number(q.timestamp&&q.timestamp[1]);
+  return{start:Number.isFinite(st)?Math.max(0,st):0,end:Number.isFinite(en)&&en>st?Math.min(dur,en):Math.min(dur,(Number.isFinite(st)?st:0)+3),text:normalizeCaptionText(q.text)};
+ }).filter(q=>q.text&&q.end>q.start);
+ if(!segments.length)throw new Error('No clear dialogue was detected. Check that the video has audible speech.');
+ if(segments.length>2500)throw new Error('This video has too much dialogue for one analysis pass. Try a shorter section first.');
+ const wanted=S.n==='auto'?Math.min(10,Math.max(3,Math.round(dur/180))):Math.max(1,Math.min(50,+S.n||3));
+ stat('ai','understanding dialogue and finding the strongest moments…');
+ const response=await guard(fetch(SEMANTIC_ENDPOINT,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({duration:dur,targetLength:PL,count:wanted,language:S.lang,segments})}),120000,'AI dialogue analysis');
+ let data={};try{data=await response.json()}catch(e){}
+ alive(tok);
+ if(!response.ok)throw new Error(data.error||('AI analysis failed ('+response.status+').'));
+ const pool=(data.clips||[]).map(q=>({s:Number(q.start),e:Number(q.end),score:Math.max(0,Math.min(100,Math.round(Number(q.score)||0))),tags:[String(q.category||'AI selected').slice(0,32)],reason:String(q.reason||'').slice(0,240),hook:String(q.hook||'').slice(0,120),blob:null,pcm:null,cap:false,ai:true}))
+  .filter(q=>Number.isFinite(q.s)&&Number.isFinite(q.e)&&q.s>=0&&q.e<=dur&&q.e-q.s>=8&&q.e-q.s<=95);
+ if(!pool.length)throw new Error('AI could not find enough strong dialogue moments. Try another source or a longer target length.');
+ pool.sort((a,b)=>b.score-a.score);LAST.semanticPool=pool;LAST.semanticCursor=Math.min(wanted,pool.length);
+ stat('ai','');return pool.slice(0,wanted).map(q=>({...q,tags:[...q.tags]}));
+}
+
 // Phrases Whisper invents on silence (like "thanks for watching"); they are removed.
 const JUNK=/^(thanks? for watching|thank you( so much)?( for watching)?|please subscribe|subscribe|bye|you|\.+|music|\[.*\]|\(.*\)|♪.*)[.!\s]*$/i;
 // Normalize common Arabic-codepoint variants that Whisper sometimes emits in Urdu transcripts.
