@@ -916,6 +916,70 @@ footer .brand,footer p,footer a{color:var(--muted)!important}
 
 
 
+/* ===== Tool catalogue visibility and card layout fix ===== */
+#tools{
+ display:block!important;
+ width:100%!important;
+ min-width:0!important;
+ position:relative!important;
+}
+#tools .section-heading{
+ display:block!important;
+ visibility:visible!important;
+}
+#tools .tools,
+#tools>.grid.tools{
+ display:grid!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:20px!important;
+ width:100%!important;
+ align-items:stretch!important;
+}
+#tools .toolcard{
+ display:flex!important;
+ flex-direction:column!important;
+ align-items:stretch!important;
+ justify-content:flex-start!important;
+ min-width:0!important;
+ min-height:250px!important;
+ height:100%!important;
+ visibility:visible!important;
+ opacity:1!important;
+ color:var(--text)!important;
+ position:relative!important;
+}
+#tools .toolcard>*{
+ position:relative;
+ z-index:1;
+ visibility:visible!important;
+}
+#tools .toolcard h3,
+#tools .toolcard p,
+#tools .toolcard li,
+#tools .toolcard .ttag,
+#tools .toolcard .go{
+ display:block;
+ visibility:visible!important;
+ opacity:1!important;
+}
+#tools .toolcard h3{color:var(--text)!important}
+#tools .toolcard p,
+#tools .toolcard li{color:var(--muted)!important}
+#tools .toolcard .go{margin-top:auto;color:var(--accent-2)!important}
+body[data-page="tools"] #tools{display:block!important}
+@media(min-width:901px) and (max-width:1199px){
+ #tools .tools,#tools>.grid.tools{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:900px){
+ #tools .tools,#tools>.grid.tools{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+ #tools .toolcard{min-height:220px!important;padding:16px!important}
+}
+@media(max-width:560px){
+ #tools .tools,#tools>.grid.tools{grid-template-columns:minmax(0,1fr)!important}
+ #tools .toolcard{min-height:unset!important}
+}
+/* ===== End tool catalogue visibility fix ===== */
+
 /* ===== Single, unified ClipForge navigation and page layout ===== */
 .cf-main-nav{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:5px!important}
 .cf-nav-label{padding:9px 12px 4px!important;color:#7585a4!important;font-size:9px!important;font-weight:850!important;letter-spacing:.16em!important}
