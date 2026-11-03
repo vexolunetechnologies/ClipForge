@@ -1768,7 +1768,7 @@ if(!root.dataset.proShortcutsReady){
  };
  const zoomBy=amount=>{const z=$('stZoom');if(!z)return;z.value=String(Math.max(.2,Math.min(180,Number(z.value)+amount)));z.dispatchEvent(new Event('input',{bubbles:true}))};
  const setRailTab=tab=>root.querySelector('[data-rail-tab="'+tab+'"]')?.click();
- root.addEventListener('keydown',event=>{
+ document.addEventListener('keydown',event=>{
   if(!document.body.classList.contains('solo')||document.body.dataset.tool!=='editor')return;
   const target=event.target,typing=target.matches('input,textarea,select,[contenteditable=true]')||target.isContentEditable;
   if(typing)return;
