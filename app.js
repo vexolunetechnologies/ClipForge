@@ -1730,36 +1730,3 @@ document.addEventListener('click',e=>{if(e.target.closest('#theme'))requestAnima
 sync();
 })();
 
-/* ===== Unified ClipForge page router =====
-   One page-state controller keeps the home, Tools directory and all six workspaces consistent. */
-(function(){
- 'use strict';
- const toolIds=['shorts','trailer','animator','reverse','montage','editor'];
- function syncPage(){
-  const hash=(location.hash||'#top').slice(1);
-  const isTool=hash==='tools';
-  const isWorkspace=toolIds.includes(hash);
-  const page=isWorkspace?'workspace':isTool?'tools':'home';
-  document.body.dataset.page=page;
-  // Enforce the Tools directory as a separate route; never leave its cards visible on Home.
-  const toolsSection=document.getElementById('tools');
-  if(toolsSection)toolsSection.style.setProperty('display',page==='tools'?'block':'none','important');
-  document.body.classList.toggle('solo',isWorkspace);
-  if(isWorkspace)document.body.dataset.tool=hash;
-  else if(page==='home'||page==='tools')document.body.dataset.tool='shorts';
-  document.querySelectorAll('[data-sidebar-tool]').forEach(link=>{
-   const active=link.dataset.sidebarTool===hash;
-   link.classList.toggle('active',active);
-   if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
-  });
-  document.querySelectorAll('.cf-side-link[href="#tools"]').forEach(link=>{
-   const active=isTool;link.classList.toggle('active',active);
-   if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
-  });
-  if(page==='home')document.title='ClipForge Studio – Creative Workspace';
-  if(page==='tools')document.title='All Creative Tools – ClipForge Studio';
- }
- window.addEventListener('hashchange',syncPage);
- window.addEventListener('pageshow',syncPage);
- syncPage();
-})();
