@@ -1662,7 +1662,7 @@ function timeline(){
  const playhead=$('stPlayhead');
  $('stRuler').style.width=(w-150)+'px';
  inner.querySelectorAll('.st-lane').forEach(lane=>lane.remove());
- const step=S.zoom>=125?1:S.zoom>=70?2:S.zoom>=38?5:10;
+ const step=[1,2,5,10,15,30,60,120,300,600,1200,1800].find(value=>value*S.zoom>=80)||3600;
  let ticks='';for(let t=0;t<=d+step;t+=step)ticks+='<span style="left:'+(t*S.zoom)+'px">'+fmt(t)+'</span>';
  $('stRuler').innerHTML=ticks;
  $('stZoom').value=String(S.zoom);
