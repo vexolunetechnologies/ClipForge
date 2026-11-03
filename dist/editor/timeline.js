@@ -69,10 +69,12 @@
   function renderLanes() {
     if (!$("stInner")) return;
     lane("stVideoLane3Row", "VIDEO 3", "stVideoLane2", S.clips.filter(x => x.track === 3), "video");
+    lane("stVideoLane4Row", "VIDEO 4", "stVideoLane3Row", S.clips.filter(x => x.track === 4), "video");
     lane("stOverlayLaneRow", "OVERLAYS", "stTextLane", S.overlays, "overlay");
     lane("stCaptionLaneRow", "CAPTIONS", "stOverlayLaneRow", S.captions, "caption");
-    lane("stAudioLane2Row", "AUDIO 2", "stAudioLane", (S.audioTracks || []).slice(1), "audio");
-    lane("stAudioLane3Row", "AUDIO 3", "stAudioLane2Row", (S.audioTracks || []).slice(2), "audio");
+    lane("stAudioLane2Row", "AUDIO 2", "stAudioLane", (S.audioTracks || [])[1] ? [S.audioTracks[1]] : [], "audio");
+    lane("stAudioLane3Row", "AUDIO 3", "stAudioLane2Row", (S.audioTracks || [])[2] ? [S.audioTracks[2]] : [], "audio");
+    lane("stAudioLane4Row", "AUDIO 4", "stAudioLane3Row", (S.audioTracks || [])[3] ? [S.audioTracks[3]] : [], "audio");
   }
 
   function actions() {
@@ -320,7 +322,7 @@
     const delta=(event.clientX-pointer.px)/Math.max(10,S.zoom), x=pointer.x;
     if (pointer.mode==="left") { const shift=Math.max(-Number(x.in||0),Math.min(pointer.duration-.1,delta)); x.start=Math.max(0,pointer.start+shift); x.in=Math.max(0,Number(x.in||0)+x.start-pointer.start); x.duration=Math.max(.1,pointer.duration-(x.start-pointer.start)); }
     else if (pointer.mode==="right") { x.duration=Math.max(.1,pointer.duration+delta); if (Number.isFinite(Number(x.in))) x.out=Number(x.in||0)+x.duration; }
-    else { x.start=snapTime(pointer.start+delta,x); const hit=document.elementFromPoint(event.clientX,event.clientY); const row=hit?.closest(".st-lane"); const label=row?.querySelector(".st-track-label")?.textContent || ""; if(x.video || x.kind==="image"){ if(label.includes("VIDEO 3"))x.track=3; else if(label.includes("VIDEO 2"))x.track=2; else if(label.includes("VIDEO 1"))x.track=1; } }
+    else { x.start=snapTime(pointer.start+delta,x); const hit=document.elementFromPoint(event.clientX,event.clientY); const row=hit?.closest(".st-lane"); const label=row?.querySelector(".st-track-label")?.textContent || ""; if(x.video || x.kind==="image"){ if(label.includes("VIDEO 4"))x.track=4; else if(label.includes("VIDEO 3"))x.track=3; else if(label.includes("VIDEO 2"))x.track=2; else if(label.includes("VIDEO 1"))x.track=1; } }
     const node=document.querySelector('[data-id="'+CSS.escape(pointer.id)+'"]');
     if (node) { node.style.left=(x.start*S.zoom)+"px"; node.style.width=Math.max(46,x.duration*S.zoom)+"px"; }
   });
