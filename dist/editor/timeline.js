@@ -364,42 +364,6 @@
 
 
   actions();
-  const inner = $("stInner");
-  if (inner) {
-    if (!inner.dataset.mediaDropReady) {
-      inner.dataset.mediaDropReady = "1";
-      inner.addEventListener("dragover", event => {
-        if (event.dataTransfer?.types?.includes("application/x-clipforge-media")) {
-          event.preventDefault(); event.dataTransfer.dropEffect = "copy"; event.target.closest(".st-lane")?.classList.add("st-drop-target");
-        }
-      });
-      inner.addEventListener("dragleave", event => { const lane=event.target.closest(".st-lane"); if (lane && (!event.relatedTarget || !lane.contains(event.relatedTarget))) lane.classList.remove("st-drop-target"); });
-      inner.addEventListener("drop", event => {
-        inner.querySelectorAll(".st-drop-target").forEach(lane => lane.classList.remove("st-drop-target"));
-        const mediaId = event.dataTransfer?.getData("application/x-clipforge-media");
-        if (!mediaId) return;
-        event.preventDefault();
-        const media = S.media.find(x => x.id === mediaId);
-        if (!media) { say("That media item is no longer available."); return; }
-        const bounds = inner.getBoundingClientRect();
-        const time = snapTime(Math.max(0,(event.clientX-bounds.left-150)/Math.max(10,S.zoom)));
-        const lane = event.target.closest(".st-lane");
-        const label = lane?.querySelector(".st-track-label")?.textContent?.trim() || "";
-        api.addToTimeline(mediaId);
-        if (media.kind === "audio") {
-          const audio = (S.audioTracks || []).find(x => x.id === S.sel);
-          if (audio) audio.start = time;
-        } else {
-          const clip = S.clips.find(x => x.id === S.sel);
-          if (clip) {
-            clip.start = time;
-            const match = label.match(/^VIDEO (\d+)$/);
-            if (match) { clip.track = Math.min(8,Number(match[1])); S.videoTrackCount = Math.max(Number(S.videoTrackCount)||4,clip.track); }
-          }
-        }
-        api.render();
-        say("Added " + media.name + " at " + time.toFixed(2) + " seconds.");
-      });
-    }
-  }
+  // Media drop handling belongs to app.js lane targets only; a second
+  // bubbling handler here previously inserted every dropped file twice.
 })();
