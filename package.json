@@ -1,0 +1,12 @@
+{
+  "name": "clipforge",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.editor.json",
+    "typecheck": "tsc -p tsconfig.editor.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
