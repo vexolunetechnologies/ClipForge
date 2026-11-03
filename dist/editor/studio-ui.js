@@ -22,13 +22,15 @@
     <span class="st-app-spacer"></span>
     <button class="st-btn" id="stAppUndo" title="Undo (Ctrl+Z)">↶ <span>Undo</span></button>
     <button class="st-btn" id="stAppRedo" title="Redo (Ctrl+Shift+Z)">↷ <span>Redo</span></button>
-    <button class="st-btn" id="stAppSave" title="Export editable project file">Project file</button>
+    <button class="st-btn" id="stAppOpen" title="Open editable project file">Open project</button>
+    <button class="st-btn" id="stAppSave" title="Save editable project file">Save project</button>
     <button class="st-btn st-primary" id="stAppExport">Export video</button>
     <button class="st-btn st-cancel-export" id="stAppCancel" hidden>Cancel export</button>
     <a class="st-app-exit" href="#top">Exit Studio ↗</a>`;
   root.prepend(bar);
   $("stAppUndo").onclick = () => $("stUndo")?.click();
   $("stAppRedo").onclick = () => $("stRedo")?.click();
+  $("stAppOpen").onclick = () => $("stProjectLoad")?.click();
   $("stAppSave").onclick = () => $("stProjectSave")?.click();
   $("stAppExport").onclick = () => $("stExport")?.click();
   $("stAppCancel").onclick = () => { if (!state.exporting) return; state.exportCancel = true; api.msg("Stopping export…"); };
@@ -254,6 +256,8 @@
       (event.shiftKey ? $("stRedo") : $("stUndo"))?.click();
     } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
       event.preventDefault(); $("stProjectSave")?.click();
+    } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "o") {
+      event.preventDefault(); $("stProjectLoad")?.click();
     } else if (!event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "s") {
       event.preventDefault(); $("stSplit")?.click();
     } else if (!event.ctrlKey && !event.metaKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
