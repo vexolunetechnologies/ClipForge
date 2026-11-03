@@ -32,20 +32,35 @@
 <!-- ===== SITE HEADER: logo, menu links, privacy badge, light/dark theme button ===== -->
 <header><div class="nav">
  <a class="brand" href="#top"><svg width="26" height="26" viewBox="0 0 26 26"><rect x="7" y="1" width="12" height="24" rx="3" fill="var(--ac)"/><path d="M11 9l6 4-6 4z" fill="var(--acx)"/></svg>ClipForge Studio</a>
- <nav><a href="#tools">Tools</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#faq">FAQ</a></nav>
+ <nav><a href="#top">Home</a><a href="#tools">Create</a><a href="#editor">Studio</a><a href="#features">Features</a><a href="#faq">Help</a></nav>
  <span class="pill">Videos stay on your device</span><button class="tbtn" id="theme" type="button" aria-label="Switch light or dark theme" title="Switch theme">◐</button></div></header>
 
 <!-- ===== PAGE WRAPPER: everything below until the footer sits in this centred column ===== -->
 <div class="wrap" id="top">
 <!-- ===== HERO: main heading and one-line description ===== -->
-<section class="hero"><h1>Shorts, trailers and picture videos.</h1>
-<p>Pick a tool. Everything runs in your browser and your video stays on your device.</p></section>
-<!-- ===== TOOL PICKER: four cards (Shorts, Trailer, Image Animator, Reverse Video) shown on the home view ===== -->
+<section class="hero hero-banner">
+ <div class="hero-copy">
+  <span class="hero-eyebrow"><i></i> THE CREATIVE STUDIO BY VEXOLUNE</span>
+  <h1>Every idea deserves<br><span> a better frame.</span></h1>
+  <p>One workspace to create shorts, trailers, animated visuals and polished video edits — with powerful tools that run right in your browser.</p>
+  <div class="hero-actions"><a class="hero-primary" href="#tools">Explore creative tools <b>↗</b></a><a class="hero-secondary" href="#editor">Open Studio Editor</a></div>
+  <div class="hero-proof"><span>✓ No account required</span><span>✓ Your media stays on your device</span><span>✓ Built for creators</span></div>
+ </div>
+ <div class="hero-visual" aria-label="Illustration of a video editing timeline">
+  <div class="hero-window"><div class="hero-window-top"><span></span><span></span><span></span><b>CLIPFORGE / STUDIO</b></div>
+   <div class="hero-screen"><div class="hero-screen-glow"></div><div class="hero-screen-play">▶</div><div class="hero-screen-caption">MAKE EVERY FRAME COUNT</div></div>
+   <div class="hero-track-label">TIMELINE</div><div class="hero-track"><i></i><i></i><i></i><i></i><i></i></div><div class="hero-track audio"><i></i><i></i><i></i></div>
+  </div><div class="hero-float">✦ <b>Creative freedom</b><small>All in one place</small></div>
+ </div>
+</section>
+<!-- ===== CREATIVE WORKSPACES: all ClipForge tools ===== -->
 <section id="tools"><div class="grid tools">
  <a class="card toolcard" href="#shorts"><span class="ttag">9:16 · vertical</span><h3>Long Video → Shorts</h3><ul><li>Best moments spread across the whole video</li><li>Smart reframe that follows faces, steady per shot</li><li>Auto captions: English, Urdu, Hindi (Whisper, on device)</li><li>Dialogue-only trim: cuts the gaps between spoken lines</li><li>Skips scenes with logos and sponsor banners</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
  <a class="card toolcard" href="#trailer"><span class="ttag">16:9 · wide or 9:16</span><h3>Trailer / Promo</h3><ul><li>45, 60 or 90 second trailer from the strongest moments</li><li>Title, tagline and “Releasing on” end card (your text)</li><li>Built-in sound effects: whooshes, impacts, riser</li><li>Review and remove parts before exporting</li><li>Skips logo and banner scenes, avoids end spoilers</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
  <a class="card toolcard" href="#animator"><span class="ttag">9:16 · 16:9 · 1:1</span><h3>Image Animator</h3><ul><li>Add many pictures and describe the camera motion in a prompt</li><li>Crossfades between pictures, 2 minutes or any length you ask for</li><li>Built-in music and sound effects, chosen from your prompt</li><li>Record your voice or add a voiceover file</li><li>MP4 export (WebM if your browser cannot make MP4)</li><li>Camera motion only: people and objects in a picture do not move</li></ul><span class="go">Open tool →</span></a>
  <a class="card toolcard" href="#reverse"><span class="ttag">Any size · MP4</span><h3>Reverse Video</h3><ul><li>Upload a video and get it back playing backwards</li><li>The sound can be reversed too, or removed</li><li>Pick the size: original, up to 1080p or up to 720p</li><li>Keeps your video's own frame rate</li><li>Everything stays on your device</li><li>Rebuilt frame by frame, so best for clips up to a few minutes</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard studio-toolcard" href="#montage"><span class="tool-icon">▤</span><span class="ttag">MULTI-CLIP WORKFLOW</span><h3>Video Montage Maker</h3><p>Combine clips into a clean sequence with independent trimming, transitions, music and title text.</p><ul><li>Import and reorder multiple videos</li><li>Trim every clip independently</li><li>Choose vertical, landscape or square format</li><li>Preview and export your montage</li></ul><span class="go">Open workspace →</span></a>
+ <a class="card toolcard studio-toolcard" href="#editor"><span class="tool-icon">▥</span><span class="ttag">MULTI-TRACK CREATIVE WORKSPACE</span><h3>Studio Editor</h3><p>Take control of your edit with a timeline-based workspace built for detailed video projects.</p><ul><li>Video, overlay, caption and audio lanes</li><li>Trim, split, move and duplicate clips</li><li>Text, shapes, stickers and subtitles</li><li>Audio fades, speed, framing and export settings</li></ul><span class="go">Open Studio →</span></a>
 </div></section>
 
 <!-- ===== MAIN TOOL PANEL (Shorts and Trailer share this panel; the CSS shows or hides parts per tool) ===== -->
@@ -179,6 +194,7 @@
 <div class="card"><div class="num">3</div><h3>Export</h3><p>The top moments become 9:16 clips. Save each one to your device.</p></div></div></section>
 
 <!-- ===== FEATURES ===== -->
+<section class="capability-strip"><div><b>06</b><span>Creative tools</span></div><div><b>Multi-track</b><span>Studio timeline</span></div><div><b>On-device</b><span>Private workflow</span></div><div><b>HD</b><span>Export options</span></div></section>
 <section id="features"><h2>Features</h2>
 <div class="grid">
 <div class="card"><h3>Engagement scoring</h3><p>Every short gets a score and tags like “Strong hook” or “Dialogue”.</p></div>
