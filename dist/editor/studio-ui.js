@@ -530,7 +530,7 @@
       } else if (command === "inspector") {
         inspector.hidden = !inspector.hidden;
       } else if (command === "shortcuts") {
-        api.msg("Premiere-style shortcuts: C = cut at playhead · Backspace/Delete = remove selected clip · Space = play/pause · J/K/L = reverse/stop/play · ←/→ = frame step · Home/End = sequence start/end · Ctrl/Cmd+K = Add Edit · Ctrl/Cmd+Z = undo · Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y = redo · Ctrl/Cmd+S = export project file · Ctrl/Cmd+I = import media · Ctrl/Cmd+Shift+E = export video.");
+        api.msg("Premiere-style shortcuts: C = cut at playhead · Backspace/Delete = remove selected clip · Space = play/pause · J = step back 1 second · K = stop · L = play · ←/→ = frame step · Home/End = sequence start/end · Ctrl/Cmd+K = Add Edit · Ctrl/Cmd+Z = undo · Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y = redo · Ctrl/Cmd+S = export project file · Ctrl/Cmd+I = import media · Ctrl/Cmd+Shift+E = export video.");
       } else if (commands[command]) {
         $(commands[command])?.click();
       }
