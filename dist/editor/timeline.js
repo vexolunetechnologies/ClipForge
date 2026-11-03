@@ -68,13 +68,20 @@
 
   function renderLanes() {
     if (!$("stInner")) return;
-    lane("stVideoLane3Row", "VIDEO 3", "stVideoLane2", S.clips.filter(x => x.track === 3), "video");
-    lane("stVideoLane4Row", "VIDEO 4", "stVideoLane3Row", S.clips.filter(x => x.track === 4), "video");
+    let previousVideoLane = "stVideoLane2";
+    for (let track = 3; track <= Math.max(4, Number(S.videoTrackCount) || 4); track++) {
+      const rowId = "stVideoLane" + track + "Row";
+      lane(rowId, "VIDEO " + track, previousVideoLane, S.clips.filter(x => Number(x.track || 1) === track), "video");
+      previousVideoLane = rowId;
+    }
     lane("stOverlayLaneRow", "OVERLAYS", "stTextLane", S.overlays, "overlay");
     lane("stCaptionLaneRow", "CAPTIONS", "stOverlayLaneRow", S.captions, "caption");
-    lane("stAudioLane2Row", "AUDIO 2", "stAudioLane", (S.audioTracks || [])[1] ? [S.audioTracks[1]] : [], "audio");
-    lane("stAudioLane3Row", "AUDIO 3", "stAudioLane2Row", (S.audioTracks || [])[2] ? [S.audioTracks[2]] : [], "audio");
-    lane("stAudioLane4Row", "AUDIO 4", "stAudioLane3Row", (S.audioTracks || [])[3] ? [S.audioTracks[3]] : [], "audio");
+    let previousAudioLane = "stAudioLane";
+    for (let index = 1; index < (S.audioTracks || []).length; index++) {
+      const rowId = "stAudioLane" + (index + 1) + "Row";
+      lane(rowId, "AUDIO " + (index + 1), previousAudioLane, [S.audioTracks[index]], "audio");
+      previousAudioLane = rowId;
+    }
   }
 
   function actions() {
@@ -86,6 +93,7 @@
       + '<button class="st-tool" id="stShape">＋ Add shape</button>'
       + '<button class="st-tool" id="stSticker">＋ Add sticker</button>'
       + '<button class="st-tool" id="stCaption">＋ Add caption</button>'
+      + '<button class="st-tool" id="stAddVideoTrack">＋ Add video track</button>'
       + '<label class="st-tool st-file-action">Import subtitles (.srt / .vtt)<input id="stSubFile" type="file" accept=".srt,.vtt,text/vtt" hidden></label>'
       + '<div class="st-panel-title st-spaced">TIMELINE</div>'
       + '<label class="st-toggle"><input id="stSnap" type="checkbox" checked> Snap to clips</label>'
@@ -98,6 +106,7 @@
     $("stShape").onclick = () => addOverlay("rect");
     $("stSticker").onclick = () => addOverlay("sticker");
     $("stCaption").onclick = () => addCaption("Your caption");
+    $("stAddVideoTrack").onclick = () => { S.videoTrackCount = Math.max(4,Number(S.videoTrackCount)||4) + 1; api.render(); say("Video track " + S.videoTrackCount + " added. Drag a clip onto the new lane."); };
     $("stSnap").onchange = e => { S.snapEnabled = e.target.checked; };
     $("stQuality").onchange = e => { S.exportQuality = Number(e.target.value); say("Export resolution set to " + e.target.value + "p."); };
     $("stFps").onchange = e => { S.exportFps = Number(e.target.value); say("Export frame rate set to " + e.target.value + " FPS."); };
@@ -323,7 +332,7 @@
     const delta=(event.clientX-pointer.px)/Math.max(10,S.zoom), x=pointer.x;
     if (pointer.mode==="left") { const shift=Math.max(-Number(x.in||0),Math.min(pointer.duration-.1,delta)); x.start=Math.max(0,pointer.start+shift); x.in=Math.max(0,Number(x.in||0)+x.start-pointer.start); x.duration=Math.max(.1,pointer.duration-(x.start-pointer.start)); }
     else if (pointer.mode==="right") { x.duration=Math.max(.1,pointer.duration+delta); if (Number.isFinite(Number(x.in))) x.out=Number(x.in||0)+x.duration; }
-    else { x.start=snapTime(pointer.start+delta,x); const hit=document.elementFromPoint(event.clientX,event.clientY); const row=hit?.closest(".st-lane"); const label=row?.querySelector(".st-track-label")?.textContent || ""; if(x.video || x.kind==="image"){ if(label.includes("VIDEO 4"))x.track=4; else if(label.includes("VIDEO 3"))x.track=3; else if(label.includes("VIDEO 2"))x.track=2; else if(label.includes("VIDEO 1"))x.track=1; } }
+    else { x.start=snapTime(pointer.start+delta,x); const hit=document.elementFromPoint(event.clientX,event.clientY); const row=hit?.closest(".st-lane"); const label=row?.querySelector(".st-track-label")?.textContent || ""; if(x.video || x.kind==="image"){ const trackMatch=label.match(/^VIDEO (\\d+)$/);if(trackMatch)x.track=Number(trackMatch[1]); } }
     const node=document.querySelector('[data-id="'+CSS.escape(pointer.id)+'"]');
     if (node) { node.style.left=(x.start*S.zoom)+"px"; node.style.width=Math.max(46,x.duration*S.zoom)+"px"; }
   });
