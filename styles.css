@@ -2229,3 +2229,9 @@ body.solo[data-tool="editor"] #editorTool .st-inout-range:before{content:"IN";po
 body.solo[data-tool="editor"] #editorTool .st-inout-range:after{content:"OUT";position:absolute;top:3px;right:3px;color:#6ff0bd;font-size:9px;font-weight:900}
 body.solo[data-tool="editor"] #editorTool .st-timeline-scroll{scroll-behavior:auto!important;overscroll-behavior-x:contain}
 @media(max-width:760px){body.solo[data-tool="editor"] #editorTool .st-sequence-size input{width:43px}body.solo[data-tool="editor"] #editorTool .st-transport{gap:4px}}
+
+body.solo[data-tool="editor"] #editorTool #stMarkIn,body.solo[data-tool="editor"] #editorTool #stMarkOut{border-color:rgba(64,215,160,.45)!important;color:#6fe9b5!important}
+body.solo[data-tool="editor"] #editorTool #stClearMarks{color:#aeb8c8!important}
+body.solo[data-tool="editor"] #editorTool .st-sequence-size{white-space:nowrap}
+body.solo[data-tool="editor"] #editorTool #stRatio,body.solo[data-tool="editor"] #editorTool #stFitMode{max-width:100px}
+@media(max-width:760px){body.solo[data-tool="editor"] #editorTool .st-timeline-actions{overflow-x:auto;max-width:100%;scrollbar-width:none}body.solo[data-tool="editor"] #editorTool .st-timeline-actions::-webkit-scrollbar{display:none}}
