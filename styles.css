@@ -1486,3 +1486,34 @@ body.studio-app #editorTool>.st-menubar{
  body.studio-app #editorTool .st-preview-panel{order:1}
  body.studio-app #editorTool .st-inspector{order:3}
 }
+
+/* ClipForge Studio — monitor-first professional editing workspace */
+body.studio-app #editorTool .st-pro-stage{grid-template-columns:40px minmax(190px,218px) minmax(0,1fr) minmax(225px,252px)!important;gap:7px!important;min-height:0!important}
+body.studio-app #editorTool .st-monitor-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px;min-width:0;min-height:0;overflow:hidden}
+body.studio-app #editorTool .st-source-panel,body.studio-app #editorTool .st-preview-panel{min-width:0;min-height:0;max-height:none!important;overflow:hidden!important;display:flex;flex-direction:column;border:1px solid #2b3850!important;border-radius:5px!important;background:#0a101b!important;padding:9px!important}
+body.studio-app #editorTool .st-source-panel>.st-panel-title,body.studio-app #editorTool .st-preview-panel>.st-panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:27px;padding:3px 2px 8px;border-bottom:1px solid #2a354a;color:#aebbd0!important;font-size:9px!important;letter-spacing:.12em;white-space:nowrap;overflow:hidden}
+body.studio-app #editorTool .st-source-meta{min-width:0;max-width:58%;overflow:hidden;text-overflow:ellipsis;color:#7184a3;font-size:8px;font-weight:500;letter-spacing:0}
+body.studio-app #editorTool .st-source-view{position:relative;display:grid;place-items:center;flex:1;min-height:0;overflow:hidden;border:1px solid #26354c;border-radius:3px;background:#05080f;background-image:linear-gradient(45deg,#111a28 25%,transparent 25%),linear-gradient(-45deg,#111a28 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#111a28 75%),linear-gradient(-45deg,transparent 75%,#111a28 75%);background-size:18px 18px;background-position:0 0,0 9px,9px -9px,-9px 0}
+body.studio-app #editorTool .st-source-view video,body.studio-app #editorTool .st-source-view img{display:block;width:100%;height:100%;max-height:100%;object-fit:contain;background:#05080f}
+body.studio-app #editorTool .st-source-view audio{width:90%;max-width:360px}
+body.studio-app #editorTool .st-source-empty{max-width:220px;padding:16px;text-align:center;color:#73839c;font-size:10px;line-height:1.7}
+body.studio-app #editorTool .st-source-footer{display:flex;justify-content:space-between;padding:7px 2px 0;color:#667994;font-size:8px;letter-spacing:.08em}
+body.studio-app #editorTool .st-media-item{display:grid!important;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:7px;min-width:0;text-align:left}
+body.studio-app #editorTool .st-media-copy{display:block;min-width:0;overflow:hidden}
+body.studio-app #editorTool .st-media-copy b,body.studio-app #editorTool .st-media-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.studio-app #editorTool .st-media-preview{display:inline-flex;align-items:center;justify-content:center;min-height:23px;padding:0 6px;border:1px solid #394b69;border-radius:3px;color:#aab9d0;background:#17243a;font-size:7px;font-weight:800;letter-spacing:.08em;cursor:pointer}
+body.studio-app #editorTool .st-media-preview:hover,body.studio-app #editorTool .st-media-preview:focus-visible{border-color:#8c82e8;background:#2a2b50;color:#fff;outline:none}
+body.studio-app #editorTool .st-timeline-panel{min-height:0!important;max-height:none!important;border:1px solid #303d54!important;border-radius:5px!important;background:#0d1625!important}
+body.studio-app #editorTool .st-timeline-top{min-height:34px;border-bottom:1px solid #2a354a}
+body.studio-app #editorTool .st-timeline-scroll{min-height:0;scrollbar-color:#465675 #101a2b;scrollbar-width:thin}
+body.studio-app #editorTool .st-track-label{background:#121e30!important;border-right:1px solid #2b3a52!important;color:#91a2bd!important;font-size:9px!important;font-weight:750!important;letter-spacing:.06em}
+body.studio-app #editorTool .st-pro-lane{min-height:43px!important}
+body.studio-app #editorTool .st-lane-content{background-color:#0a1321!important;background-image:linear-gradient(to right,rgba(116,137,172,.09) 1px,transparent 1px);background-size:var(--timeline-grid,80px) 100%}
+body.studio-app #editorTool .st-clip-block{min-height:31px;border-radius:3px!important;border:1px solid rgba(171,190,225,.25)!important;overflow:hidden;text-align:left}
+body.studio-app #editorTool .st-clip-block b{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px!important}
+body.studio-app #editorTool .st-clip-block small{font-size:8px!important}
+body.studio-app #editorTool .st-ruler{background:#101a2b!important}
+body.studio-app #editorTool .st-ruler-content span{color:#8d9db7!important;font-size:8px}
+body.studio-app #editorTool .st-timeline-foot{border-top:1px solid #29364b;color:#7d8da8;font-size:9px}
+@media(max-width:1350px) and (min-width:761px){body.studio-app #editorTool .st-pro-stage{grid-template-columns:36px 180px minmax(0,1fr) 220px!important}body.studio-app #editorTool .st-monitor-pair{grid-template-columns:minmax(0,1fr)}body.studio-app #editorTool .st-source-panel{min-height:180px}body.studio-app #editorTool .st-preview-panel{min-height:220px}}
+@media(max-width:760px){body.studio-app #editorTool .st-monitor-pair{display:flex;flex-direction:column;overflow:visible}body.studio-app #editorTool .st-source-panel{min-height:240px}body.studio-app #editorTool .st-preview-panel{min-height:300px}body.studio-app #editorTool .st-source-view{min-height:170px}}
