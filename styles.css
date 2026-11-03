@@ -1775,3 +1775,129 @@ body.solo[data-tool="editor"] #editorTool .st-clip-block {border-radius:2px!impo
  body.solo[data-tool="editor"] #editorTool .st-inspector {max-height:360px!important}
  body.solo[data-tool="editor"] #editorTool .st-source-view {min-height:160px!important}
 }
+
+
+/* Studio finishing pass: compact NLE chrome, proper panel tabs and tool icons. */
+body.solo[data-tool="editor"] #editorTool {
+  background:#202327!important;color:#d7dce2!important;
+}
+body.solo[data-tool="editor"] #editorTool > .st-appbar {
+  background:#1b1e22!important;border-bottom:1px solid #3b4148!important;
+  color:#e5e9ef!important;box-shadow:none!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-menubar {
+  background:#25292e!important;border-bottom:1px solid #3b4148!important;
+  color:#d7dce2!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-menu-pop {
+  background:#292e34!important;border-color:#4a525c!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-menu-pop button {color:#e1e6ed!important}
+body.solo[data-tool="editor"] #editorTool .st-menu-pop button:hover {background:#39434f!important}
+body.solo[data-tool="editor"] #editorTool .st-pro-main {background:#202327!important}
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail,
+body.solo[data-tool="editor"] #editorTool .st-assets,
+body.solo[data-tool="editor"] #editorTool .st-source-panel,
+body.solo[data-tool="editor"] #editorTool .st-preview-panel,
+body.solo[data-tool="editor"] #editorTool .st-timeline-panel {
+  background:#25292e!important;border:1px solid #414850!important;border-radius:2px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail {border-color:#3b424a!important}
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail button {
+  background:transparent!important;border:1px solid transparent!important;
+  color:#b7c0ca!important;transition:background .12s ease,border-color .12s ease;
+}
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail button svg {
+  width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail button:hover,
+body.solo[data-tool="editor"] #editorTool .st-vertical-rail button.active {
+  background:#344b63!important;border-color:#557b9e!important;color:#fff!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-rail-brand {
+  color:#9ec9eb!important;font-size:10px!important;letter-spacing:.06em;
+}
+body.solo[data-tool="editor"] #editorTool .st-left-tabs {
+  display:flex;align-items:center;gap:3px;flex:0 0 30px;min-height:30px;
+  border-bottom:1px solid #424a53;margin:-2px -2px 5px;padding:0 4px;
+}
+body.solo[data-tool="editor"] #editorTool .st-left-tabs button {
+  align-self:stretch;padding:0 11px;border:0;border-bottom:2px solid transparent;
+  background:transparent;color:#aeb8c3;font-size:10px;cursor:pointer;
+}
+body.solo[data-tool="editor"] #editorTool .st-left-tabs button.active {
+  color:#f0f3f7;border-bottom-color:#70a9d8;background:#30363d;
+}
+body.solo[data-tool="editor"] #editorTool .st-left-tabs .st-source-meta {
+  margin-left:auto;color:#87929e;font-size:9px;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-panel[data-left-tab="effects"] .st-source-view,
+body.solo[data-tool="editor"] #editorTool .st-source-panel[data-left-tab="effects"] .st-source-footer {display:none!important}
+body.solo[data-tool="editor"] #editorTool .st-source-panel[data-left-tab="effects"] .st-inspector {
+  display:flex!important;flex:1 1 0!important;max-height:none!important;min-height:0!important;
+  border:0!important;padding:4px 2px!important;background:transparent!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-panel[data-left-tab="source"] .st-inspector {display:none!important}
+body.solo[data-tool="editor"] #editorTool .st-source-panel[data-left-tab="source"] .st-source-view {
+  display:grid!important;flex:1 1 0!important;min-height:0!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-source-panel[data-left-tab="source"] .st-source-footer {display:flex!important}
+body.solo[data-tool="editor"] #editorTool .st-inspector-tabs button,
+body.solo[data-tool="editor"] #editorTool .st-tool-tabs button,
+body.solo[data-tool="editor"] #editorTool .st-media-filters button {
+  background:#30363d!important;border-color:#4a535d!important;color:#c7d0d9!important;
+  border-radius:2px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-inspector-tabs button.active,
+body.solo[data-tool="editor"] #editorTool .st-tool-tabs button.active,
+body.solo[data-tool="editor"] #editorTool .st-media-filters button.active {
+  background:#3c536b!important;border-color:#648db2!important;color:#fff!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-media-item {
+  background:#30363d!important;border:1px solid #48515b!important;border-radius:2px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-panel-title {
+  color:#c5cdd6!important;font-weight:650!important;letter-spacing:.06em!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-timeline-panel {background:#1c2024!important}
+body.solo[data-tool="editor"] #editorTool .st-timeline-top {
+  background:#292e34!important;border-bottom:1px solid #414951!important;
+  padding:3px 5px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-timeline-actions button {
+  min-width:26px;height:24px;padding:2px 7px!important;
+  background:#343b43!important;border:1px solid #515b66!important;
+  border-radius:2px!important;color:#d8e0e8!important;font-size:10px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-track-label {
+  background:#2a3036!important;color:#c0c9d2!important;
+  border-right:1px solid #49515a!important;font-weight:650!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-lane-content {
+  background-color:#191d21!important;
+  background-image:linear-gradient(to right,rgba(177,190,203,.09) 1px,transparent 1px)!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-ruler {background:#292e34!important}
+body.solo[data-tool="editor"] #editorTool .st-ruler-content span {color:#aeb8c3!important}
+body.solo[data-tool="editor"] #editorTool .st-clip-block {
+  border:1px solid rgba(180,205,228,.28)!important;border-radius:2px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-clip-block.is-selected {
+  outline:2px solid #8dc5f3!important;outline-offset:-2px!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-timeline-foot {
+  background:#22272c!important;color:#aeb8c3!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-canvas-wrap,
+body.solo[data-tool="editor"] #editorTool .st-source-view {background:#080a0c!important}
+body.solo[data-tool="editor"] #editorTool .st-transport {
+  background:#252a30!important;border-top:1px solid #414951!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-transport button {
+  background:#343b43!important;border:1px solid #515b66!important;
+  border-radius:2px!important;color:#e4eaf0!important;
+}
+body.solo[data-tool="editor"] #editorTool .st-transport select {
+  background:#30363d!important;border:1px solid #515b66!important;color:#e4eaf0!important;
+}
