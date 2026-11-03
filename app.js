@@ -806,9 +806,11 @@ async function transcribe(pcm){const p=await loadASR(),o={task:'transcribe',chun
  const r=await guard(p(pcm,o),120000+secs*10000,'Transcription');return r.chunks||[]}
 // Phrases Whisper invents on silence (like "thanks for watching"); they are removed.
 const JUNK=/^(thanks? for watching|thank you( so much)?( for watching)?|please subscribe|subscribe|bye|you|\.+|music|\[.*\]|\(.*\)|♪.*)[.!\s]*$/i;
+// Normalize common Arabic-codepoint variants that Whisper sometimes emits in Urdu transcripts.
+const normalizeCaptionText=s=>String(s||'').replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[\u0640]/g,'').replace(/[\t ]+/g,' ').trim();
 // Turn Whisper chunks into timed caption cues (words and short lines).
 function buildCues(ch,off,pcm){let out=[];
- ch.forEach(h=>{const w=(h.text||'').trim().split(/\s+/).filter(Boolean);if(!w.length)return;
+ ch.forEach(h=>{const w=normalizeCaptionText(h.text).split(/\s+/).filter(Boolean);if(!w.length)return;
   const a0=h.timestamp[0]||0,b0=h.timestamp[1]??(pcm.length/16000),[a,b]=snapSeg(pcm,a0,b0),t0=off+a,t1=off+b;
   const m=Math.max(1,Math.ceil(w.length/5)),g=Math.ceil(w.length/m),parts=[];for(let i=0;i<m;i++)parts.push(w.slice(i*g,(i+1)*g).join(' '));
   const tot=parts.reduce((s,p)=>s+p.length+3,0);let t=t0;parts.forEach(p=>{const d=(t1-t0)*(p.length+3)/tot;out.push({s:t,e:t+d,text:p});t+=d})});
