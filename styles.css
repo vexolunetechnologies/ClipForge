@@ -1284,3 +1284,6 @@ body.studio-app #editorTool .st-playhead{z-index:12;box-shadow:0 0 9px rgba(255,
  body.studio-app #editorTool .st-appbar .st-btn span{display:none}
  body.studio-app #editorTool .st-appbrand{font-size:10px}
 }
+
+.st-appbar .st-btn:disabled{opacity:.38!important;cursor:not-allowed!important;filter:saturate(.4)}
+.st-project-name-wrap input:disabled{opacity:.65;cursor:default}
