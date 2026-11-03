@@ -822,7 +822,7 @@ function loadASR(){const m=S.model;if(ASRP[m])return ASRP[m];
   let lastEv=Date.now(),wd=null,wdRej;const stuck=new Promise((_,r)=>{wdRej=r});
   wd=setInterval(()=>{if(Date.now()-lastEv>90000){clearInterval(wd);wdRej(new Error('The speech model did not start on this browser (it stopped after downloading). Reload the page, try Chrome, or choose the Fast model.'))}},3000);
   const cb=x=>{lastEv=Date.now();if(x.status==='progress'&&/onnx/.test(x.file||'')){const pc=Math.round(x.progress);stat('cap',pc>=100?'starting speech model (can take up to a minute)…':'downloading speech model '+pc+'%')}else if(x.status==='ready'){stat('cap','')}};
-  try{return await Promise.race([guard(T.pipeline('automatic-speech-recognition','Xenova/whisper-'+m,{progress_callback:cb}),900000,'Speech model download'),stuck])}finally{clearInterval(wd)}})();
+  try{return await Promise.race([guard(T.pipeline('automatic-speech-recognition','Xenova/whisper-'+m,{revision:m==='base'?'9226b958253551c6db13a6f43837e1b46918e620':'main',progress_callback:cb}),900000,'Speech model download'),stuck])}finally{clearInterval(wd)}})();
  ASRP[m].catch(()=>{delete ASRP[m]});return ASRP[m]}
 // Transcribe audio with Whisper and return the text chunks.
 async function transcribe(pcm){const p=await loadASR(),o={task:'transcribe',chunk_length_s:30,stride_length_s:5,return_timestamps:true};if(S.lang!=='auto')o.language=S.lang;
