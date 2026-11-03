@@ -2235,3 +2235,26 @@ body.solo[data-tool="editor"] #editorTool #stClearMarks{color:#aeb8c8!important}
 body.solo[data-tool="editor"] #editorTool .st-sequence-size{white-space:nowrap}
 body.solo[data-tool="editor"] #editorTool #stRatio,body.solo[data-tool="editor"] #editorTool #stFitMode{max-width:100px}
 @media(max-width:760px){body.solo[data-tool="editor"] #editorTool .st-timeline-actions{overflow-x:auto;max-width:100%;scrollbar-width:none}body.solo[data-tool="editor"] #editorTool .st-timeline-actions::-webkit-scrollbar{display:none}}
+
+
+/* Studio: adjustment layers and editable keyframe graph */
+.st-clip-block.adjustment{background:linear-gradient(105deg,rgba(175,116,255,.9),rgba(111,83,201,.88))!important;border-color:rgba(207,175,255,.7)!important;color:#fff!important}
+.st-clip-block.adjustment b,.st-clip-block.adjustment small{color:#fff!important}
+.st-lane[data-lane-kind="adjustment"] .st-track-label{color:#c5a5ff!important}
+.st-keyframe-editor{margin:14px 0;padding:11px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--panel) 86%,#7560d8 14%)}
+.st-keyframe-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.st-keyframe-heading b{font-size:10px;letter-spacing:.1em}
+.st-keyframe-heading select{max-width:116px;padding:5px 7px!important;font-size:10px!important}
+#pGraphSvg{display:block;width:100%;height:100px;border-radius:7px;background:rgba(5,9,20,.58);overflow:visible}
+.st-graph-axis{stroke:rgba(148,163,184,.3);stroke-width:1;stroke-dasharray:3 4}
+.st-graph-line{fill:none;stroke:#70d7e5;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.st-graph-point{fill:#b59bff;stroke:#fff;stroke-width:1.5;cursor:pointer}
+.st-graph-point:hover{r:6;fill:#fff}
+.st-keyframe-ease{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:9px 0;color:var(--muted);font-size:10px}
+.st-keyframe-ease select{max-width:145px;padding:5px 7px!important;font-size:10px!important}
+.st-keyframe-rows{display:grid;gap:5px;max-height:160px;overflow:auto}
+.st-keyframe-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px;gap:5px}
+.st-keyframe-row input{min-width:0;width:100%;padding:5px 7px!important;font-size:10px!important}
+.st-keyframe-row button{border:1px solid var(--line);border-radius:6px;background:var(--panel-2);color:var(--muted);font-weight:800;cursor:pointer}
+.st-keyframe-row button:hover{border-color:#f87171;color:#fca5a5}
+@media(max-width:900px){.st-keyframe-editor{padding:9px}.st-keyframe-row input{font-size:11px!important}}
