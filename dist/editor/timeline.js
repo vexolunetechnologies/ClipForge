@@ -69,7 +69,7 @@
   function renderLanes() {
     if (!$("stInner")) return;
     let previousVideoLane = "stVideoLane2";
-    for (let track = 3; track <= Math.max(4, Number(S.videoTrackCount) || 4); track++) {
+    for (let track = 3; track <= Math.min(8, Math.max(4, Number(S.videoTrackCount) || 4)); track++) {
       const rowId = "stVideoLane" + track + "Row";
       lane(rowId, "VIDEO " + track, previousVideoLane, S.clips.filter(x => Number(x.track || 1) === track), "video");
       previousVideoLane = rowId;
@@ -106,7 +106,7 @@
     $("stShape").onclick = () => addOverlay("rect");
     $("stSticker").onclick = () => addOverlay("sticker");
     $("stCaption").onclick = () => addCaption("Your caption");
-    $("stAddVideoTrack").onclick = () => { S.videoTrackCount = Math.max(4,Number(S.videoTrackCount)||4) + 1; api.render(); say("Video track " + S.videoTrackCount + " added. Drag a clip onto the new lane."); };
+    $("stAddVideoTrack").onclick = () => { const current = Math.min(8, Math.max(4, Number(S.videoTrackCount) || 4)); if (current >= 8) { say("Studio supports up to 8 video tracks."); $("stAddVideoTrack").disabled = true; return; } S.videoTrackCount = current + 1; api.render(); $("stAddVideoTrack").disabled = S.videoTrackCount >= 8; say("Video track " + S.videoTrackCount + " added. Drag a clip onto the new lane."); };
     $("stSnap").onchange = e => { S.snapEnabled = e.target.checked; };
     $("stQuality").onchange = e => { S.exportQuality = Number(e.target.value); say("Export resolution set to " + e.target.value + "p."); };
     $("stFps").onchange = e => { S.exportFps = Number(e.target.value); say("Export frame rate set to " + e.target.value + " FPS."); };
