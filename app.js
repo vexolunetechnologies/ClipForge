@@ -816,15 +816,15 @@ async function transcribe(pcm){const p=await loadASR(),o={task:'transcribe',chun
 // Phrases Whisper invents on silence (like "thanks for watching"); they are removed.
 const JUNK=/^(thanks? for watching|thank you( so much)?( for watching)?|please subscribe|subscribe|bye|you|\.+|music|\[.*\]|\(.*\)|♪.*)[.!\s]*$/i;
 // Normalize common Arabic-codepoint variants that Whisper sometimes emits in Urdu transcripts.
-const normalizeCaptionText=s=>{let t=String(s||'').replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[\u0640]/g,'').replace(/[\t ]+/g,' ').trim();
- if(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(t))t=t.replace(/,/g,'،').replace(/;/g,'؛').replace(/\?/g,'؟');
- return t.replace(/\s+([،؛؟,.!?])/g,'$1')};
+const normalizeCaptionText=s=>{let t=String(s||'').normalize('NFC').replace(/[يىئ]/g,'ی').replace(/ك/g,'ک').replace(/ۀ/g,'ہ').replace(/[\u0640]/g,'').replace(/[\t\u00a0 ]+/g,' ').trim();
+ if(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(t))t=t.replace(/,/g,'،').replace(/;/g,'؛').replace(/\?/g,'؟').replace(/\.(?=\s|$)/g,'۔');
+ return t.replace(/\s+([،؛؟۔,.!?])/g,'$1').replace(/([،؛؟۔!?])(?=\S)/g,'$1 ')}
 // Turn Whisper chunks into timed caption cues (words and short lines).
 function buildCues(ch,off,pcm){let out=[];
  ch.forEach(h=>{const w=normalizeCaptionText(h.text).split(/\s+/).filter(Boolean);if(!w.length)return;
   const a0=h.timestamp[0]||0,b0=h.timestamp[1]??(pcm.length/16000),[a,b]=snapSeg(pcm,a0,b0),t0=off+a,t1=off+b;
-  const m=Math.max(1,Math.ceil(w.length/5)),g=Math.ceil(w.length/m),parts=[];for(let i=0;i<m;i++)parts.push(w.slice(i*g,(i+1)*g).join(' '));
-  const tot=parts.reduce((s,p)=>s+p.length+3,0);let t=t0;parts.forEach(p=>{const d=(t1-t0)*(p.length+3)/tot;out.push({s:t,e:t+d,text:p});t+=d})});
+  const parts=[];let line=[];for(const word of w){line.push(word);const sentenceEnd=/[۔.!?؟]$/.test(word);if(line.length>=5||(sentenceEnd&&line.length>=2)){parts.push(line.join(' '));line=[]}}if(line.length)parts.push(line.join(' '));
+  const weights=parts.map(p=>Math.max(1,p.split(/\s+/).length)),tot=weights.reduce((a,b)=>a+b,0);let t=t0;parts.forEach((p,i)=>{const d=(t1-t0)*weights[i]/tot;out.push({s:t,e:t+d,text:p});t+=d})});
  out=out.filter(q=>!JUNK.test(q.text)&&rmsRange(pcm,q.s-off,q.e-off)>.004);
  out=out.filter((q,i)=>!(i>1&&q.text===out[i-1].text&&q.text===out[i-2].text));
  for(let i=0;i<out.length;i++){const nx=out[i+1];if(nx&&out[i].e>nx.s)out[i].e=nx.s;else if(nx)out[i].e=Math.min(nx.s,out[i].e+.25)}
@@ -922,9 +922,15 @@ function liveCut(){lcx.drawImage(v,0,0,32,18);const d=lcx.getImageData(0,0,32,18
  if(cam.pg){let s=0;for(let i=0;i<d.length;i+=4)s+=Math.abs(d[i]-cam.pg[i])+Math.abs(d[i+1]-cam.pg[i+1])+Math.abs(d[i+2]-cam.pg[i+2]);r=s/(576*3*255)>.1}
  cam.pg=d.slice();return r}
 // Move the camera towards its target every frame (hard cut on scene changes, smooth otherwise).
-function camUpdate(t,dt,lc){const K=cam.keys;
- while(cam.k+1<K.length){const n=K[cam.k+1],due=n.cut?(t>=n.t||(lc&&t>=n.t0-.05)):(t>=n.t-.25);if(!due)break;cam.k++;cam.tx=n.x;if(n.cut)cam.vx=0}
- const d=(cam.tx-cam.x)*(1-Math.exp(-dt*3.8)),m=.38*dt;cam.x+=Math.max(-m,Math.min(m,d))}
+function camUpdate(t,dt,lc){const K=cam.keys,was=cam.k;
+ while(cam.k+1<K.length){const n=K[cam.k+1],due=n.cut?(t>=n.t||(lc&&t>=n.t0-.05)):(t>=n.t-.25);if(!due)break;cam.k++;cam.tx=n.x}
+ // A planned shot cut is a real edit point: change crop on that frame, not with a fast pan.
+ if(cam.k!==was&&K[cam.k].cut){cam.x=cam.tx;cam.vx=0;return}
+ // Critically damped spring: smooth in-shot subject movement without abrupt velocity changes.
+ const step=Math.max(.001,Math.min(.05,dt||0)),omega=5.2,y=cam.x-cam.tx,e=Math.exp(-omega*step),temp=(cam.vx+omega*y)*step;
+ cam.x=cam.tx+(y+temp)*e;cam.vx=(cam.vx-omega*temp)*e;
+ const maxV=.9;if(cam.vx>maxV)cam.vx=maxV;else if(cam.vx< -maxV)cam.vx=-maxV;
+ if(Math.abs(cam.tx-cam.x)<.001&&Math.abs(cam.vx)<.01){cam.x=cam.tx;cam.vx=0}}
 // Redraw the preview when the player seeks or its time changes (not while recording).
 v.addEventListener('seeked',()=>{if(!busy)draw()});v.addEventListener('timeupdate',()=>{if(!busy)draw()});v.addEventListener('loadeddata',()=>draw());
 
