@@ -197,7 +197,7 @@
       S.audioTracks = savedAudio.flatMap(saved => {
         const m = findAsset(saved);
         if (!m || !m.audio) { if (saved.name) missing.push(saved.name); return []; }
-        return [{...saved,id:uid(),file:m.file || null,audio:m.audio,url:m.url}];
+        return [{...saved,id:uid(),file:m.file || null,audio:m.audio,url:m.url,waveform:m.waveform || null}];
       });
       S.audio = S.audioTracks[0] || null;
       if ($("stRatio") && data.ratio) $("stRatio").value = data.ratio;
