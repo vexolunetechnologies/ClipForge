@@ -1372,7 +1372,7 @@ if(featureCards[3]){featureCards[3].querySelector('h3').textContent='Private, te
 try{localStorage.removeItem('cf_projects')}catch(e){}
 if(typeof window.projSave==='function')window.projSave=function(){};
 if(typeof window.projOffer==='function')window.projOffer=function(){};
-const addWorkspace=(id,html)=>{let el=document.getElementById(id);if(!el){el=document.createElement('section');el.id=id;el.style.display='none';const before=$('#how');before?before.parentNode.insertBefore(el,before):document.body.append(el)}el.innerHTML=html;return el};
+const addWorkspace=(id,html)=>{let el=document.getElementById(id);if(!el){el=document.createElement('section');el.id=id;el.className='cf-workspace';el.style.display='none';const home=$('.wrap');const tools=$('#tools');if(home&&tools&&tools.parentNode===home)tools.insertAdjacentElement('afterend',el);else if(home)home.append(el);else document.body.append(el)}el.innerHTML=html;return el};
 const shell=(title,desc,tag)=>'<a class="cf-back" href="#tools">← All creative tools</a><div class="cf-page-head"><div><div class="cf-kicker">'+tag+'</div><h2>'+title+'</h2><p>'+desc+'</p></div><span class="cf-badge">● Local browser session</span></div>';
 const montageHTML=shell('Video Montage Maker','Bring multiple clips together, refine the order and create a clean montage with optional music and title text.','CLIPFORGE / MONTAGE')+
 '<div class="cf-grid"><div class="cf-panel"><div class="cf-field"><label>ADD VIDEO CLIPS</label><input id="vmFiles" type="file" accept="video/*" multiple></div><div id="vmEmpty" class="cf-empty">Choose two or more video clips to start your montage.</div><div id="vmTimeline" class="cf-timeline"></div><video id="vmPreview" class="cf-preview" controls playsinline></video><div class="cf-row" style="margin-top:12px"><button class="sm" id="vmPreviewBtn">Preview selected clip</button><button class="sm" id="vmClear">Clear clips</button></div></div><div class="cf-panel"><div class="cf-kicker">OUTPUT SETTINGS</div><div class="cf-field"><label>VIDEO FORMAT</label><select id="vmRatio"><option value="9:16">9:16 · Reels / Shorts</option><option value="16:9" selected>16:9 · YouTube</option><option value="1:1">1:1 · Square</option></select></div><div class="cf-field"><label>TRANSITION</label><select id="vmTransition"><option value="fade">Fade between clips</option><option value="cut">Straight cuts</option></select></div><div class="cf-field"><label>VIDEO TITLE (OPTIONAL)</label><input id="vmTitle" maxlength="90" placeholder="Your montage title"></div><div class="cf-field"><label>BACKGROUND MUSIC (OPTIONAL)</label><input id="vmMusic" type="file" accept="audio/*"></div><div class="cf-stat"><b id="vmCount">0 clips</b><span id="vmDuration">Add media to calculate duration</span></div><button class="main" id="vmExport">Render montage</button><button class="sm" id="vmStop" style="display:none;margin-top:8px">Stop rendering</button><div class="cf-progress"><i id="vmProgress"></i></div><div id="vmStatus" class="cf-status" role="status"></div><div id="vmOutput" class="cf-output"></div></div></div>';
@@ -1384,8 +1384,11 @@ addWorkspace('vmTool',montageHTML);addWorkspace('editorTool',editorHTML);
 const activeWorkspace=()=>['montage','editor'].includes(location.hash.slice(1));
 function routeV2(){
  const h=location.hash.replace('#','');
+ const montage=document.getElementById('vmTool'),editor=document.getElementById('editorTool');
+ if(montage)montage.style.display=h==='montage'?'block':'none';
+ if(editor)editor.style.display=h==='editor'?'block':'none';
  if(h==='montage'||h==='editor'){
-  document.body.classList.add('solo');document.body.dataset.tool=h;document.title=(h==='montage'?'Video Montage Maker':'Editor')+' – ClipForge Studio';
+  document.body.classList.add('solo');document.body.dataset.tool=h;document.title=(h==='montage'?'Video Montage Maker':'Studio Editor')+' – ClipForge Studio';
   window.scrollTo(0,0);
  }else{
   document.body.classList.remove('solo');
