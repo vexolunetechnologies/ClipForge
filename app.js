@@ -1742,7 +1742,7 @@ $('stExport').onclick=async()=>{
   const now=performance.now();t+=(now-last)/1000;last=now;seek(t);
   msg('Rendering… '+Math.min(100,Math.round(t/Math.max(1,total())*100))+'%');
   const active=S.clips.filter(x=>t>=x.start&&t<x.start+x.duration);
-  active.forEach(c=>{if(!c.video)return;const p=c.in+t-c.start;if(Math.abs(c.video.currentTime-p)>.3)c.video.currentTime=p;c.video.playbackRate=c.speed||1;c.video.muted=false;c.video.volume=Math.max(0,Math.min(1,Number(c.audioVolume??100)/100));c.video.play().catch(()=>{})});
+  active.forEach(c=>{if(!c.video)return;const p=(c.in||0)+(t-c.start)*(c.speed||1);if(Math.abs(c.video.currentTime-p)>.3)c.video.currentTime=p;c.video.playbackRate=c.speed||1;c.video.muted=false;c.video.volume=Math.max(0,Math.min(1,Number(c.audioVolume??100)/100));c.video.play().catch(()=>{})});
   (S.audioTracks||[S.audio]).filter(Boolean).forEach(a=>{
    if(!a.audio)return;
    if(t>=a.start&&t<a.start+a.duration){
