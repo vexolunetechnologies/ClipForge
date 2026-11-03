@@ -42,7 +42,9 @@
       if (anchor && anchor.parentElement) anchor.parentElement.after(row);
       else $("stInner").append(row);
     }
-    row.querySelector(".st-lane-content").innerHTML = items.map(x => clipButton(x, kind)).join("");
+    const content = row.querySelector(".st-lane-content");
+    const html = items.map(x => clipButton(x, kind)).join("");
+    if (content.innerHTML !== html) content.innerHTML = html;
   }
 
   function renderLanes() {
@@ -320,5 +322,5 @@
   actions();
   renderLanes();
   const inner = $("stInner");
-  if (inner) new MutationObserver(() => { renderLanes(); }).observe(inner, { childList:true, subtree:false });
+  if (inner) new MutationObserver(() => { renderLanes(); }).observe(inner, { childList:true, subtree:true });
 })();
