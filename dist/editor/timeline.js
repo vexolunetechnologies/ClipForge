@@ -11,7 +11,7 @@
   const uid = () => crypto.randomUUID();
   const say = (message) => { if ($("stStatus")) $("stStatus").textContent = message; };
   const safe = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-  const getClip = (id) => S.clips.find(x => x.id === id) || S.titles.find(x => x.id === id) || S.overlays.find(x => x.id === id) || S.captions.find(x => x.id === id) || (S.audio && S.audio.id === id ? S.audio : null);
+  const getClip = (id) => S.clips.find(x => x.id === id) || S.titles.find(x => x.id === id) || S.overlays.find(x => x.id === id) || S.captions.find(x => x.id === id) || (S.audioTracks || []).find(x => x.id === id) || (S.audio && S.audio.id === id ? S.audio : null);
   const len = (x) => Math.max(.1, Number(x.duration) || .1);
 
   function snapshot() {
@@ -50,6 +50,8 @@
     lane("stVideoLane3Row", "VIDEO 3", "stVideoLane2", S.clips.filter(x => x.track === 3), "video");
     lane("stOverlayLaneRow", "OVERLAYS", "stTextLane", S.overlays, "overlay");
     lane("stCaptionLaneRow", "CAPTIONS", "stOverlayLaneRow", S.captions, "caption");
+    lane("stAudioLane2Row", "AUDIO 2", "stAudioLane", (S.audioTracks || []).slice(1), "audio");
+    lane("stAudioLane3Row", "AUDIO 3", "stAudioLane2Row", (S.audioTracks || []).slice(2), "audio");
   }
 
   function actions() {
@@ -209,6 +211,7 @@
 
   const originalRender = api.render;
   api.render = function() { originalRender(); renderLanes(); actions(); inspectExtra(); };
+  api.drawExtras = drawExtras;
   window.addEventListener("clipforge:image-imported", event => {
     const a = event.detail;
     if (!a || S.media.some(x => x.id === a.id)) return;
@@ -222,7 +225,7 @@
     if (!node) return;
     const x = getClip(node.dataset.id);
     if (!x) return;
-    event.preventDefault(); api.stop(); S.sel=x.id; snapshot();
+    event.preventDefault(); api.stop(); S.sel=x.id; snapshot(); node.setPointerCapture?.(event.pointerId);
     pointer={x, id:x.id, px:event.clientX, start:x.start, duration:len(x), mode:event.target.closest("[data-trim]")?.dataset.trim || "move"};
   });
   $("stInner")?.addEventListener("pointermove", event => {
@@ -230,7 +233,7 @@
     const delta=(event.clientX-pointer.px)/Math.max(10,S.zoom), x=pointer.x;
     if (pointer.mode==="left") { const shift=Math.max(-Number(x.in||0),Math.min(pointer.duration-.1,delta)); x.start=Math.max(0,pointer.start+shift); x.in=Math.max(0,Number(x.in||0)+x.start-pointer.start); x.duration=Math.max(.1,pointer.duration-(x.start-pointer.start)); }
     else if (pointer.mode==="right") x.duration=Math.max(.1,pointer.duration+delta);
-    else x.start=Math.max(0,pointer.start+delta);
+    else { x.start=Math.max(0,pointer.start+delta); const row=event.target.closest(".st-lane"); const label=row?.querySelector(".st-track-label")?.textContent || ""; if(x.video || x.kind==="image"){ if(label.includes("VIDEO 3"))x.track=3; else if(label.includes("VIDEO 2"))x.track=2; else if(label.includes("VIDEO 1"))x.track=1; } }
     const node=document.querySelector('[data-id="'+CSS.escape(pointer.id)+'"]');
     if (node) { node.style.left=(x.start*S.zoom)+"px"; node.style.width=Math.max(46,x.duration*S.zoom)+"px"; }
   });
@@ -255,11 +258,9 @@
     }
   });
 
-  function frame() {
-    if (document.visibilityState==="visible" && $("editorTool")?.offsetParent!==null) drawExtras();
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
+
   actions();
   renderLanes();
+  const inner = $("stInner");
+  if (inner) new MutationObserver(() => { renderLanes(); }).observe(inner, { childList:true, subtree:false });
 })();
