@@ -316,7 +316,32 @@
       assetPanel.querySelector('[data-st-tab="' + tab + '"]')?.click();
       rail.querySelectorAll("[data-rail-tab]").forEach(item => item.classList.toggle("active", item === button));
     });
-    stage.append(rail, assetPanel, preview, inspector);
+    const monitorPair = document.createElement("div");
+    monitorPair.className = "st-monitor-pair";
+    const sourcePanel = document.createElement("section");
+    sourcePanel.className = "st-source-panel";
+    sourcePanel.innerHTML = '<div class="st-panel-title">SOURCE MONITOR <span class="st-source-meta">No source loaded</span></div><div class="st-source-view"><div class="st-source-empty">Select SOURCE on a media item to preview it here.</div></div><div class="st-source-footer"><span>CLIPFORGE SOURCE</span><span>Local preview</span></div>';
+    const sourceView = sourcePanel.querySelector(".st-source-view");
+    const loadSource = media => {
+      sourceView.replaceChildren();
+      sourcePanel.querySelector(".st-source-meta").textContent = media.name;
+      if (media.kind === "image") { const image = document.createElement("img"); image.src = media.url; image.alt = media.name; sourceView.append(image); }
+      else if (media.kind === "audio") { const audio = document.createElement("audio"); audio.src = media.url; audio.controls = true; audio.preload = "metadata"; sourceView.append(audio); }
+      else { const video = document.createElement("video"); video.src = media.url; video.controls = true; video.preload = "metadata"; video.playsInline = true; video.muted = true; sourceView.append(video); }
+      sourcePanel.dataset.loaded = "true";
+    };
+    root.addEventListener("click", event => {
+      const trigger = event.target.closest("[data-media-preview]");
+      if (!trigger || !root.contains(trigger)) return;
+      event.preventDefault(); event.stopPropagation();
+      const media = state.media.find(item => item.id === trigger.dataset.mediaPreview);
+      if (media) loadSource(media);
+    }, true);
+    root.addEventListener("keydown", event => {
+      if ((event.key === "Enter" || event.key === " ") && event.target.closest("[data-media-preview]")) { event.preventDefault(); event.target.closest("[data-media-preview]").click(); }
+    }, true);
+    monitorPair.append(sourcePanel, preview);
+    stage.append(rail, assetPanel, monitorPair, inspector);
     main.replaceChildren(stage, timeline);
     workspace.replaceChildren(main);
     workspace.classList.add("st-pro-workspace");
