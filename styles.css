@@ -2065,3 +2065,193 @@ body.solo[data-tool="editor"] #editorTool .st-clip-block.audio small {
 body.solo[data-tool="editor"] #editorTool .st-pro-lane[data-lane-kind="video"] .st-track-label {
   color:#a9bfff!important;
 }
+
+
+/* Detached source-audio control on timeline clips. */
+body.studio-app #editorTool .st-audio-detach {
+  position:absolute;right:8px;top:2px;z-index:5;display:grid;place-items:center;
+  width:17px;height:17px;border:1px solid rgba(220,255,240,.55);border-radius:3px;
+  background:#124d3d;color:#e2fff4;font-size:11px;font-weight:900;cursor:pointer;
+}
+body.studio-app #editorTool .st-clip-block.audio {padding-right:28px!important}
+
+/* Mobile Studio: a compact, touch-first editing surface inspired by mobile NLEs. */
+.st-mobile-dock,.st-mobile-import {display:none}
+@media (max-width:760px) {
+  html,body.studio-app {height:100%;min-height:100%;overflow:hidden!important;overscroll-behavior:none}
+  body.studio-app #editorTool {
+    position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important;
+    min-height:0!important;overflow:hidden!important;padding:0!important;margin:0!important;
+    background:#101113!important;z-index:20;
+  }
+  body.studio-app #editorTool .st-appbar {
+    position:absolute!important;inset:0 0 auto!important;height:52px!important;min-height:52px!important;
+    display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:7px!important;
+    padding:0 10px!important;background:#17191d!important;border:0!important;border-bottom:1px solid #303238!important;
+    z-index:35!important;overflow:hidden!important;
+  }
+  body.studio-app #editorTool .st-appbrand {font-size:10px!important;white-space:nowrap!important}
+  body.studio-app #editorTool .st-app-divider,
+  body.studio-app #editorTool .st-app-status,
+  body.studio-app #editorTool .st-appbar #stAppUndo,
+  body.studio-app #editorTool .st-appbar #stAppRedo,
+  body.studio-app #editorTool .st-appbar #stAppOpen,
+  body.studio-app #editorTool .st-appbar #stAppSave,
+  body.studio-app #editorTool .st-appbar #stAppCancel {display:none!important}
+  body.studio-app #editorTool .st-project-name-wrap {min-width:0!important;max-width:34vw!important;margin:0!important}
+  body.studio-app #editorTool .st-project-name-wrap small {display:none!important}
+  body.studio-app #editorTool .st-project-name-wrap input {
+    width:100%!important;min-width:0!important;padding:5px 4px!important;background:transparent!important;
+    border:0!important;color:#f1f3f5!important;font-size:11px!important;font-weight:650!important;
+  }
+  body.studio-app #editorTool .st-app-spacer {flex:1!important}
+  body.studio-app #editorTool .st-appbar #stAppExport {
+    display:block!important;flex:none!important;padding:8px 13px!important;min-height:34px!important;
+    border-radius:7px!important;background:#13bfd0!important;color:#071316!important;
+    font-size:12px!important;font-weight:800!important;
+  }
+  body.studio-app #editorTool .st-menubar {display:none!important}
+  body.studio-app #editorTool .st-workspace,
+  body.studio-app #editorTool .st-pro-workspace {
+    display:block!important;position:absolute!important;inset:52px 0 66px!important;
+    width:100%!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;
+    overflow:hidden!important;
+  }
+  body.studio-app #editorTool .st-pro-main {
+    position:absolute!important;inset:0!important;display:flex!important;flex-direction:column!important;
+    gap:0!important;width:100%!important;height:100%!important;min-height:0!important;
+    padding:0!important;overflow:hidden!important;background:#111315!important;
+  }
+  body.studio-app #editorTool .st-pro-stage,
+  body.studio-app #editorTool .st-monitor-pair {display:contents!important}
+  body.studio-app #editorTool .st-vertical-rail {display:none!important}
+  body.studio-app #editorTool .st-assets {
+    display:none!important;position:fixed!important;left:8px!important;right:8px!important;
+    top:auto!important;bottom:calc(70px + env(safe-area-inset-bottom,0px))!important;
+    width:auto!important;height:43dvh!important;max-height:43dvh!important;min-height:0!important;
+    padding:12px!important;overflow:auto!important;z-index:60!important;
+    background:#202226!important;border:1px solid #41454b!important;border-radius:12px!important;
+    box-shadow:0 12px 45px rgba(0,0,0,.55)!important;
+  }
+  body.studio-app #editorTool.st-mobile-media-open .st-assets {display:block!important}
+  body.studio-app #editorTool .st-assets .st-media {max-height:24dvh!important;overflow:auto!important}
+  body.studio-app #editorTool .st-assets .st-media-item {min-height:52px!important}
+  body.studio-app #editorTool .st-source-panel {
+    display:none!important;position:fixed!important;left:8px!important;right:8px!important;
+    top:auto!important;bottom:calc(70px + env(safe-area-inset-bottom,0px))!important;
+    width:auto!important;height:52dvh!important;max-height:52dvh!important;min-height:0!important;
+    padding:12px!important;z-index:61!important;overflow:hidden!important;
+    background:#202226!important;border:1px solid #41454b!important;border-radius:12px!important;
+    box-shadow:0 12px 45px rgba(0,0,0,.55)!important;
+  }
+  body.studio-app #editorTool.st-mobile-inspector-open .st-source-panel {
+    display:flex!important;flex-direction:column!important;
+  }
+  body.studio-app #editorTool .st-source-panel .st-left-tabs,
+  body.studio-app #editorTool .st-source-panel .st-source-view,
+  body.studio-app #editorTool .st-source-panel .st-source-footer {display:none!important}
+  body.studio-app #editorTool .st-source-panel .st-inspector {
+    display:flex!important;flex:1!important;width:100%!important;height:100%!important;max-height:none!important;
+    min-height:0!important;overflow:auto!important;padding:0!important;border:0!important;background:transparent!important;
+  }
+  body.studio-app #editorTool .st-inspector-body {overflow:auto!important;padding-bottom:12px!important}
+  body.studio-app #editorTool .st-preview-panel {
+    display:flex!important;flex:0 0 32dvh!important;width:100%!important;height:32dvh!important;
+    min-height:190px!important;max-height:32dvh!important;overflow:hidden!important;
+    padding:7px 8px 5px!important;border:0!important;border-bottom:1px solid #33373c!important;
+    border-radius:0!important;background:#111315!important;
+  }
+  body.studio-app #editorTool .st-preview-panel>.st-panel-title {
+    flex:0 0 22px!important;min-height:22px!important;margin:0!important;padding:0 3px 5px!important;
+    border:0!important;color:#e4e6e9!important;font-size:9px!important;letter-spacing:.1em!important;
+  }
+  body.studio-app #editorTool .st-mobile-import {
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    margin-left:auto!important;padding:4px 9px!important;border:0!important;border-radius:5px!important;
+    background:#2a2d32!important;color:#e9edf0!important;font-size:10px!important;font-weight:750!important;
+  }
+  body.studio-app #editorTool .st-canvas-wrap {
+    flex:1 1 0!important;min-height:0!important;max-height:none!important;border:0!important;
+    border-radius:3px!important;background:#050607!important;
+  }
+  body.studio-app #editorTool .st-canvas-wrap canvas {width:100%!important;height:100%!important;object-fit:contain!important}
+  body.studio-app #editorTool .st-transport {
+    flex:0 0 34px!important;min-height:34px!important;margin:3px 0 0!important;gap:8px!important;
+    color:#b9bdc3!important;font-size:10px!important;
+  }
+  body.studio-app #editorTool .st-transport button {
+    width:30px!important;height:28px!important;border-radius:50%!important;background:#292d32!important;
+    color:#fff!important;border:0!important;
+  }
+  body.studio-app #editorTool .st-transport select {width:56px!important;padding:4px!important}
+  body.studio-app #editorTool .st-transport input {accent-color:#13bfd0!important}
+  body.studio-app #editorTool .st-timeline-panel {
+    display:flex!important;flex:1 1 0!important;width:100%!important;height:auto!important;
+    min-height:190px!important;max-height:none!important;overflow:hidden!important;
+    padding:6px 0 2px!important;border:0!important;border-radius:0!important;
+    background:#151719!important;
+  }
+  body.studio-app #editorTool .st-timeline-top {
+    flex:0 0 34px!important;min-height:34px!important;padding:0 9px!important;
+    border:0!important;background:#1b1e21!important;
+  }
+  body.studio-app #editorTool .st-timeline-top .st-panel-title {
+    color:#f0f1f3!important;font-size:10px!important;letter-spacing:.06em!important;
+  }
+  body.studio-app #editorTool .st-timeline-actions {display:flex!important;align-items:center!important;gap:4px!important}
+  body.studio-app #editorTool .st-timeline-actions button {
+    min-width:27px!important;height:25px!important;padding:2px 6px!important;
+    background:#2b2f34!important;border:0!important;border-radius:4px!important;color:#e7eaed!important;font-size:10px!important;
+  }
+  body.studio-app #editorTool .st-timeline-actions #stSplit,
+  body.studio-app #editorTool .st-timeline-actions #stDelete {display:none!important}
+  body.studio-app #editorTool .st-timeline-actions input[type="range"] {width:54px!important;min-width:45px!important}
+  body.studio-app #editorTool .st-timeline-scroll {
+    flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
+    margin:0!important;overflow:auto!important;border:0!important;border-radius:0!important;
+    background:#17191b!important;touch-action:pan-x pan-y!important;
+  }
+  body.studio-app #editorTool .st-timeline-inner {min-width:760px!important;min-height:100%!important;padding-bottom:8px!important}
+  body.studio-app #editorTool .st-ruler {height:25px!important;min-height:25px!important}
+  body.studio-app #editorTool .st-track-label {
+    position:sticky!important;left:0!important;z-index:4!important;width:72px!important;min-width:72px!important;
+    padding:9px 5px!important;background:#24272b!important;border-right:1px solid #42464b!important;
+    color:#c3c8ce!important;font-size:8px!important;letter-spacing:.02em!important;
+  }
+  body.studio-app #editorTool .st-ruler .st-track-label {z-index:6!important}
+  body.studio-app #editorTool .st-lane,
+  body.studio-app #editorTool .st-pro-lane {height:43px!important;min-height:43px!important}
+  body.studio-app #editorTool .st-lane-content {height:43px!important;min-height:43px!important;background-size:48px 100%!important}
+  body.studio-app #editorTool .st-ruler-content {background-size:48px 100%!important}
+  body.studio-app #editorTool .st-clip-block {
+    top:5px!important;height:33px!important;min-height:33px!important;min-width:28px!important;
+    padding:4px 6px!important;border-radius:4px!important;
+  }
+  body.studio-app #editorTool .st-clip-block b {font-size:8px!important}
+  body.studio-app #editorTool .st-clip-block small {font-size:7px!important}
+  body.studio-app #editorTool .st-clip-block .st-trim-handle {width:8px!important}
+  body.studio-app #editorTool .st-clip-block.audio {padding-right:23px!important}
+  body.studio-app #editorTool .st-audio-detach {right:3px!important;top:2px!important;width:15px!important;height:15px!important}
+  body.studio-app #editorTool .st-timeline-foot {display:none!important}
+  body.studio-app #editorTool .st-export-status {display:none!important}
+  body.studio-app #editorTool .st-mobile-dock {
+    position:fixed!important;inset:auto 0 0!important;z-index:70!important;
+    display:flex!important;align-items:stretch!important;justify-content:space-around!important;
+    height:calc(62px + env(safe-area-inset-bottom,0px))!important;
+    padding:5px 3px calc(5px + env(safe-area-inset-bottom,0px))!important;
+    background:#1b1d20!important;border-top:1px solid #35393e!important;
+  }
+  body.studio-app #editorTool .st-mobile-dock button {
+    flex:1 1 0!important;min-width:0!important;display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:center!important;gap:3px!important;
+    padding:2px 1px!important;border:0!important;border-radius:5px!important;background:transparent!important;
+    color:#c5c8cc!important;
+  }
+  body.studio-app #editorTool .st-mobile-dock button:active {background:#30343a!important;color:#fff!important}
+  body.studio-app #editorTool .st-mobile-dock button span {font-size:23px!important;line-height:24px!important;font-weight:400!important}
+  body.studio-app #editorTool .st-mobile-dock button small {font-size:10px!important;line-height:12px!important}
+  body.studio-app #editorTool .st-mobile-dock [data-mobile-action="audio"] span {color:#b9c2cc!important}
+  body.studio-app #editorTool .st-mobile-dock [data-mobile-action="text"] span {font-size:25px!important}
+  body.studio-app #editorTool.st-mobile-media-open .st-source-panel,
+  body.studio-app #editorTool.st-mobile-inspector-open .st-assets {display:none!important}
+}
