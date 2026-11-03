@@ -25,7 +25,7 @@
 <!-- Fonts: Noto Naskh Arabic (Urdu / Arabic) and Noto Sans Devanagari (Hindi) for the captions -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@700&family=Noto+Sans+Devanagari:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@700&family=Noto+Sans+Devanagari:wght@700&display=swap" rel="stylesheet">
 </head>
 <body data-tool="shorts" data-page="home">
 <!-- ===== HTML: page structure ===== -->
@@ -140,8 +140,8 @@
   <div class="lbl">Trim silence <small>(skips quiet gaps while exporting)</small></div><div class="row"><button class="chip on" data-k="tr" data-v="off">Off</button><button class="chip" data-k="tr" data-v="gentle">Gentle</button><button class="chip" data-k="tr" data-v="normal">Normal</button><button class="chip" data-k="tr" data-v="strong">Aggressive</button><button class="chip" data-k="tr" data-v="speech">Dialogue only (speech AI)</button></div><p class="note">“Dialogue only” transcribes each short with Whisper and cuts the gaps between spoken lines, so it works even when music plays under the pauses. Pick the right speech language below for best results. First use downloads the speech model.</p>
   <div id="posbox" class="hide"><div class="lbl">Crop position <small>(left ↔ right)</small></div><input type="range" id="pos" min="0" max="100" value="50"></div>
   <div hidden><div class="lbl">Caption model <small>(bigger = more accurate, slower)</small></div><div class="row"><button class="chip" data-k="model" data-v="tiny">Fast ~40MB</button><button class="chip on" data-k="model" data-v="base">Better ~75MB</button><button class="chip" data-k="model" data-v="small">Best ~250MB</button></div></div>
-  <div id="stylebox" class="hide"><div class="lbl">Caption style</div><div class="row"><button class="chip on" data-k="cs" data-v="classic">Classic</button><button class="chip" data-k="cs" data-v="pop">Pop (yellow)</button><button class="chip" data-k="cs" data-v="box">Box</button><button class="chip" data-k="cs" data-v="karaoke">Karaoke</button><button class="chip" data-k="cs" data-v="hl">Highlight</button><button class="chip" data-k="cs" data-v="neon">Neon</button><button class="chip" data-k="cs" data-v="min">Minimal</button></div>
-  <p class="note">Karaoke: words turn yellow as they are spoken. Highlight: the spoken word sits on an orange box. Word timing is estimated from the length of each word.</p></div>
+  <div id="stylebox" class="hide"><div class="lbl">Caption style</div><div class="row"><button class="chip on" data-k="cs" data-v="classic">Classic</button><button class="chip" data-k="cs" data-v="pop">Pop (yellow)</button><button class="chip" data-k="cs" data-v="box">Box</button><button class="chip" data-k="cs" data-v="karaoke">Karaoke</button><button class="chip" data-k="cs" data-v="hl">Highlight</button><button class="chip" data-k="cs" data-v="neon">Neon</button><button class="chip" data-k="cs" data-v="min">Minimal</button><button class="chip" data-k="cs" data-v="pill">Pill</button><button class="chip" data-k="cs" data-v="news">News bar</button><button class="chip" data-k="cs" data-v="outline">Bold outline</button><button class="chip" data-k="cs" data-v="urdu">Urdu Nastaliq</button></div>
+  <p class="note">Karaoke: spoken words highlight in sequence. Highlight: the active word gets a colour block. Pill and News bar add clean lower-third panels. Urdu Nastaliq uses a dedicated Urdu font; transcription still depends on the selected Whisper model.</p></div>
   <div hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div></div>
 </div>
 <!-- Live preview of the 9:16 frame -->
