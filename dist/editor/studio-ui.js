@@ -118,10 +118,16 @@
         <div class="st-effect-grid">
           <button type="button" data-st-effect="none">Original</button>
           <button type="button" data-st-effect="cinema">Cinematic</button>
+          <button type="button" data-st-effect="teal-orange">Teal / Orange</button>
+          <button type="button" data-st-effect="film">Film</button>
+          <button type="button" data-st-effect="vintage">Vintage</button>
+          <button type="button" data-st-effect="bleach">Bleach Bypass</button>
           <button type="button" data-st-effect="mono">B&amp;W</button>
+          <button type="button" data-st-effect="noir">Noir</button>
           <button type="button" data-st-effect="warm">Warm</button>
           <button type="button" data-st-effect="cool">Cool</button>
           <button type="button" data-st-effect="vivid">Vivid</button>
+          <button type="button" data-st-effect="dream">Dream</button>
         </div>
       </div>
       <div class="st-tool-pane" data-st-pane="tracks" hidden>
@@ -530,7 +536,10 @@
       } else if (command === "inspector") {
         inspector.hidden = !inspector.hidden;
       } else if (command === "shortcuts") {
-        api.msg("Premiere-style shortcuts: C = cut at playhead · Backspace/Delete = remove selected clip · Space = play/pause · J = step back 1 second · K = stop · L = play · ←/→ = frame step · Home/End = sequence start/end · Ctrl/Cmd+K = Add Edit · Ctrl/Cmd+Z = undo · Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y = redo · Ctrl/Cmd+S = export project file · Ctrl/Cmd+I = import media · Ctrl/Cmd+Shift+E = export video.");
+        root.querySelector(".st-shortcut-guide")?.remove();
+        const guide=document.createElement("div");guide.className="st-shortcut-guide";guide.innerHTML='<div class="st-shortcut-card" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts"><header><strong>Keyboard shortcuts</strong><button type="button" data-shortcut-close aria-label="Close">×</button></header><div class="st-shortcut-grid"><section><b>Playback & navigation</b><p><kbd>Space</kbd> Play / pause</p><p><kbd>J</kbd> Back 1 sec · <kbd>K</kbd> Stop · <kbd>L</kbd> Play</p><p><kbd>←</kbd> / <kbd>→</kbd> Previous / next frame</p><p><kbd>Shift</kbd> + arrows Step 5 frames</p><p><kbd>Home</kbd> / <kbd>End</kbd> Sequence start / end</p></section><section><b>Editing</b><p><kbd>C</kbd> Split selected / top clip</p><p><kbd>Ctrl</kbd> + <kbd>K</kbd> Add edit</p><p><kbd>Delete</kbd> / <kbd>Backspace</kbd> Remove selection</p><p><kbd>D</kbd> Deselect clip</p><p><kbd>N</kbd> Toggle snapping</p></section><section><b>Timeline & panels</b><p><kbd>F</kbd> Fit timeline</p><p><kbd>+</kbd> / <kbd>−</kbd> Zoom timeline</p><p><kbd>1</kbd> Media · <kbd>2</kbd> Audio · <kbd>3</kbd> Text · <kbd>4</kbd> Captions</p><p><kbd>5</kbd> Effects · <kbd>6</kbd> Transitions · <kbd>7</kbd> Graphics · <kbd>8</kbd> Tracks</p></section><section><b>Project</b><p><kbd>Ctrl</kbd> + <kbd>Z</kbd> Undo · <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> Redo</p><p><kbd>Ctrl</kbd> + <kbd>Y</kbd> Redo</p><p><kbd>Ctrl</kbd> + <kbd>I</kbd> Import · <kbd>Ctrl</kbd> + <kbd>O</kbd> Open project</p><p><kbd>Ctrl</kbd> + <kbd>S</kbd> Export project file</p><p><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> Export video</p></section></div><footer>Shortcuts work when the editor canvas or timeline is active. Inputs keep their normal typing behavior.</footer></div>';
+        guide.addEventListener("click",e=>{if(e.target===guide||e.target.closest("[data-shortcut-close]"))guide.remove();});
+        root.append(guide);
       } else if (commands[command]) {
         $(commands[command])?.click();
       }
