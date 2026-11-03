@@ -133,7 +133,7 @@
 
   function addAdjustment() {
     snapshot();
-    const x={id:uid(),name:"Adjustment Layer",start:S.time,duration:Math.max(1,Math.min(10,api.total()-S.time||4)),brightness:100,contrast:100,saturation:100,hue:0,blur:0,vignette:0,opacity:100,blendMode:"source-over"};
+    const x={id:uid(),name:"Adjustment Layer",start:S.time,duration:4,brightness:100,contrast:100,saturation:100,hue:0,blur:0,vignette:0,opacity:100,blendMode:"source-over"};
     S.adjustments.push(x);S.sel=x.id;api.render();say("Adjustment layer added. Extend or trim it on the timeline, then adjust its effect controls.");
   }
 
