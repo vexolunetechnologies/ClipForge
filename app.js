@@ -1653,7 +1653,7 @@ function block(c,type){
   const wave = type === "audio" && Array.isArray(c.waveform)
     ? '<span class="st-waveform">' + c.waveform.map(v => '<i style="height:' + Math.max(8,Math.min(100,Math.round(v*100))) + '%"></i>').join("") + '</span>'
     : "";
-  return `<button draggable="${c.visualOnly?'false':'true'}" class="st-clip-block ${type}${S.sel===c.id?' is-selected':''}" data-id="${c.id}" style="left:${c.start*S.zoom}px;width:${Math.max(46,c.duration*S.zoom)}px"><span class="st-trim-handle left" data-trim="left" aria-label="Trim clip start"></span><b>${esc(c.name)}</b><small>${fmt(c.duration)}</small>${wave}<span class="st-trim-handle right" data-trim="right" aria-label="Trim clip end"></span></button>`;
+  return `<button draggable="${c.visualOnly?'false':'true'}" class="st-clip-block ${type}${S.sel===c.id?' is-selected':''}" data-id="${c.id}" style="left:${c.start*S.zoom}px;width:${Math.max(46,c.duration*S.zoom)}px"><span class="st-trim-handle left" data-trim="left" aria-label="Trim clip start"></span><b>${esc(c.name)}</b><small>${fmt(c.duration)}</small>${wave}${c.linkedVideoId?'<span class="st-audio-detach" data-detach="'+c.id+'" role="button" tabindex="0" title="Detach audio from video">↗</span>':''}<span class="st-trim-handle right" data-trim="right" aria-label="Trim clip end"></span></button>`;
 }
 function timeline(){
  const inner=$('stInner'),scroll=inner?.closest('.st-timeline-scroll'),d=total(),w=Math.max(1100,d*S.zoom+260);
@@ -1704,7 +1704,7 @@ function timeline(){
  lanes.forEach(createLane);
  document.querySelectorAll('#stInner [data-id]').forEach(button=>{
   const itemId=button.dataset.id;
-  button.onclick=event=>{if(event.target.closest('[data-trim]'))return;S.sel=itemId;inspector();timeline()};
+  button.onclick=event=>{if(event.target.closest('[data-trim]'))return;const detach=event.target.closest('[data-detach]');if(detach){event.preventDefault();event.stopPropagation();const track=(S.audioTracks||[]).find(x=>x.id===detach.dataset.detach);if(!track||!track.linkedVideoId)return;const parent=S.clips.find(x=>x.id===track.linkedVideoId);if(!parent)return;snap();track.linkedVideoId=null;track.visualOnly=false;track.name=track.name.replace(' · Linked audio',' · Detached audio');track.audio=new Audio(track.url);track.audio.preload='auto';track.audio.volume=Math.max(0,Math.min(1,Number(track.volume??100)/100));parent.audioDetached=true;S.sel=track.id;render();msg('Audio detached — move, trim and adjust it independently.');return}S.sel=itemId;inspector();timeline()};
   button.ondragstart=e=>{e.dataTransfer.setData('text/plain',itemId);e.dataTransfer.effectAllowed='move'};
   button.querySelectorAll('[data-trim]').forEach(handle=>{
    handle.onpointerdown=e=>{
