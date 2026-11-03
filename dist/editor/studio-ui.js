@@ -241,6 +241,12 @@
       (event.shiftKey ? $("stRedo") : $("stUndo"))?.click();
     } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
       event.preventDefault(); $("stProjectSave")?.click();
+    } else if (!event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "s") {
+      event.preventDefault(); $("stSplit")?.click();
+    } else if (!event.ctrlKey && !event.metaKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      event.preventDefault(); api.stop();
+      const step = 1 / Math.max(1,Number(state.exportFps)||30);
+      api.seek(state.time + (event.key === "ArrowRight" ? step : -step));
     }
   });
 })();
