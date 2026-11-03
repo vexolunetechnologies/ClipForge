@@ -91,7 +91,7 @@
       + '<label class="st-prop"><span>Frame rate</span><select id="stFps"><option value="24">24 FPS</option><option value="30" selected>30 FPS</option><option value="60">60 FPS</option></select></label>'
       + '<button class="st-tool" id="stProjectSave">↓ Export project file</button>'
       + '<label class="st-tool st-file-action">Load project file<input id="stProjectLoad" type="file" accept=".clipforge,.json,application/json" hidden></label>'
-      + '<small class="st-hint">Project files store edit decisions only. Re-import original media after loading. Nothing is uploaded or autosaved.</small>';
+      + '<small class="st-hint">Project files store edit decisions only. Import original media first, then load the project file. Nothing is uploaded or autosaved.</small>';
     document.querySelector(".st-assets")?.append(panel);
     $("stShape").onclick = () => addOverlay("rect");
     $("stSticker").onclick = () => addOverlay("sticker");
@@ -149,8 +149,8 @@
   function saveProject() {
     const data = {
       format:"clipforge-project", version:1, ratio:$("stRatio")?.value || "16:9",
-      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed})),
-      titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation})),
+      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
+      titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation,fontFamily:x.fontFamily,positionY:x.positionY,stroke:x.stroke,shadowColor:x.shadowColor,shadow:x.shadow})),
       overlays:S.overlays.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
       audio:S.audio ? {name:S.audio.name,start:S.audio.start,in:S.audio.in,out:S.audio.out,duration:S.audio.duration,volume:S.audio.volume,fadeIn:S.audio.fadeIn,fadeOut:S.audio.fadeOut} : null,
       audioTracks:(S.audioTracks || []).map(x => ({name:x.name,start:x.start,in:x.in,out:x.out,duration:x.duration,volume:x.volume,fadeIn:x.fadeIn,fadeOut:x.fadeOut,track:x.track}))
