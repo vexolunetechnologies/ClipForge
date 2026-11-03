@@ -34,7 +34,7 @@
 
   function snapshot() {
     S.undo.push({
-      videoTrackCount:S.videoTrackCount || 4, clips: S.clips.map(x => ({...x})), titles: S.titles.map(x => ({...x})),
+      videoTrackCount:Math.max(4,Math.min(8,Number(S.videoTrackCount)||4)), clips: S.clips.map(x => ({...x})), titles: S.titles.map(x => ({...x})),
       overlays: S.overlays.map(x => ({...x})), captions: S.captions.map(x => ({...x})),
       audio: S.audio ? {...S.audio} : null,
       audioTracks: (S.audioTracks || []).map(x => ({...x}))
@@ -68,7 +68,7 @@
 
   function renderLanes() {
     if (!$("stInner")) return;
-    const maxVideoTracks = Math.max(4, Number(S.videoTrackCount) || 4);
+    const maxVideoTracks = Math.max(4, Math.min(8, Number(S.videoTrackCount) || 4));
     for (let stale = maxVideoTracks + 1; stale <= 12; stale++) $( "stVideoLane" + stale + "Row")?.remove();
     const addTrackButton = $("stAddVideoTrack");
     if (addTrackButton) addTrackButton.disabled = maxVideoTracks >= 8;
@@ -188,7 +188,7 @@
       S.clips = data.clips.flatMap(saved => {
         const m = assets.get(saved.name);
         if (!m) { missing.push(saved.name); return []; }
-        return [{...saved,id:uid(),video:m.video || null,image:m.image || null,url:m.url,kind:m.kind}];
+        return [{...saved,id:uid(),track:Math.min(8,Math.max(1,Number(saved.track)||1)),video:m.video || null,image:m.image || null,url:m.url,kind:m.kind}];
       });
       S.titles = (data.titles || []).map(x => ({...x,id:uid()}));
       S.overlays = (data.overlays || []).map(x => ({...x,id:uid()}));
@@ -202,7 +202,7 @@
       S.audio = S.audioTracks[0] || null;
       if ($("stRatio") && data.ratio) $("stRatio").value = data.ratio;
       if ($("stProjectName") && data.projectName) $("stProjectName").value = data.projectName;
-      S.videoTrackCount = Math.max(4,Number(data.videoTrackCount)||4,...data.clips.map(x=>Number(x.track)||1));
+      S.videoTrackCount = Math.max(4,Math.min(8,Math.max(Number(data.videoTrackCount)||4,data.clips.reduce((max,x)=>Math.max(max,Number(x.track)||1),1))));
       S.sel = null; api.render();
       say(missing.length ? "Project loaded. Re-import media: " + missing.join(", ") : "Project loaded.");
     } catch (error) { say(error.message || "Could not load project."); }
