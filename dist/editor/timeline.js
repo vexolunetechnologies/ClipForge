@@ -164,7 +164,7 @@
   function saveProject() {
     const data = {
       format:"clipforge-project", version:2, projectName:$("stProjectName")?.value || "Untitled Project", ratio:$("stRatio")?.value || "16:9", videoTrackCount:S.videoTrackCount || 4, exportQuality:S.exportQuality || 720, exportFps:S.exportFps || 30, zoom:S.zoom || 80, snapEnabled:$("stSnap")?.checked !== false,
-      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,sourceDuration:x.sourceDuration || x.video?.duration || x.out,sourceSize:x.file?.size || x.sourceSize || null,sourceLastModified:x.file?.lastModified || x.sourceLastModified || null,sourceType:x.file?.type || x.sourceType || null,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed,audioVolume:x.audioVolume,audioFadeIn:x.audioFadeIn,audioFadeOut:x.audioFadeOut,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
+      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,sourceDuration:x.sourceDuration || x.video?.duration || x.out,sourceSize:x.file?.size || x.sourceSize || null,sourceLastModified:x.file?.lastModified || x.sourceLastModified || null,sourceType:x.file?.type || x.sourceType || null,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,exposure:x.exposure,temperature:x.temperature,tint:x.tint,vibrance:x.vibrance,highlights:x.highlights,shadows:x.shadows,scale:x.scale,rotation:x.rotation,speed:x.speed,audioVolume:x.audioVolume,audioFadeIn:x.audioFadeIn,audioFadeOut:x.audioFadeOut,x:x.x,y:x.y,transition:x.transition,keyframes:x.keyframes || []})),
       titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation,fontFamily:x.fontFamily,positionY:x.positionY,stroke:x.stroke,shadowColor:x.shadowColor,shadow:x.shadow})),
       overlays:S.overlays.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
       audio:S.audio ? {name:S.audio.name,start:S.audio.start,in:S.audio.in,out:S.audio.out,duration:S.audio.duration,volume:S.audio.volume,fadeIn:S.audio.fadeIn,fadeOut:S.audio.fadeOut} : null,
@@ -325,11 +325,57 @@
     }
   }
 
+
+  function inspectColor() {
+    const clip = S.clips.find(item => item.id === S.sel);
+    const panel = $("stInspector");
+    if (!clip || !panel || panel.querySelector(".st-grade-panel")) return;
+    const fields = [
+      ["exposure","Exposure","-2","2","0.1",0],
+      ["temperature","Temperature","-100","100","1",0],
+      ["tint","Tint","-100","100","1",0],
+      ["vibrance","Vibrance","0","200","1",100],
+      ["highlights","Highlights","-100","100","1",0],
+      ["shadows","Shadows","-100","100","1",0]
+    ];
+    const section = document.createElement("section");
+    section.className = "st-grade-panel";
+    section.innerHTML = '<div class="st-grade-heading"><strong>COLOR CORRECTION</strong><span>Primary grade</span></div>' +
+      fields.map(([key,label,min,max,step,fallback]) => {
+        const value = Number(clip[key] ?? fallback);
+        return '<label class="st-grade-control"><span>'+label+'</span><output data-grade-value="'+key+'">'+value+'</output><input type="range" data-grade-key="'+key+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+value+'"></label>';
+      }).join("") +
+      '<div class="st-grade-actions"><button type="button" class="st-btn" data-grade-reset>Reset grade</button><small>Adjustments are applied to preview and export.</small></div>';
+    panel.append(section);
+    let captured = false;
+    section.addEventListener("pointerdown", event => {
+      if (event.target.matches('input[type="range"]') && !captured) { snapshot(); captured = true; }
+    });
+    section.addEventListener("input", event => {
+      const input = event.target.closest("[data-grade-key]");
+      if (!input) return;
+      const key = input.dataset.gradeKey;
+      clip[key] = Number(input.value);
+      const output = section.querySelector('[data-grade-value="'+key+'"]');
+      if (output) output.textContent = input.value;
+      api.draw();
+    });
+    section.addEventListener("change", event => {
+      if (event.target.matches("[data-grade-key]")) { captured = false; api.render(); }
+    });
+    section.querySelector("[data-grade-reset]").addEventListener("click", () => {
+      snapshot();
+      fields.forEach(([key,,,,,fallback]) => { clip[key] = fallback; });
+      api.render();
+      say("Color correction reset.");
+    });
+  }
+
   const originalRender = api.render;
   // app.js owns the single authoritative NLE timeline. The legacy lane
   // renderer duplicated every track and distorted sequence layout, so only
   // retain its inspector extensions and creative tools.
-  api.render = function() { originalRender(); actions(); inspectExtra(); inspectClip(); };
+  api.render = function() { originalRender(); actions(); inspectExtra(); inspectClip(); inspectColor(); };
   api.drawExtras = drawExtras;
   window.addEventListener("clipforge:image-imported", event => {
     const a = event.detail;
