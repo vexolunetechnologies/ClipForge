@@ -136,6 +136,14 @@
       });
     }
     new MutationObserver(tagMedia).observe($("stMedia"), {childList:true,subtree:true});
+    assets.addEventListener("dragstart", event => {
+      const item = event.target.closest(".st-media-item[data-mid]");
+      if (!item || !event.dataTransfer) return;
+      event.dataTransfer.setData("application/x-clipforge-media", item.dataset.mid);
+      event.dataTransfer.effectAllowed = "copy";
+      item.classList.add("is-dragging");
+    });
+    assets.addEventListener("dragend", event => event.target.closest(".st-media-item")?.classList.remove("is-dragging"));
     tagMedia();
     let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceButton = null;
     async function toggleVoiceover(button) {
@@ -213,7 +221,7 @@
     const tagMedia = () => {
       assets.querySelectorAll(".st-media-item[data-mid]").forEach(item => {
         const media = state.media.find(x => x.id === item.dataset.mid);
-        if (media) { item.dataset.kind = media.kind; if (media.kind === "audio") makeWaveform(media); }
+        if (media) { item.dataset.kind = media.kind; item.draggable = true; if (media.kind === "audio") makeWaveform(media); }
       });
       filterMedia();
     };
