@@ -914,75 +914,48 @@ footer .brand,footer p,footer a{color:var(--muted)!important}
 @media(max-width:800px){.hero-banner{grid-template-columns:1fr;gap:8px;min-height:unset}.hero-visual{max-width:520px;width:100%;margin:0 auto}.hero-screen{height:155px}.hero-window{transform:none}.hero-float{right:0}.capability-strip{grid-template-columns:repeat(2,1fr)}.capability-strip div:nth-child(2){border-right:0}.capability-strip div:nth-child(3){border-top:1px solid var(--line);padding-top:12px}.capability-strip div:nth-child(4){border-top:1px solid var(--line);padding-top:12px}}
 @media(max-width:480px){.hero-banner{padding:22px!important;border-radius:19px}.hero-banner h1{font-size:39px!important}.hero-proof{gap:8px;display:grid}.hero-visual{padding:8px 0 18px}.hero-screen{height:140px}.capability-strip{padding:10px}.capability-strip b{font-size:15px}.studio-toolcard{min-height:unset}}
 
-/* Keep the public creative homepage centered; no phantom sidebar gutter. */
-@media(min-width:901px){
- .wrap{width:min(100% - 48px,1240px)!important;max-width:1240px!important;margin-left:auto!important;margin-right:auto!important}
- .nav{max-width:1240px!important}
-}
 
 
-/* ===== Sidebar + separate Home and Tools directory navigation ===== */
-.cf-sidebar{position:fixed;z-index:40;left:0;top:0;bottom:0;width:232px;padding:24px 14px;display:flex;flex-direction:column;gap:5px;background:linear-gradient(180deg,#10192b,#0b1220);border-right:1px solid rgba(148,163,184,.16);overflow-y:auto}
-.cf-sidebar-label{padding:8px 11px 5px;color:#7585a4;font-size:9px;font-weight:900;letter-spacing:.16em}
-.cf-side-tools-label{margin-top:14px}
-.cf-side-link{display:flex;align-items:center;gap:12px;min-height:42px;padding:9px 11px;border:1px solid transparent;border-radius:10px;color:#aab7cf!important;text-decoration:none;font-size:12px;font-weight:650;transition:background .16s,border-color .16s,color .16s}
-.cf-side-link>span{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:rgba(139,124,255,.12);color:#a99cff;font-size:15px}
-.cf-side-link:hover,.cf-side-link:focus-visible{background:rgba(139,124,255,.1);border-color:rgba(139,124,255,.22);color:#fff!important}
-.cf-side-link.active{background:linear-gradient(100deg,rgba(139,124,255,.2),rgba(77,216,232,.08));border-color:rgba(139,124,255,.32);color:#fff!important}
-.cf-sidebar-foot{margin-top:auto;padding:14px 10px 4px;border-top:1px solid rgba(148,163,184,.14);color:#91a0ba;font-size:10px;display:flex;align-items:center;gap:8px}
-.cf-status-dot{width:7px;height:7px;border-radius:50%;background:#39d5a4;box-shadow:0 0 10px rgba(57,213,164,.55)}
-@media(min-width:901px){
- header .nav{width:calc(100% - 232px)!important;max-width:none!important;margin-left:232px!important;padding-left:clamp(24px,3vw,54px)!important;padding-right:clamp(24px,3vw,54px)!important}
- .wrap{width:calc(100% - 232px)!important;max-width:1440px!important;margin-left:232px!important;margin-right:0!important;padding:clamp(24px,3vw,54px)!important}
- footer{margin-left:232px!important}
-}
+/* ===== Single, unified ClipForge navigation and page layout ===== */
+.cf-main-nav{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:5px!important}
+.cf-nav-label{padding:9px 12px 4px!important;color:#7585a4!important;font-size:9px!important;font-weight:850!important;letter-spacing:.16em!important}
+.cf-nav-create{margin-top:12px}
+.cf-nav-explore{margin-top:10px}
+.cf-nav-link{display:flex!important;align-items:center!important;gap:11px!important;min-height:42px!important;padding:9px 11px!important;border:1px solid transparent!important;border-radius:10px!important;color:var(--muted)!important;text-decoration:none!important;font-size:12px!important;font-weight:650!important;transition:background .16s,border-color .16s,color .16s!important}
+.cf-nav-link .cf-nav-icon{display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;border-radius:8px;background:rgba(139,124,255,.13);color:var(--accent-2);font-size:15px;font-weight:800}
+.cf-nav-link:hover{background:rgba(139,124,255,.1)!important;color:var(--text)!important}
+.cf-nav-link.active{background:linear-gradient(100deg,rgba(139,124,255,.2),rgba(77,216,232,.08))!important;border-color:rgba(139,124,255,.3)!important;color:var(--text)!important}
+.cf-nav-link.active .cf-nav-icon{background:linear-gradient(135deg,var(--accent),#5a9cff);color:#fff}
 body[data-page="home"] #tools{display:none!important}
-body[data-page="tools"] .hero{display:none!important}
+body[data-page="tools"] .hero,body[data-page="tools"] #how,body[data-page="tools"] .capability-strip,body[data-page="tools"] #features,body[data-page="tools"] #faq{display:none!important}
 body[data-page="tools"] #tools{display:block!important}
 body[data-page="tools"] #tool,body[data-page="tools"] #iaTool,body[data-page="tools"] #rvTool,body[data-page="tools"] #vmTool,body[data-page="tools"] #editorTool{display:none!important}
-body[data-page="tools"] #how,body[data-page="tools"] .capability-strip,body[data-page="tools"] #features,body[data-page="tools"] #faq{display:none!important}
-body[data-page="workspace"] #how,body[data-page="workspace"] .capability-strip,body[data-page="workspace"] #features,body[data-page="workspace"] #faq{display:none!important}
-body[data-page="workspace"] .cf-sidebar .cf-side-link.active{background:linear-gradient(100deg,rgba(139,124,255,.2),rgba(77,216,232,.08))}
+body[data-page="workspace"] .hero,body[data-page="workspace"] #tools,body[data-page="workspace"] #how,body[data-page="workspace"] .capability-strip,body[data-page="workspace"] #features,body[data-page="workspace"] #faq,body[data-page="workspace"] footer{display:none!important}
+body[data-page="workspace"][data-tool="shorts"] #tool,body[data-page="workspace"][data-tool="trailer"] #tool{display:block!important}
+body[data-page="workspace"][data-tool="animator"] #iaTool{display:block!important}
+body[data-page="workspace"][data-tool="reverse"] #rvTool{display:block!important}
+body[data-page="workspace"][data-tool="montage"] #vmTool{display:block!important}
+body[data-page="workspace"][data-tool="editor"] #editorTool{display:block!important}
+@media(min-width:901px){
+ header{position:fixed!important;inset:0 auto 0 0!important;width:252px!important;height:100dvh!important;z-index:100!important}
+ .nav{height:100%!important;max-height:100dvh!important;overflow-y:auto!important}
+ .wrap{width:calc(100% - 252px)!important;max-width:none!important;margin:0 0 0 252px!important;padding:32px clamp(28px,3vw,64px)!important}
+ footer{margin-left:252px!important}
+}
 @media(max-width:900px){
- .cf-sidebar{position:sticky;top:0;bottom:auto;width:100%;height:auto;padding:7px 10px;display:flex;flex-direction:row;align-items:center;gap:5px;border-right:0;border-bottom:1px solid rgba(148,163,184,.16);overflow-x:auto;overflow-y:hidden;white-space:nowrap}
- .cf-sidebar-label,.cf-sidebar-foot{display:none}
- .cf-side-link{flex:none;min-height:38px;padding:8px 10px;font-size:11px}
- header .nav{max-width:none!important;margin:0!important;padding:12px 16px!important}
- .wrap{width:100%!important;max-width:none!important;margin:0!important;padding:20px 16px!important}
+ header{position:sticky!important;inset:auto!important;width:100%!important;height:auto!important;z-index:100!important}
+ .nav{height:auto!important;min-height:0!important;padding:12px 14px!important;display:flex!important;flex-direction:row!important;align-items:center!important;flex-wrap:wrap!important;gap:10px!important}
+ .nav nav.cf-main-nav{order:3!important;width:100%!important;display:flex!important;flex-direction:row!important;align-items:center!important;gap:5px!important;margin:0!important;padding:4px 0 2px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;scrollbar-width:thin}
+ .cf-nav-label{display:none!important}
+ .cf-nav-link{flex:0 0 auto!important;min-height:38px!important;padding:7px 10px!important;font-size:11px!important}
+ .cf-nav-link .cf-nav-icon{width:21px;height:21px;flex-basis:21px}
+ .nav .pill{display:none!important}
+ .wrap{width:100%!important;max-width:none!important;margin:0!important;padding:22px 18px!important}
  footer{margin-left:0!important}
 }
-
-
-/* ===== Navigation visibility hardening ===== */
-body>aside.cf-sidebar{
- display:flex!important;visibility:visible!important;opacity:1!important;
- position:fixed!important;z-index:9999!important;left:0!important;top:0!important;bottom:0!important;
- width:232px!important;height:100vh!important;min-height:100vh!important;
- flex-direction:column!important;align-items:stretch!important;gap:5px!important;
- padding:24px 14px!important;overflow-y:auto!important;overflow-x:hidden!important;
- background:linear-gradient(180deg,#10192b,#0b1220)!important;
- border-right:1px solid rgba(148,163,184,.16)!important;
-}
-body[data-page="home"] #tools{display:none!important}
-body[data-page="tools"] #tools{display:block!important}
-body[data-page="tools"] .hero,
-body[data-page="tools"] #tool,body[data-page="tools"] #iaTool,
-body[data-page="tools"] #rvTool,body[data-page="tools"] #vmTool,
-body[data-page="tools"] #editorTool{display:none!important}
-@media(min-width:901px){
- body>header .nav{margin-left:232px!important;width:calc(100% - 232px)!important}
- body>.wrap{margin-left:232px!important;width:calc(100% - 232px)!important;max-width:none!important}
- body>footer{margin-left:232px!important}
-}
-@media(max-width:900px){
- body>aside.cf-sidebar{
-  position:sticky!important;top:0!important;bottom:auto!important;left:auto!important;
-  width:100%!important;height:auto!important;min-height:0!important;
-  padding:7px 10px!important;flex-direction:row!important;align-items:center!important;
-  overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;
- }
- body>aside.cf-sidebar .cf-sidebar-label,
- body>aside.cf-sidebar .cf-sidebar-foot{display:none!important}
- body>aside.cf-sidebar .cf-side-link{flex:none!important;min-height:38px!important}
- body>.wrap{width:100%!important;max-width:none!important;margin:0!important}
+@media(max-width:480px){
+ .nav{gap:8px!important}
+ .nav nav.cf-main-nav{margin-left:-2px!important}
+ .cf-nav-link{gap:7px!important;padding:7px 9px!important}
+ .wrap{padding:18px 14px!important}
 }
