@@ -1192,3 +1192,6 @@ body.solo[data-tool="editor"] .st-timeline-scroll{max-height:300px}
 .st-waveform i{display:block;flex:1;min-width:1px;border-radius:2px;background:#48d7a2}
 .st-clip-block.audio b,.st-clip-block.audio small{position:relative;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,.55)}
 .st-clip-block.audio .st-trim-handle{z-index:4}
+
+.st-cancel-export{border-color:rgba(251,113,133,.45)!important;color:#fda4af!important}
+.st-cancel-export:hover{background:rgba(251,113,133,.12)!important}
