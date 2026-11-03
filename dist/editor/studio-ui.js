@@ -137,6 +137,64 @@
     if (mediaTitle) mediaTitle.insertAdjacentElement("afterend", shelf);
     else assets.prepend(shelf);
 
+    // Premiere-style Project panel tabs: keep media import/bin clean and move
+    // creative controls into their own tab instead of one long scrolling column.
+    const importLabel = assets.querySelector(".st-import");
+    const importInput = assets.querySelector("#stImport");
+    const mediaList = assets.querySelector("#stMedia");
+    const panelTabs = document.createElement("div");
+    panelTabs.className = "st-project-tabs";
+    panelTabs.setAttribute("role", "tablist");
+    panelTabs.innerHTML = '<button type="button" class="active" data-project-tab="project" role="tab" aria-selected="true">Project</button><button type="button" data-project-tab="tools" role="tab" aria-selected="false">Tools</button><button type="button" data-project-tab="browser" role="tab" aria-selected="false">Media Browser</button><button type="button" data-project-tab="libraries" role="tab" aria-selected="false">Libraries</button><button type="button" data-project-tab="info" role="tab" aria-selected="false">Info</button>';
+    const projectPane = document.createElement("div"); projectPane.className = "st-project-pane"; projectPane.dataset.projectPane = "project";
+    const toolsPane = document.createElement("div"); toolsPane.className = "st-project-pane"; toolsPane.dataset.projectPane = "tools"; toolsPane.hidden = true;
+    const browserPane = document.createElement("div"); browserPane.className = "st-project-pane st-project-placeholder"; browserPane.dataset.projectPane = "browser"; browserPane.hidden = true; browserPane.innerHTML = '<strong>Media Browser</strong><p>Import files from your device into this temporary project. Your original files stay on your device.</p><button type="button" data-open-import>＋ Browse files</button>';
+    const librariesPane = document.createElement("div"); librariesPane.className = "st-project-pane st-project-placeholder"; librariesPane.dataset.projectPane = "libraries"; librariesPane.hidden = true; librariesPane.innerHTML = '<strong>Libraries</strong><p>Reusable assets and saved libraries are not connected in this local-session editor yet.</p>';
+    const infoPane = document.createElement("div"); infoPane.className = "st-project-pane st-project-placeholder"; infoPane.dataset.projectPane = "info"; infoPane.hidden = true; infoPane.innerHTML = '<strong>Project Info</strong><p>Temporary browser session · No cloud upload or autosave.</p>';
+    assets.insertBefore(panelTabs, shelf);
+    if (importLabel) projectPane.append(importLabel);
+    if (importInput) projectPane.append(importInput);
+    if (mediaList) projectPane.append(mediaList);
+    toolsPane.append(shelf);
+    assets.append(projectPane, toolsPane, browserPane, librariesPane, infoPane);
+    const setProjectPanel = tab => {
+      panelTabs.querySelectorAll("[data-project-tab]").forEach(button => {
+        const active = button.dataset.projectTab === tab;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+      });
+      assets.querySelectorAll("[data-project-pane]").forEach(pane => pane.hidden = pane.dataset.projectPane !== tab);
+    };
+    panelTabs.addEventListener("click", event => {
+      const button = event.target.closest("[data-project-tab]");
+      if (button) setProjectPanel(button.dataset.projectTab);
+    });
+    browserPane.querySelector("[data-open-import]")?.addEventListener("click", () => importInput?.click());
+    // Timeline tools are mounted by the timeline module; move them into Tools
+    // as soon as they exist, keeping the Project bin free of unrelated controls.
+    const moveAdvancedTools = () => {
+      const advanced = assets.querySelector(".st-advanced-tools");
+      if (advanced && advanced.parentElement !== toolsPane) toolsPane.append(advanced);
+    };
+    moveAdvancedTools();
+    const advancedObserver = new MutationObserver(moveAdvancedTools);
+    advancedObserver.observe(assets, {childList:true,subtree:true});
+
+    // Native desktop drag-and-drop import into the Project bin.
+    if (importLabel && importInput) {
+      importLabel.addEventListener("dragover", event => { event.preventDefault(); importLabel.classList.add("is-drop-target"); });
+      importLabel.addEventListener("dragleave", () => importLabel.classList.remove("is-drop-target"));
+      importLabel.addEventListener("drop", event => {
+        event.preventDefault(); importLabel.classList.remove("is-drop-target");
+        const files = Array.from(event.dataTransfer?.files || []);
+        if (!files.length) return;
+        const transfer = new DataTransfer();
+        files.forEach(file => transfer.items.add(file));
+        importInput.files = transfer.files;
+        importInput.dispatchEvent(new Event("change", {bubbles:true}));
+      });
+    }
+
     const setTab = tab => {
       shelf.querySelectorAll("[data-st-tab]").forEach(b => {
         const active = b.dataset.stTab === tab;
@@ -313,7 +371,9 @@
       const button = event.target.closest("[data-rail-tab]");
       if (!button) return;
       const tab = button.dataset.railTab;
-      assetPanel.querySelector('[data-st-tab="' + tab + '"]')?.click();
+      const panelTab = tab === "media" ? "project" : "tools";
+      assetPanel.querySelector('[data-project-tab="' + panelTab + '"]')?.click();
+      if (tab !== "media") assetPanel.querySelector('[data-st-tab="' + tab + '"]')?.click();
       rail.querySelectorAll("[data-rail-tab]").forEach(item => item.classList.toggle("active", item === button));
     });
     const monitorPair = document.createElement("div");
@@ -385,6 +445,13 @@
       <details><summary>Help</summary><div class="st-menu-pop"><button data-pro-command="shortcuts">Keyboard shortcuts</button></div></details>
       <span class="st-menu-workspace">EDITING WORKSPACE <i>●</i></span>`;
     bar.insertAdjacentElement("afterend", menu);
+    // Only one application menu can be open at a time.
+    menu.querySelectorAll("details").forEach(details => {
+      details.addEventListener("toggle", () => {
+        if (!details.open) return;
+        menu.querySelectorAll("details").forEach(other => { if (other !== details) other.open = false; });
+      });
+    });
 
     const inspectorTabs = document.createElement("div");
     inspectorTabs.className = "st-inspector-tabs";
