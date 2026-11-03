@@ -1195,3 +1195,6 @@ body.solo[data-tool="editor"] .st-timeline-scroll{max-height:300px}
 
 .st-cancel-export{border-color:rgba(251,113,133,.45)!important;color:#fda4af!important}
 .st-cancel-export:hover{background:rgba(251,113,133,.12)!important}
+
+body.solo[data-tool="editor"] #editorTool.is-exporting .st-workspace{pointer-events:none;opacity:.78;filter:saturate(.8)}
+body.solo[data-tool="editor"] #editorTool.is-exporting .st-appbar{pointer-events:auto}
