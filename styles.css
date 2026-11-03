@@ -951,3 +951,38 @@ body[data-page="workspace"] .cf-sidebar .cf-side-link.active{background:linear-g
  .wrap{width:100%!important;max-width:none!important;margin:0!important;padding:20px 16px!important}
  footer{margin-left:0!important}
 }
+
+
+/* ===== Navigation visibility hardening ===== */
+body>aside.cf-sidebar{
+ display:flex!important;visibility:visible!important;opacity:1!important;
+ position:fixed!important;z-index:9999!important;left:0!important;top:0!important;bottom:0!important;
+ width:232px!important;height:100vh!important;min-height:100vh!important;
+ flex-direction:column!important;align-items:stretch!important;gap:5px!important;
+ padding:24px 14px!important;overflow-y:auto!important;overflow-x:hidden!important;
+ background:linear-gradient(180deg,#10192b,#0b1220)!important;
+ border-right:1px solid rgba(148,163,184,.16)!important;
+}
+body[data-page="home"] #tools{display:none!important}
+body[data-page="tools"] #tools{display:block!important}
+body[data-page="tools"] .hero,
+body[data-page="tools"] #tool,body[data-page="tools"] #iaTool,
+body[data-page="tools"] #rvTool,body[data-page="tools"] #vmTool,
+body[data-page="tools"] #editorTool{display:none!important}
+@media(min-width:901px){
+ body>header .nav{margin-left:232px!important;width:calc(100% - 232px)!important}
+ body>.wrap{margin-left:232px!important;width:calc(100% - 232px)!important;max-width:none!important}
+ body>footer{margin-left:232px!important}
+}
+@media(max-width:900px){
+ body>aside.cf-sidebar{
+  position:sticky!important;top:0!important;bottom:auto!important;left:auto!important;
+  width:100%!important;height:auto!important;min-height:0!important;
+  padding:7px 10px!important;flex-direction:row!important;align-items:center!important;
+  overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;
+ }
+ body>aside.cf-sidebar .cf-sidebar-label,
+ body>aside.cf-sidebar .cf-sidebar-foot{display:none!important}
+ body>aside.cf-sidebar .cf-side-link{flex:none!important;min-height:38px!important}
+ body>.wrap{width:100%!important;max-width:none!important;margin:0!important}
+}
