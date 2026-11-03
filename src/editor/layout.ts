@@ -118,29 +118,21 @@ function mountEditorLayout(): void {
         const url = URL.createObjectURL(file);
         const image = new Image();
         image.onload = () => {
-          imageAssets.push({
+          const asset: ImageAsset = {
             id: crypto.randomUUID(),
             file,
             url,
             image,
             width: image.naturalWidth,
             height: image.naturalHeight
-          });
-          renderImages();
+          };
+          imageAssets.push(asset);
+          window.dispatchEvent(new CustomEvent("clipforge:image-imported", { detail: asset }));
         };
         image.onerror = () => URL.revokeObjectURL(url);
         image.src = url;
       });
     };
-  }
-
-  const mediaRoot = byId<HTMLDivElement>("#stMedia");
-  if (mediaRoot) {
-    new MutationObserver(renderImages).observe(mediaRoot, {
-      childList: true,
-      subtree: false
-    });
-    renderImages();
   }
 
   window.addEventListener("beforeunload", () => {
