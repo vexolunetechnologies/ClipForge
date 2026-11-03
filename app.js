@@ -1765,6 +1765,7 @@ if(!root.dataset.proShortcutsReady){
   if(mod&&key==='y'){event.preventDefault();$('stRedo')?.click();return}
   if(mod&&key==='s'){event.preventDefault();$('stProjectSave')?.click();return}
   if(mod&&key==='i'){event.preventDefault();$('stImport')?.click();return}
+  if(mod&&key==='o'){event.preventDefault();$('stAppOpen')?.click();return}
   if(mod&&event.shiftKey&&key==='e'){event.preventDefault();$('stExport')?.click();return}
   if(mod&&key==='k'||!mod&&key==='c'){
    event.preventDefault();
