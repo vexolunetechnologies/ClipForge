@@ -1382,20 +1382,8 @@ const editorHTML=shell('Editor','A focused editing workspace with a clip timelin
 '<p class="cf-muted">Note: this first editor release is a browser-rendered single video timeline. Advanced multi-track keyframes and project recovery are not part of this no-save version.</p>';
 addWorkspace('vmTool',montageHTML);addWorkspace('editorTool',editorHTML);
 const activeWorkspace=()=>['montage','editor'].includes(location.hash.slice(1));
-function routeV2(){
- const h=location.hash.replace('#','');
- const montage=document.getElementById('vmTool'),editor=document.getElementById('editorTool');
- if(montage)montage.style.display=h==='montage'?'block':'none';
- if(editor)editor.style.display=h==='editor'?'block':'none';
- if(h==='montage'||h==='editor'){
-  document.body.classList.add('solo');document.body.dataset.tool=h;document.title=(h==='montage'?'Video Montage Maker':'Studio Editor')+' – ClipForge Studio';
-  window.scrollTo(0,0);
- }else{
-  document.body.classList.remove('solo');
-  if(['','top','tools','how','features','faq'].includes(h)){document.body.dataset.tool='shorts';document.title='ClipForge Studio – Vexolune Technologies'}
- }
-}
-addEventListener('hashchange',routeV2);routeV2();
+// Routing is owned by the final page router in index.html. Keeping a second
+// router here caused competing .solo/data-tool updates on hash navigation.
 /* Reusable in-memory timeline engine. Files and exports are never written to storage. */
 function mountTimeline(prefix,mode){
  const el=id=>document.getElementById(prefix+id),state={clips:[],selected:0,music:null,busy:false,cancel:false,outUrl:null};
