@@ -124,4 +124,3 @@ if (document.readyState === "loading") {
 else {
     mountEditorLayout();
 }
-export {};
