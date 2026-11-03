@@ -1754,39 +1754,53 @@ $('stSplit').onclick=()=>{const c=S.clips.find(x=>x.id===S.sel);if(!c||S.time<=c
 $('stDelete').onclick=()=>{const c=current();if(!c)return;snap();S.clips=S.clips.filter(x=>x.id!==c.id);S.titles=S.titles.filter(x=>x.id!==c.id);S.overlays=(S.overlays||[]).filter(x=>x.id!==c.id);S.captions=(S.captions||[]).filter(x=>x.id!==c.id);S.audioTracks=(S.audioTracks||[]).filter(x=>x.id!==c.id&&x.linkedVideoId!==c.id);if(S.audio&&S.audio.id===c.id)S.audio=S.audioTracks[0]||null;S.sel=null;window.ClipForgeEditor?.render?.()||render()};
 $('stZoom').oninput=e=>{const sc=$('stInner').closest('.st-timeline-scroll'),anchor=S.time;S.zoom=Number(e.target.value);timeline();if(sc)sc.scrollLeft=Math.max(0,150+anchor*S.zoom-Math.min(sc.clientWidth*.35,260))};$('stZoomIn').onclick=()=>{$('stZoom').value=Math.min(180,Number($('stZoom').value)+10);$('stZoom').oninput({target:$('stZoom')})};$('stZoomOut').onclick=()=>{$('stZoom').value=Math.max(.2,Number($('stZoom').value)-10);$('stZoom').oninput({target:$('stZoom')})};$('stZoomFit').onclick=()=>{const sc=$('stInner').closest('.st-timeline-scroll'),available=Math.max(250,(sc?.clientWidth||900)-190);S.zoom=Math.max(.2,Math.min(180,available/Math.max(1,total())));timeline();if(sc)sc.scrollTo({left:0,behavior:'smooth'})};
 $('stUndo').onclick=()=>{if(!S.undo.length)return;S.redo.push({videoTrackCount:S.videoTrackCount||4,clips:S.clips.map(c=>({...c,keyframes:(c.keyframes||[]).map(k=>({...k}))})),titles:S.titles.map(c=>({...c})),overlays:(S.overlays||[]).map(c=>({...c})),captions:(S.captions||[]).map(c=>({...c})),audio:S.audio?{...S.audio}:null,audioTracks:(S.audioTracks||[]).map(a=>({...a}))});const x=S.undo.pop();S.videoTrackCount=x.videoTrackCount||4;S.clips=x.clips;S.titles=x.titles;S.overlays=x.overlays||[];S.captions=x.captions||[];S.audio=x.audio;S.audioTracks=x.audioTracks||[];window.ClipForgeEditor?.render?.()||render()};$('stRedo').onclick=()=>{if(!S.redo.length)return;S.undo.push({videoTrackCount:S.videoTrackCount||4,clips:S.clips.map(c=>({...c,keyframes:(c.keyframes||[]).map(k=>({...k}))})),titles:S.titles.map(c=>({...c})),overlays:(S.overlays||[]).map(c=>({...c})),captions:(S.captions||[]).map(c=>({...c})),audio:S.audio?{...S.audio}:null,audioTracks:(S.audioTracks||[]).map(a=>({...a}))});const x=S.redo.pop();S.videoTrackCount=x.videoTrackCount||4;S.clips=x.clips;S.titles=x.titles;S.overlays=x.overlays||[];S.captions=x.captions||[];S.audio=x.audio;S.audioTracks=x.audioTracks||[];window.ClipForgeEditor?.render?.()||render()};
-// Premiere-inspired keyboard map. Shortcuts are scoped to the active Studio editor.
+// Premiere-inspired keyboard map. Commands are scoped to the active Studio workspace.
 if(!root.dataset.proShortcutsReady){
  root.dataset.proShortcutsReady='1';
+ let lastTransportDirection=0;
+ const frameStep=1/Math.max(1,Number(S.exportFps)||30);
+ const activeVideo=()=>S.clips.filter(x=>S.time>=x.start-.001&&S.time<x.start+x.duration+.001).sort((a,b)=>(Number(b.track)||1)-(Number(a.track)||1))[0];
+ const splitAtPlayhead=()=>{
+  const selected=S.clips.find(x=>x.id===S.sel);
+  const clip=selected&&S.time>selected.start+.05&&S.time<selected.start+selected.duration-.05?selected:activeVideo();
+  if(!clip){msg('Place the playhead inside a video clip to split it.');return}
+  S.sel=clip.id;$('stSplit')?.click();
+ };
+ const zoomBy=amount=>{const z=$('stZoom');if(!z)return;z.value=String(Math.max(.2,Math.min(180,Number(z.value)+amount)));z.dispatchEvent(new Event('input',{bubbles:true}))};
+ const setRailTab=tab=>root.querySelector('[data-rail-tab="'+tab+'"]')?.click();
  root.addEventListener('keydown',event=>{
-  if(!document.body.classList.contains('solo')||!document.body.dataset.tool?.includes('editor'))return;
+  if(!document.body.classList.contains('solo')||document.body.dataset.tool!=='editor')return;
   const target=event.target,typing=target.matches('input,textarea,select,[contenteditable=true]')||target.isContentEditable;
   if(typing)return;
-  const key=event.key.toLowerCase(),mod=event.ctrlKey||event.metaKey;
+  const key=event.key.toLowerCase(),mod=event.ctrlKey||event.metaKey,shift=event.shiftKey;
   if(event.code==='Space'){event.preventDefault();$('stPlay')?.click();return}
-  if(mod&&key==='z'){event.preventDefault();(event.shiftKey?$('stRedo'):$('stUndo'))?.click();return}
+  if(mod&&key==='z'){event.preventDefault();(shift?$('stRedo'):$('stUndo'))?.click();return}
   if(mod&&key==='y'){event.preventDefault();$('stRedo')?.click();return}
   if(mod&&key==='s'){event.preventDefault();$('stProjectSave')?.click();return}
-  if(mod&&key==='i'){event.preventDefault();$('stImport')?.click();return}
   if(mod&&key==='o'){event.preventDefault();$('stAppOpen')?.click();return}
-  if(mod&&event.shiftKey&&key==='e'){event.preventDefault();$('stExport')?.click();return}
-  if(mod&&key==='k'||!mod&&key==='c'){
-   event.preventDefault();
-   const selected=S.clips.find(x=>x.id===S.sel);
-   const clip=selected&&S.time>selected.start+.001&&S.time<selected.start+selected.duration-.001?selected:
-    S.clips.filter(x=>S.time>=x.start&&S.time<x.start+x.duration).sort((x,y)=>(Number(y.track)||1)-(Number(x.track)||1))[0];
-   if(clip){S.sel=clip.id;$('stSplit')?.click()}else msg('Move the playhead over a video clip to add an edit.');
-   return;
-  }
+  if(mod&&key==='i'){event.preventDefault();$('stImport')?.click();return}
+  if(mod&&shift&&key==='e'){event.preventDefault();$('stExport')?.click();return}
+  if(mod&&key==='k'||!mod&&key==='c'){event.preventDefault();splitAtPlayhead();return}
   if(key==='delete'||key==='backspace'){event.preventDefault();if(S.sel)$('stDelete')?.click();return}
-  if(key==='j'){event.preventDefault();stop();seek(S.time-1);return}
-  if(key==='k'){event.preventDefault();stop();return}
-  if(key==='l'){event.preventDefault();if(!S.playing)$('stPlay')?.click();return}
-  if(key==='arrowleft'||key==='arrowright'){event.preventDefault();stop();seek(S.time+(key==='arrowleft'?-1:1)/(Number(S.exportFps)||30));return}
+  if(key==='j'){event.preventDefault();stop();seek(S.time-(shift?5:1));lastTransportDirection=-1;return}
+  if(key==='k'&&!mod){event.preventDefault();stop();lastTransportDirection=0;return}
+  if(key==='l'){event.preventDefault();if(!S.playing)$('stPlay')?.click();lastTransportDirection=1;return}
+  if(key==='arrowleft'||key==='arrowright'||key===', '||key==='.'){
+   event.preventDefault();stop();const dir=(key==='arrowleft'||key===', ')?-1:1;seek(S.time+dir*frameStep*(shift?5:1));return;
+  }
   if(key==='home'){event.preventDefault();stop();seek(0);return}
   if(key==='end'){event.preventDefault();stop();seek(total());return}
+  if(!mod&&!shift&&key==='n'){event.preventDefault();const snap=$('stSnap');if(snap){snap.checked=!snap.checked;snap.dispatchEvent(new Event('change',{bubbles:true}));msg('Timeline snapping '+(snap.checked?'enabled.':'disabled.'));}return}
+  if(!mod&&!shift&&key==='f'){event.preventDefault();$('stZoomFit')?.click();return}
+  if(!mod&&!shift&&(key==='+'||key==='=')){event.preventDefault();zoomBy(10);return}
+  if(!mod&&!shift&&key==='-'){event.preventDefault();zoomBy(-10);return}
+  if(!mod&&!shift&&key==='d'){event.preventDefault();S.sel=null;api.render();return}
+  if(!mod&&!shift&&['1','2','3','4','5','6','7','8'].includes(key)){
+   event.preventDefault();setRailTab(({1:'media',2:'audio',3:'text',4:'captions',5:'effects',6:'transitions',7:'stickers',8:'tracks'})[key]);return;
+  }
+  if(!mod&&!shift&&key==='?'){event.preventDefault();root.querySelector('[data-pro-command="shortcuts"]')?.click();return}
  });
-}
-$('stInner').onclick=e=>{if(e.target.closest('[data-id]'))return;const r=$('stInner').getBoundingClientRect();stop();seek(Math.max(0,(e.clientX-r.left-150)/S.zoom))};const timelineScroll=$('stInner').closest('.st-timeline-scroll');if(timelineScroll){timelineScroll.addEventListener('wheel',e=>{if(e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();timelineScroll.scrollLeft+=e.deltaX||e.deltaY}else if(e.ctrlKey||e.metaKey){e.preventDefault();const z=$('stZoom');z.value=String(Math.max(.2,Math.min(180,Number(z.value)+(e.deltaY<0?5:-5))));z.dispatchEvent(new Event('input'))}},{passive:false});timelineScroll.addEventListener('pointerdown',e=>{if(e.button!==1||e.target.closest('[data-id]'))return;e.preventDefault();const x=e.clientX,left=timelineScroll.scrollLeft;const move=ev=>timelineScroll.scrollLeft=left-(ev.clientX-x);const up=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up)};document.addEventListener('pointermove',move);document.addEventListener('pointerup',up,{once:true})})};
+}$('stInner').onclick=e=>{if(e.target.closest('[data-id]'))return;const r=$('stInner').getBoundingClientRect();stop();seek(Math.max(0,(e.clientX-r.left-150)/S.zoom))};const timelineScroll=$('stInner').closest('.st-timeline-scroll');if(timelineScroll){timelineScroll.addEventListener('wheel',e=>{if(e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();timelineScroll.scrollLeft+=e.deltaX||e.deltaY}else if(e.ctrlKey||e.metaKey){e.preventDefault();const z=$('stZoom');z.value=String(Math.max(.2,Math.min(180,Number(z.value)+(e.deltaY<0?5:-5))));z.dispatchEvent(new Event('input'))}},{passive:false});timelineScroll.addEventListener('pointerdown',e=>{if(e.button!==1||e.target.closest('[data-id]'))return;e.preventDefault();const x=e.clientX,left=timelineScroll.scrollLeft;const move=ev=>timelineScroll.scrollLeft=left-(ev.clientX-x);const up=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up)};document.addEventListener('pointermove',move);document.addEventListener('pointerup',up,{once:true})})};
 $('stExport').onclick=async()=>{
  if(!S.clips.length){msg('Import a video before exporting.');return}
  if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){msg('Browser export is unavailable. Use a current Chrome or Edge.');return}
