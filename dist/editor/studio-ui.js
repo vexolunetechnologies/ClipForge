@@ -278,7 +278,106 @@
         api.msg(clip.transition === "none" ? "Transition removed." : transition.textContent + " transition applied.");
       }
     });
+
     setTab("media");
+  }
+
+  // Recompose the editor into a professional NLE layout without replacing
+  // the existing editing controls or disconnecting their event handlers.
+  const workspace = root.querySelector(".st-workspace");
+  const main = root.querySelector(".st-main");
+  const previewRow = root.querySelector(".st-preview-row");
+  const preview = previewRow?.querySelector(".st-preview-panel");
+  const inspector = previewRow?.querySelector(".st-inspector");
+  const timeline = main?.querySelector(".st-timeline-panel");
+  const assetPanel = root.querySelector(".st-assets");
+  if (workspace && main && preview && inspector && timeline && assetPanel) {
+    const stage = document.createElement("div");
+    stage.className = "st-pro-stage";
+    stage.append(assetPanel, preview, inspector);
+    main.replaceChildren(stage, timeline);
+    workspace.replaceChildren(main);
+    workspace.classList.add("st-pro-workspace");
+    main.classList.add("st-pro-main");
+    previewRow?.remove();
+
+    const previewTitle = preview.querySelector(".st-panel-title");
+    if (previewTitle && previewTitle.firstChild) previewTitle.firstChild.textContent = "PROGRAM MONITOR ";
+    const inspectorTitle = inspector.querySelector(".st-panel-title");
+    if (inspectorTitle && inspectorTitle.firstChild) inspectorTitle.firstChild.textContent = "EFFECT CONTROLS ";
+
+    const menu = document.createElement("nav");
+    menu.className = "st-menubar";
+    menu.setAttribute("aria-label", "Studio menus");
+    menu.innerHTML = `
+      <details><summary>File</summary><div class="st-menu-pop"><button data-pro-command="import">Import media…</button><button data-pro-command="open">Open project…</button><button data-pro-command="save">Save project as…</button><button data-pro-command="export">Export video…</button></div></details>
+      <details><summary>Edit</summary><div class="st-menu-pop"><button data-pro-command="undo">Undo <kbd>Ctrl Z</kbd></button><button data-pro-command="redo">Redo <kbd>Ctrl Shift Z</kbd></button><button data-pro-command="split">Split clip <kbd>S</kbd></button><button data-pro-command="delete">Delete selected</button></div></details>
+      <details><summary>Clip</summary><div class="st-menu-pop"><button data-pro-command="text">New text layer</button><button data-pro-command="caption">New caption</button><button data-pro-command="sticker">Add graphic / sticker</button></div></details>
+      <details><summary>Sequence</summary><div class="st-menu-pop"><button data-pro-command="fit">Fit timeline to sequence</button><button data-pro-command="ratio">Cycle preview ratio</button></div></details>
+      <details><summary>View</summary><div class="st-menu-pop"><button data-pro-command="fit">Fit timeline</button><button data-pro-command="inspector">Toggle Effect Controls</button></div></details>
+      <details><summary>Help</summary><div class="st-menu-pop"><button data-pro-command="shortcuts">Keyboard shortcuts</button></div></details>
+      <span class="st-menu-workspace">EDITING WORKSPACE <i>●</i></span>`;
+    bar.insertAdjacentElement("afterend", menu);
+
+    const inspectorTabs = document.createElement("div");
+    inspectorTabs.className = "st-inspector-tabs";
+    inspectorTabs.setAttribute("role", "tablist");
+    inspectorTabs.setAttribute("aria-label", "Effect control categories");
+    inspectorTabs.innerHTML = `
+      <button type="button" class="active" data-pro-inspector="all" role="tab" aria-selected="true">All</button>
+      <button type="button" data-pro-inspector="motion" role="tab" aria-selected="false">Motion</button>
+      <button type="button" data-pro-inspector="color" role="tab" aria-selected="false">Color</button>
+      <button type="button" data-pro-inspector="audio" role="tab" aria-selected="false">Audio</button>
+      <button type="button" data-pro-inspector="text" role="tab" aria-selected="false">Text</button>`;
+    inspectorTitle?.insertAdjacentElement("afterend", inspectorTabs);
+    let inspectorMode = "all";
+    const filterInspector = () => {
+      const groups = inspector.querySelectorAll(".st-prop");
+      groups.forEach(group => {
+        const label = group.querySelector("label")?.textContent?.toLowerCase() || "";
+        const matches = inspectorMode === "all" ||
+          (inspectorMode === "motion" && /start|trim|position|rotation|scale|keyframe|opacity/.test(label)) ||
+          (inspectorMode === "color" && /filter|brightness|contrast|saturation|color/.test(label)) ||
+          (inspectorMode === "audio" && /volume|fade|audio/.test(label)) ||
+          (inspectorMode === "text" && /text|size|animation|font|color/.test(label));
+        group.hidden = !matches;
+      });
+    };
+    inspectorTabs.addEventListener("click", event => {
+      const button = event.target.closest("[data-pro-inspector]");
+      if (!button) return;
+      inspectorMode = button.dataset.proInspector;
+      inspectorTabs.querySelectorAll("[data-pro-inspector]").forEach(tab => {
+        const active = tab === button;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+      });
+      filterInspector();
+    });
+    new MutationObserver(filterInspector).observe(inspector, {childList:true,subtree:true});
+    filterInspector();
+
+    menu.addEventListener("click", event => {
+      const button = event.target.closest("[data-pro-command]");
+      if (!button) return;
+      const commands = {
+        import:"stImport",open:"stAppOpen",save:"stAppSave",export:"stAppExport",
+        undo:"stUndo",redo:"stRedo",split:"stSplit",delete:"stDelete",
+        text:"stAddText",caption:"stCaption",sticker:"stSticker",fit:"stZoomFit"
+      };
+      const command = button.dataset.proCommand;
+      if (command === "ratio") {
+        const ratio = $("stRatio");
+        if (ratio) { ratio.selectedIndex = (ratio.selectedIndex + 1) % ratio.options.length; ratio.dispatchEvent(new Event("change",{bubbles:true})); }
+      } else if (command === "inspector") {
+        inspector.hidden = !inspector.hidden;
+      } else if (command === "shortcuts") {
+        api.msg("Shortcuts: Space = play/pause · S = split · Ctrl/Cmd+Z = undo · Ctrl/Cmd+Shift+Z = redo · Ctrl/Cmd+S = save project · ←/→ = frame step.");
+      } else if (commands[command]) {
+        $(commands[command])?.click();
+      }
+      menu.querySelectorAll("details[open]").forEach(item => item.open = false);
+    });
   }
 
   window.addEventListener("hashchange", () => {
