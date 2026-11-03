@@ -1187,3 +1187,8 @@ body.solo[data-tool="editor"] .st-timeline-scroll{max-height:300px}
  .st-appbar .st-btn{font-size:9px}.st-app-exit{margin-left:auto}
  .st-tool-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+.st-waveform{position:absolute;left:12px;right:12px;bottom:3px;height:13px;display:flex;align-items:center;gap:1px;opacity:.72;pointer-events:none}
+.st-waveform i{display:block;flex:1;min-width:1px;border-radius:2px;background:#48d7a2}
+.st-clip-block.audio b,.st-clip-block.audio small{position:relative;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+.st-clip-block.audio .st-trim-handle{z-index:4}
