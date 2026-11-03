@@ -2258,3 +2258,8 @@ body.solo[data-tool="editor"] #editorTool #stRatio,body.solo[data-tool="editor"]
 .st-keyframe-row button{border:1px solid var(--line);border-radius:6px;background:var(--panel-2);color:var(--muted);font-weight:800;cursor:pointer}
 .st-keyframe-row button:hover{border-color:#f87171;color:#fca5a5}
 @media(max-width:900px){.st-keyframe-editor{padding:9px}.st-keyframe-row input{font-size:11px!important}}
+
+
+/* AI-selected Shorts: keep the explanation readable without adding another settings panel. */
+.ai-privacy-note{margin:8px 2px 12px;padding:9px 11px;border:1px solid var(--bd);border-radius:10px;background:color-mix(in srgb,var(--ac) 6%,var(--card));}
+.ai-reason{display:block;margin-top:5px;color:var(--mu);font-size:12px;line-height:1.45}
