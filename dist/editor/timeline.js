@@ -278,7 +278,7 @@
       $("exSpeed").value = String(x.speed || 1);
       $("exTransition").value = x.transition || "none";
       [["exSpeed","speed"],["exAudioVolume","audioVolume"],["exX","x"],["exY","y"],["exScale","scale"],["exTransition","transition"]].forEach(([id,key]) => {
-        $(id).onchange = e => { snapshot(); x[key] = ["exAudioVolume","exX","exY","exScale"].includes(id) ? Number(e.target.value) : id === "exSpeed" ? Number(e.target.value) : e.target.value; api.render(); };
+        $(id).onchange = e => { snapshot(); if (id === "exSpeed") { const speed = Math.max(.25,Number(e.target.value)||1); const sourceLength = Math.max(.1,Number(x.out ?? ((x.in||0)+x.duration*(x.speed||1))) - Number(x.in||0)); x.speed = speed; if (x.video) x.duration = sourceLength / speed; } else x[key] = ["exAudioVolume","exX","exY","exScale"].includes(id) ? Number(e.target.value) : e.target.value; api.render(); };
       });
       $("exFreeze").onclick = () => {
         if (!x.video || x.video.readyState < 2) { say("Move the playhead onto a loaded video frame first."); return; }
@@ -336,8 +336,8 @@
   $("stInner")?.addEventListener("pointermove", event => {
     if (!pointer) return;
     const delta=(event.clientX-pointer.px)/Math.max(10,S.zoom), x=pointer.x;
-    if (pointer.mode==="left") { const shift=Math.max(-Number(x.in||0),Math.min(pointer.duration-.1,delta)); x.start=Math.max(0,pointer.start+shift); x.in=Math.max(0,Number(x.in||0)+x.start-pointer.start); x.duration=Math.max(.1,pointer.duration-(x.start-pointer.start)); }
-    else if (pointer.mode==="right") { x.duration=Math.max(.1,pointer.duration+delta); if (Number.isFinite(Number(x.in))) x.out=Number(x.in||0)+x.duration; }
+    if (pointer.mode==="left") { const speed=Number(x.speed)||1,shift=Math.max(-Number(x.in||0)/speed,Math.min(pointer.duration-.1,delta)); x.start=Math.max(0,pointer.start+shift); x.in=Math.max(0,Number(x.in||0)+(x.start-pointer.start)*speed); x.duration=Math.max(.1,pointer.duration-(x.start-pointer.start)); }
+    else if (pointer.mode==="right") { x.duration=Math.max(.1,pointer.duration+delta); if (Number.isFinite(Number(x.in))) x.out=Number(x.in||0)+x.duration*(Number(x.speed)||1); }
     else { x.start=snapTime(pointer.start+delta,x); const hit=document.elementFromPoint(event.clientX,event.clientY); const row=hit?.closest(".st-lane"); const label=row?.querySelector(".st-track-label")?.textContent || ""; if(x.video || x.kind==="image"){ const trackMatch=label.match(/^VIDEO (\d+)$/);if(trackMatch)x.track=Number(trackMatch[1]); } }
     const node=document.querySelector('[data-id="'+CSS.escape(pointer.id)+'"]');
     if (node) { node.style.left=(x.start*S.zoom)+"px"; node.style.width=Math.max(46,x.duration*S.zoom)+"px"; }
