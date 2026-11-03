@@ -1648,7 +1648,7 @@ function buttons(){$('stUndo').disabled=!S.undo.length;$('stRedo').disabled=!S.r
 function total(){return Math.max(1,...S.clips.map(c=>c.start+c.duration),...S.titles.map(c=>c.start+c.duration),...(S.overlays||[]).map(c=>c.start+c.duration),...(S.captions||[]).map(c=>c.start+c.duration),...(S.audioTracks||[]).map(a=>a.start+a.duration),S.audio?S.audio.start+S.audio.duration:0)}
 function current(){return S.clips.find(c=>c.id===S.sel)||S.titles.find(c=>c.id===S.sel)||(S.overlays||[]).find(c=>c.id===S.sel)||(S.captions||[]).find(c=>c.id===S.sel)||(S.audioTracks||[]).find(a=>a.id===S.sel)||(S.audio&&S.audio.id===S.sel?S.audio:null)}
 function mediaRender(){$('stMediaCount').textContent=S.media.length;$('stMedia').innerHTML=S.media.map(m=>'<button class="st-media-item" data-mid="'+m.id+'">'+(m.kind==='image'?'<img class="st-image-thumb" src="'+m.url+'" alt="">':'<span class="st-media-icon">'+(m.kind==='audio'?'♫':'▶')+'</span>')+'<span><b>'+esc(m.name)+'</b><small>'+(m.kind==='audio'?'Audio':m.kind==='image'?'Image · 5 sec':fmt(m.duration))+'</small></span></button>').join('')||'<div class="st-empty">Your media appears here.</div>';document.querySelectorAll('[data-mid]').forEach(b=>b.onclick=()=>addToTimeline(b.dataset.mid))}
-function addToTimeline(id){const m=S.media.find(x=>x.id===id);if(!m)return;snap();if(m.kind==='audio'){S.audioTracks=S.audioTracks|| (S.audio?[S.audio]:[]);const a={id:crypto.randomUUID(),name:m.name,audio:m.audio,url:m.url,start:0,in:0,out:m.duration,duration:m.duration,volume:80,track:S.audioTracks.length+1};S.audioTracks.push(a);if(!S.audio)S.audio=a;S.sel=a.id}else{const duration=m.kind==='image'?5:m.duration;const c={id:crypto.randomUUID(),name:m.name,video:m.video||null,image:m.image||null,kind:m.kind,url:m.url,start:S.clips.length?Math.max(...S.clips.map(x=>x.start+x.duration)):0,in:0,out:duration,duration,track:1,filter:'none',brightness:100,contrast:100,saturation:100,scale:100,rotation:0,x:50,y:50,speed:1,keyframes:[]};S.clips.push(c);S.sel=c.id}render()}
+function addToTimeline(id){const m=S.media.find(x=>x.id===id);if(!m)return;snap();if(m.kind==='audio'){S.audioTracks=S.audioTracks|| (S.audio?[S.audio]:[]);const a={id:crypto.randomUUID(),name:m.name,audio:m.audio,url:m.url,start:0,in:0,out:m.duration,duration:m.duration,volume:80,track:S.audioTracks.length+1};S.audioTracks.push(a);if(!S.audio)S.audio=a;S.sel=a.id}else{const duration=m.kind==='image'?5:m.duration;const c={id:crypto.randomUUID(),name:m.name,video:m.video||null,image:m.image||null,kind:m.kind,url:m.url,start:S.clips.length?Math.max(...S.clips.map(x=>x.start+x.duration)):0,in:0,out:duration,duration,track:1,filter:'none',brightness:100,contrast:100,saturation:100,scale:100,rotation:0,x:50,y:50,speed:1,audioVolume:100,keyframes:[]};S.clips.push(c);S.sel=c.id}render()}
 function block(c,type){
   const wave = type === "audio" && Array.isArray(c.waveform)
     ? '<span class="st-waveform">' + c.waveform.map(v => '<i style="height:' + Math.max(8,Math.min(100,Math.round(v*100))) + '%"></i>').join("") + '</span>'
@@ -1667,8 +1667,8 @@ function dimensions(){const q=Math.max(480,Math.min(1080,Number(S.exportQuality)
 function draw(){const cv=$('stCanvas'),ctx=cv.getContext('2d'),d=dimensions();cv.width=d[0];cv.height=d[1];ctx.fillStyle='#080b13';ctx.fillRect(0,0,d[0],d[1]);const active=S.clips.filter(x=>S.time>=x.start&&S.time<x.start+x.duration).sort((a,b)=>(a.track||1)-(b.track||1));const c=active[0];active.forEach(c=>{if(c&&c.image){const iw=c.image.naturalWidth,ih=c.image.naturalHeight,sc=Math.min(d[0]/iw,d[1]/ih)*(c.scale||100)/100;ctx.save();ctx.translate(d[0]*(Number(c.x??50)/100),d[1]*(Number(c.y??50)/100));ctx.drawImage(c.image,-iw*sc/2,-ih*sc/2,iw*sc,ih*sc);ctx.restore()}else if(c&&c.video&&c.video.readyState>=2){const v=c.video,local=S.time-c.start,keys=(c.keyframes||[]).slice().sort((a,b)=>a.time-b.time);let animatedScale=c.scale||100,animatedRotation=c.rotation||0;if(keys.length){let before=keys[0],after=keys[keys.length-1];for(let i=0;i<keys.length-1;i++){if(local>=keys[i].time&&local<=keys[i+1].time){before=keys[i];after=keys[i+1];break}}if(after.time>before.time){const p=Math.max(0,Math.min(1,(local-before.time)/(after.time-before.time)));animatedScale=before.scale+(after.scale-before.scale)*p;animatedRotation=before.rotation+(after.rotation-before.rotation)*p}else{animatedScale=before.scale;animatedRotation=before.rotation}}const scale=Math.min(d[0]/v.videoWidth,d[1]/v.videoHeight)*animatedScale/100,w=v.videoWidth*scale,h=v.videoHeight*scale;ctx.save();const edge=Math.min(1,local/.4,(c.duration-local)/.4);if(c.transition==='fade')ctx.globalAlpha=edge;const motion=Math.max(0,Math.min(1,local/Math.max(.1,c.duration)));if(c.transition==='zoom')animatedScale*=.88+.12*motion;if(c.transition==='wipe-left'||c.transition==='wipe-right'){const reveal=Math.max(.02,Math.min(1,local/.45));ctx.beginPath();ctx.rect(c.transition==='wipe-left'?0:d[0]*(1-reveal),0,d[0]*reveal,d[1]);ctx.clip()}ctx.translate(d[0]*(Number(c.x??50)/100),d[1]*(Number(c.y??50)/100));ctx.rotate(animatedRotation*Math.PI/180);ctx.filter='brightness('+(c.brightness/100)+') contrast('+(c.contrast/100)+') saturate('+(c.saturation/100)+') '+(c.filter==='mono'?'grayscale(1)':c.filter==='warm'?'sepia(.3)':c.filter==='cool'?'hue-rotate(18deg)':c.filter==='cinema'?'contrast(1.15)':c.filter==='vivid'?'saturate(1.35)':'');ctx.drawImage(v,-w/2,-h/2,w,h);ctx.restore()}});const t=S.titles.find(x=>S.time>=x.start&&S.time<x.start+x.duration);if(t){const local=S.time-t.start,progress=Math.max(0,Math.min(1,local/.45));let titleText=String(t.text||''),y=d[1]*(Number(t.positionY)||82)/100,scale=1;ctx.save();if(t.animation==='Fade')ctx.globalAlpha=progress;else if(t.animation==='Slide'){ctx.globalAlpha=progress;y+=d[1]*.08*(1-progress)}else if(t.animation==='Pop'){ctx.globalAlpha=progress;scale=.82+.18*progress}else if(t.animation==='Typewriter')titleText=titleText.slice(0,Math.ceil(titleText.length*Math.max(.02,Math.min(1,local/Math.max(.3,Math.min(2,titleText.length*.055))))));ctx.translate(d[0]/2,y);ctx.scale(scale,scale);ctx.fillStyle=t.color;ctx.font='bold '+Math.round(d[1]*t.size/100)+'px '+(t.fontFamily||'system-ui');ctx.textAlign='center';ctx.shadowColor=t.shadowColor||'#000';ctx.shadowBlur=t.shadow===false?0:14;if(t.stroke){ctx.lineWidth=Math.max(2,d[1]*.003);ctx.strokeStyle=t.stroke;ctx.strokeText(titleText,0,0)}ctx.fillText(titleText,0,0);ctx.restore()}$('stPreviewEmpty').style.display=c||t?'none':'grid';window.ClipForgeEditor?.drawExtras?.();timeline()}
 function seek(t){S.time=Math.max(0,Math.min(total(),t));$('stScrub').value=String(Math.round(S.time/Math.max(1,total())*1000));const c=S.clips.find(x=>S.time>=x.start&&S.time<x.start+x.duration);if(c&&c.video){const p=(c.in||0)+S.time-c.start;if(Math.abs(c.video.currentTime-p)>.25)c.video.currentTime=p}draw()}
 function stop(){S.playing=false;cancelAnimationFrame(S.raf);S.clips.forEach(c=>c.video?.pause());(S.audioTracks||[S.audio]).filter(Boolean).forEach(a=>a.audio?.pause());$('stPlay').textContent='▶'}
-function tick(){if(!S.playing)return;S.time+=.033;seek(S.time);const active=S.clips.filter(x=>S.time>=x.start&&S.time<x.start+x.duration);S.clips.forEach(x=>{if(!active.includes(x))x.video?.pause()});active.forEach(c=>{if(!c.video)return;const p=(c.in||0)+S.time-c.start;c.video.playbackRate=c.speed||1;if(Math.abs(c.video.currentTime-p)>.35)c.video.currentTime=p;if(c.video.paused)c.video.play().catch(()=>{})});(S.audioTracks||[S.audio]).filter(Boolean).forEach(a=>{if(!a.audio)return;const ap=a.in+S.time-a.start;if(S.time>=a.start&&S.time<a.start+a.duration){a.audio.volume=(a.volume||80)/100*(a.fadeIn?Math.min(1,Math.max(0,(S.time-a.start)/a.fadeIn)):1)*(a.fadeOut?Math.min(1,Math.max(0,(a.start+a.duration-S.time)/a.fadeOut)):1);if(Math.abs(a.audio.currentTime-ap)>.35)a.audio.currentTime=Math.max(0,ap);if(a.audio.paused)a.audio.play().catch(()=>{})}else a.audio.pause()});if(S.time>=total()){stop();return}S.raf=requestAnimationFrame(tick)}
-$('stImport').onchange=e=>{Array.from(e.target.files).forEach(f=>{const url=URL.createObjectURL(f);if(f.type.startsWith('audio/')){const a=new Audio(url);a.onloadedmetadata=()=>{S.media.push({id:crypto.randomUUID(),name:f.name,file:f,url,kind:'audio',duration:a.duration,audio:a});mediaRender()}}else{const v=document.createElement('video');v.src=url;v.preload='auto';v.muted=true;v.playsInline=true;v.onloadedmetadata=()=>{S.media.push({id:crypto.randomUUID(),name:f.name,file:f,url,kind:'video',duration:v.duration,video:v});mediaRender()}}});e.target.value=''};
+function tick(){if(!S.playing)return;S.time+=.033;seek(S.time);const active=S.clips.filter(x=>S.time>=x.start&&S.time<x.start+x.duration);S.clips.forEach(x=>{if(!active.includes(x))x.video?.pause()});active.forEach(c=>{if(!c.video)return;const p=(c.in||0)+S.time-c.start;c.video.playbackRate=c.speed||1;c.video.muted=false;c.video.volume=Math.max(0,Math.min(1,Number(c.audioVolume??100)/100));if(Math.abs(c.video.currentTime-p)>.35)c.video.currentTime=p;if(c.video.paused)c.video.play().catch(()=>{})});(S.audioTracks||[S.audio]).filter(Boolean).forEach(a=>{if(!a.audio)return;const ap=a.in+S.time-a.start;if(S.time>=a.start&&S.time<a.start+a.duration){a.audio.volume=Math.max(0,Math.min(1,(Number(a.volume??80)/100)*(a.fadeIn?Math.min(1,Math.max(0,(S.time-a.start)/a.fadeIn)):1)*(a.fadeOut?Math.min(1,Math.max(0,(a.start+a.duration-S.time)/a.fadeOut)):1)));if(Math.abs(a.audio.currentTime-ap)>.35)a.audio.currentTime=Math.max(0,ap);if(a.audio.paused)a.audio.play().catch(()=>{})}else a.audio.pause()});if(S.time>=total()){stop();return}S.raf=requestAnimationFrame(tick)}
+$('stImport').onchange=e=>{Array.from(e.target.files).forEach(f=>{const url=URL.createObjectURL(f);if(f.type.startsWith('audio/')){const a=new Audio(url);a.onloadedmetadata=()=>{S.media.push({id:crypto.randomUUID(),name:f.name,file:f,url,kind:'audio',duration:a.duration,audio:a});mediaRender()}}else{const v=document.createElement('video');v.src=url;v.preload='auto';v.muted=false;v.playsInline=true;v.onloadedmetadata=()=>{S.media.push({id:crypto.randomUUID(),name:f.name,file:f,url,kind:'video',duration:v.duration,video:v});mediaRender()}}});e.target.value=''};
 $('stAddText').onclick=()=>{snap();const t={id:crypto.randomUUID(),name:'Text overlay',text:'Your title here',start:S.time,in:0,out:4,duration:4,color:'#ffffff',size:5,animation:'Fade'};S.titles.push(t);S.sel=t.id;render()};
 $('stPlay').onclick=()=>{if(S.playing)stop();else{S.playing=true;$('stPlay').textContent='Ⅱ';tick()}};$('stStop').onclick=()=>{stop();seek(0)};
 $('stScrub').oninput=e=>{stop();seek(Number(e.target.value)/1000*total())};$('stRatio').onchange=draw;
@@ -1685,29 +1685,32 @@ $('stExport').onclick=async()=>{
  const stream=$('stCanvas').captureStream(S.exportFps||30);
  let audioCtx=null,audioDest=null,rec=null;
  const audioItems=(S.audioTracks||[S.audio]).filter(Boolean).filter(a=>a.audio);
+ const videoItems=[...new Set(S.clips.map(c=>c.video).filter(Boolean))];
+ const routedMedia=[...new Set([...audioItems.map(a=>a.audio),...videoItems])];
  const cleanup=()=>{
   S.clips.forEach(c=>c.video?.pause());
   audioItems.forEach(a=>a.audio?.pause());
   if(stream)stream.getTracks().forEach(t=>t.stop());
   if(audioDest){
-   audioItems.forEach(a=>window.__clipForgeStudioAudioSources?.get(a.audio)?.disconnect(audioDest));
+   routedMedia.forEach(media=>{const source=window.__clipForgeStudioAudioSources?.get(media);if(source){source.disconnect();source.connect(audioCtx.destination)}});
    audioDest.stream.getTracks().forEach(t=>t.stop());
   }
   S.exporting=false;S.exportRaf=0;
   $('stExport').disabled=false;
   const cancel=$('stAppCancel');if(cancel)cancel.hidden=true;
  };
- if(audioItems.length){
+ if(audioItems.length||videoItems.length){
   try{
    audioCtx=window.__clipForgeStudioAudioContext||(window.__clipForgeStudioAudioContext=new AudioContext());
    window.__clipForgeStudioAudioSources=window.__clipForgeStudioAudioSources||new WeakMap();
    audioDest=audioCtx.createMediaStreamDestination();
-   audioItems.forEach(a=>{
-    let source=window.__clipForgeStudioAudioSources.get(a.audio);
-    if(!source){source=audioCtx.createMediaElementSource(a.audio);window.__clipForgeStudioAudioSources.set(a.audio,source)}
-    source.disconnect();source.connect(audioCtx.destination);source.connect(audioDest);
-    a.audio.currentTime=a.in||0;a.audio.volume=(a.volume||80)/100;
+   routedMedia.forEach(media=>{
+    let source=window.__clipForgeStudioAudioSources.get(media);
+    if(!source){source=audioCtx.createMediaElementSource(media);window.__clipForgeStudioAudioSources.set(media,source)}
+    source.disconnect();source.connect(audioDest);
    });
+   audioItems.forEach(a=>{a.audio.currentTime=a.in||0;a.audio.volume=1});
+   videoItems.forEach(video=>{video.muted=false;video.volume=1});
    audioDest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
    await audioCtx.resume();
   }catch(e){msg('One or more audio tracks could not be attached; continuing with available audio.')}
@@ -1739,12 +1742,12 @@ $('stExport').onclick=async()=>{
   const now=performance.now();t+=(now-last)/1000;last=now;seek(t);
   msg('Rendering… '+Math.min(100,Math.round(t/Math.max(1,total())*100))+'%');
   const active=S.clips.filter(x=>t>=x.start&&t<x.start+x.duration);
-  active.forEach(c=>{if(!c.video)return;const p=c.in+t-c.start;if(Math.abs(c.video.currentTime-p)>.3)c.video.currentTime=p;c.video.playbackRate=c.speed||1;c.video.play().catch(()=>{})});
+  active.forEach(c=>{if(!c.video)return;const p=c.in+t-c.start;if(Math.abs(c.video.currentTime-p)>.3)c.video.currentTime=p;c.video.playbackRate=c.speed||1;c.video.muted=false;c.video.volume=Math.max(0,Math.min(1,Number(c.audioVolume??100)/100));c.video.play().catch(()=>{})});
   (S.audioTracks||[S.audio]).filter(Boolean).forEach(a=>{
    if(!a.audio)return;
    if(t>=a.start&&t<a.start+a.duration){
     const p=a.in+t-a.start;if(Math.abs(a.audio.currentTime-p)>.3)a.audio.currentTime=p;
-    a.audio.volume=(a.volume||80)/100*(a.fadeIn?Math.min(1,Math.max(0,(t-a.start)/a.fadeIn)):1)*(a.fadeOut?Math.min(1,Math.max(0,(a.start+a.duration-t)/a.fadeOut)):1);
+    a.audio.volume=Math.max(0,Math.min(1,(Number(a.volume??80)/100)*(a.fadeIn?Math.min(1,Math.max(0,(t-a.start)/a.fadeIn)):1)*(a.fadeOut?Math.min(1,Math.max(0,(a.start+a.duration-t)/a.fadeOut)):1)));
     a.audio.play().catch(()=>{});
    }else a.audio.pause();
   });
