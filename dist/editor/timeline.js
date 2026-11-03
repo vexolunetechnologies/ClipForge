@@ -13,12 +13,31 @@
   const safe = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const getClip = (id) => S.clips.find(x => x.id === id) || S.titles.find(x => x.id === id) || S.overlays.find(x => x.id === id) || S.captions.find(x => x.id === id) || (S.audioTracks || []).find(x => x.id === id) || (S.audio && S.audio.id === id ? S.audio : null);
   const len = (x) => Math.max(.1, Number(x.duration) || .1);
+  const timelineItems = () => [
+    ...S.clips, ...S.titles, ...S.overlays, ...S.captions,
+    ...(S.audioTracks || []), ...(S.audio && !(S.audioTracks || []).some(a => a.id === S.audio.id) ? [S.audio] : [])
+  ];
+  function snapTime(time, moving) {
+    const value = Math.max(0, Number(time) || 0);
+    if (!S.snapEnabled) return value;
+    const threshold = 9 / Math.max(10, Number(S.zoom) || 1);
+    let best = value, distance = threshold;
+    for (const item of timelineItems()) {
+      if (!item || item.id === moving?.id) continue;
+      for (const edge of [Number(item.start) || 0, (Number(item.start) || 0) + len(item)]) {
+        const delta = Math.abs(edge - value);
+        if (delta <= distance) { best = edge; distance = delta; }
+      }
+    }
+    return Math.max(0, best);
+  }
 
   function snapshot() {
     S.undo.push({
       clips: S.clips.map(x => ({...x})), titles: S.titles.map(x => ({...x})),
       overlays: S.overlays.map(x => ({...x})), captions: S.captions.map(x => ({...x})),
-      audio: S.audio ? {...S.audio} : null
+      audio: S.audio ? {...S.audio} : null,
+      audioTracks: (S.audioTracks || []).map(x => ({...x}))
     });
     if (S.undo.length > 40) S.undo.shift();
     S.redo = [];
@@ -133,7 +152,8 @@
       clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed})),
       titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation})),
       overlays:S.overlays.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
-      audio:S.audio ? {name:S.audio.name,start:S.audio.start,in:S.audio.in,duration:S.audio.duration,volume:S.audio.volume} : null
+      audio:S.audio ? {name:S.audio.name,start:S.audio.start,in:S.audio.in,out:S.audio.out,duration:S.audio.duration,volume:S.audio.volume,fadeIn:S.audio.fadeIn,fadeOut:S.audio.fadeOut} : null,
+      audioTracks:(S.audioTracks || []).map(x => ({name:x.name,start:x.start,in:x.in,out:x.out,duration:x.duration,volume:x.volume,fadeIn:x.fadeIn,fadeOut:x.fadeOut,track:x.track}))
     };
     const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:"application/json"}));
     const a = document.createElement("a"); a.href=url; a.download="clipforge-project.clipforge"; a.click();
@@ -158,6 +178,13 @@
       S.titles = (data.titles || []).map(x => ({...x,id:uid()}));
       S.overlays = (data.overlays || []).map(x => ({...x,id:uid()}));
       S.captions = (data.captions || []).map(x => ({...x,id:uid()}));
+      const savedAudio = data.audioTracks || (data.audio ? [data.audio] : []);
+      S.audioTracks = savedAudio.flatMap(saved => {
+        const m = assets.get(saved.name);
+        if (!m || !m.audio) { if (saved.name) missing.push(saved.name); return []; }
+        return [{...saved,id:uid(),audio:m.audio,url:m.url}];
+      });
+      S.audio = S.audioTracks[0] || null;
       if ($("stRatio") && data.ratio) $("stRatio").value = data.ratio;
       S.sel = null; api.render();
       say(missing.length ? "Project loaded. Re-import media: " + missing.join(", ") : "Project loaded.");
@@ -292,7 +319,7 @@
     if (!pointer) return;
     const delta=(event.clientX-pointer.px)/Math.max(10,S.zoom), x=pointer.x;
     if (pointer.mode==="left") { const shift=Math.max(-Number(x.in||0),Math.min(pointer.duration-.1,delta)); x.start=Math.max(0,pointer.start+shift); x.in=Math.max(0,Number(x.in||0)+x.start-pointer.start); x.duration=Math.max(.1,pointer.duration-(x.start-pointer.start)); }
-    else if (pointer.mode==="right") x.duration=Math.max(.1,pointer.duration+delta);
+    else if (pointer.mode==="right") { x.duration=Math.max(.1,pointer.duration+delta); if (Number.isFinite(Number(x.in))) x.out=Number(x.in||0)+x.duration; }
     else { x.start=snapTime(pointer.start+delta,x); const hit=document.elementFromPoint(event.clientX,event.clientY); const row=hit?.closest(".st-lane"); const label=row?.querySelector(".st-track-label")?.textContent || ""; if(x.video || x.kind==="image"){ if(label.includes("VIDEO 3"))x.track=3; else if(label.includes("VIDEO 2"))x.track=2; else if(label.includes("VIDEO 1"))x.track=1; } }
     const node=document.querySelector('[data-id="'+CSS.escape(pointer.id)+'"]');
     if (node) { node.style.left=(x.start*S.zoom)+"px"; node.style.width=Math.max(46,x.duration*S.zoom)+"px"; }
@@ -307,13 +334,14 @@
     if ((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="d") {
       event.preventDefault(); const x=getClip(S.sel); if(!x)return; snapshot();
       const copy={...x,id:uid(),name:(x.name||"Clip")+" copy",start:x.start+len(x)};
-      if(S.clips.includes(x))S.clips.push(copy);else if(S.titles.includes(x))S.titles.push(copy);else if(S.overlays.includes(x))S.overlays.push(copy);else if(S.captions.includes(x))S.captions.push(copy);
+      if(S.clips.includes(x))S.clips.push(copy);else if(S.titles.includes(x))S.titles.push(copy);else if(S.overlays.includes(x))S.overlays.push(copy);else if(S.captions.includes(x))S.captions.push(copy);else if((S.audioTracks||[]).includes(x)){S.audioTracks.push(copy);if(!S.audio)S.audio=copy;}
       S.sel=copy.id;api.render();
     }
     if(event.key==="Delete"||event.key==="Backspace"){
       const x=getClip(S.sel);if(!x)return;snapshot();
       S.clips=S.clips.filter(y=>y.id!==x.id);S.titles=S.titles.filter(y=>y.id!==x.id);
       S.overlays=S.overlays.filter(y=>y.id!==x.id);S.captions=S.captions.filter(y=>y.id!==x.id);
+      S.audioTracks=(S.audioTracks||[]).filter(y=>y.id!==x.id);if(S.audio&&S.audio.id===x.id)S.audio=S.audioTracks[0]||null;
       S.sel=null;api.render();
     }
   });
