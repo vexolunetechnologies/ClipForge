@@ -34,7 +34,7 @@
 
   function snapshot() {
     S.undo.push({
-      videoTrackCount:Math.max(4,Math.min(8,Number(S.videoTrackCount)||4)), clips: S.clips.map(x => ({...x})), titles: S.titles.map(x => ({...x})),
+      videoTrackCount:Math.max(4,Math.min(8,Number(S.videoTrackCount)||4)), clips: S.clips.map(x => ({...x,keyframes:(x.keyframes || []).map(k => ({...k}))})), titles: S.titles.map(x => ({...x})),
       overlays: S.overlays.map(x => ({...x})), captions: S.captions.map(x => ({...x})),
       audio: S.audio ? {...S.audio} : null,
       audioTracks: (S.audioTracks || []).map(x => ({...x}))
@@ -351,7 +351,7 @@
     if (event.code==="Space") { event.preventDefault(); $("stPlay")?.click(); }
     if ((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="d") {
       event.preventDefault(); const x=getClip(S.sel); if(!x)return; snapshot();
-      const copy={...x,id:uid(),name:(x.name||"Clip")+" copy",start:x.start+len(x)};
+      const copy={...x,id:uid(),keyframes:(x.keyframes||[]).map(k=>({...k})),name:(x.name||"Clip")+" copy",start:x.start+len(x)};
       if(S.clips.includes(x))S.clips.push(copy);else if(S.titles.includes(x))S.titles.push(copy);else if(S.overlays.includes(x))S.overlays.push(copy);else if(S.captions.includes(x))S.captions.push(copy);else if((S.audioTracks||[]).includes(x)){S.audioTracks.push(copy);if(!S.audio)S.audio=copy;}
       S.sel=copy.id;api.render();
     }
