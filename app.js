@@ -1741,6 +1741,9 @@ sync();
   const isWorkspace=toolIds.includes(hash);
   const page=isWorkspace?'workspace':isTool?'tools':'home';
   document.body.dataset.page=page;
+  // Enforce the Tools directory as a separate route; never leave its cards visible on Home.
+  const toolsSection=document.getElementById('tools');
+  if(toolsSection)toolsSection.style.setProperty('display',page==='tools'?'block':'none','important');
   document.body.classList.toggle('solo',isWorkspace);
   if(isWorkspace)document.body.dataset.tool=hash;
   else if(page==='home'||page==='tools')document.body.dataset.tool='shorts';
