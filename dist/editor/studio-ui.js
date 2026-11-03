@@ -227,7 +227,7 @@
         const clip = state.clips.find(x => x.id === state.sel);
         if (!clip) { api.msg("Select a video clip on the timeline first."); return; }
         api.snap(); clip.transition = transition.dataset.stTransition; api.render();
-        api.msg(clip.transition === "fade" ? "Fade in / out applied." : "Transition removed.");
+        api.msg(clip.transition === "none" ? "Transition removed." : transition.textContent + " transition applied.");
       }
     });
     setTab("media");
