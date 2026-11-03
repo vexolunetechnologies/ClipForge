@@ -146,7 +146,7 @@ function snapSeg(pcm,t0,t1){
 // Main elements: v = the video player, cv = preview / recording canvas, ctx = its 2D drawing context.
 const v=$('#src'),cv=$('#cv'),ctx=cv.getContext('2d');
 // S = every user setting (count, length, framing, captions, trailer options...). Option buttons write into it through their data-k / data-v attributes.
-let S={n:3,len:30,mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
+let S={n:'auto',len:'auto',mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
 // Runtime state: clips (the plan), busy flag, RUN token (changing it cancels running work), loaded file info, and audio analysis data (ENV = loudness every 0.1 s).
 let clips=[],busy=false,RUN=0,url=null,fname='video',file=null,PL=30,cues=[],capOn=false,AUD=null,ENV=null,LAST=null,REC=null,ALL=false,RECING=false;
 // Web Audio objects: actx = audio context, src = video as audio source, adest = stream that is recorded, outG = speaker volume, recG = recording volume.
@@ -414,7 +414,7 @@ let _langSave=null,ZOOM=1,SHX=0,SHY=0,WIDEREC=false,_modeSave=null;
 function setTool(t,scroll){S.tool=t;document.body.dataset.tool=t;
  $$('#tooltabs [data-tool]').forEach(b=>{const on=b.dataset.tool===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
  if(t==='trailer'){if(S.lang==='auto'){_langSave='auto';S.lang='urdu';$$('[data-k=lang]').forEach(c=>c.classList.toggle('on',c.dataset.v==='urdu'))}if(S.mode!=='best'){_modeSave=S.mode;S.mode='best'}$('#go').textContent='Analyze video'}
- else{if(_langSave){S.lang=_langSave;_langSave=null;$$('[data-k=lang]').forEach(c=>c.classList.toggle('on',c.dataset.v===S.lang))}if(_modeSave){S.mode=_modeSave;_modeSave=null}$('#go').textContent='Analyze & create plan'}
+ else{if(_langSave){S.lang=_langSave;_langSave=null;$$('[data-k=lang]').forEach(c=>c.classList.toggle('on',c.dataset.v===S.lang))}if(_modeSave){S.mode=_modeSave;_modeSave=null}$('#go').textContent='Find AI-selected moments'}
  if(scroll)$('#tool').scrollIntoView({behavior:'smooth'})}
 // Address-hash routing: #shorts, #trailer, #animator and #tools decide which tool is shown.
 function route(){const h=location.hash.replace('#','');
