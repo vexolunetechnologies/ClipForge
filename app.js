@@ -1653,7 +1653,7 @@ function block(c,type){
   const wave = type === "audio" && Array.isArray(c.waveform)
     ? '<span class="st-waveform">' + c.waveform.map(v => '<i style="height:' + Math.max(8,Math.min(100,Math.round(v*100))) + '%"></i>').join("") + '</span>'
     : "";
-  return `<button draggable="true" class="st-clip-block ${type}${S.sel===c.id?' is-selected':''}" data-id="${c.id}" style="left:${c.start*S.zoom}px;width:${Math.max(46,c.duration*S.zoom)}px"><span class="st-trim-handle left" data-trim="left" aria-label="Trim clip start"></span><b>${esc(c.name)}</b><small>${fmt(c.duration)}</small>${wave}<span class="st-trim-handle right" data-trim="right" aria-label="Trim clip end"></span></button>`;
+  return `<button draggable="${c.visualOnly?'false':'true'}" class="st-clip-block ${type}${S.sel===c.id?' is-selected':''}" data-id="${c.id}" style="left:${c.start*S.zoom}px;width:${Math.max(46,c.duration*S.zoom)}px"><span class="st-trim-handle left" data-trim="left" aria-label="Trim clip start"></span><b>${esc(c.name)}</b><small>${fmt(c.duration)}</small>${wave}<span class="st-trim-handle right" data-trim="right" aria-label="Trim clip end"></span></button>`;
 }
 function timeline(){
  const inner=$('stInner'),scroll=inner?.closest('.st-timeline-scroll'),d=total(),w=Math.max(1100,d*S.zoom+260);
@@ -1674,7 +1674,7 @@ function timeline(){
   ...Array.from({length:Math.max(2,Math.min(8,Number(S.videoTrackCount)||4))},(_,i)=>({label:'VIDEO '+(i+1),kind:'video',track:i+1,items:S.clips.filter(c=>(Number(c.track)||1)===i+1)})),
   {label:'OVERLAYS',kind:'overlay',items:(S.overlays||[]),track:0},
   {label:'CAPTIONS / TITLES',kind:'caption',items:[...(S.titles||[]),...(S.captions||[])],track:0},
-  ...allAudio.map((audio,i)=>({label:'AUDIO '+(i+1),kind:'audio',track:i+1,items:[audio]}))
+  ...allAudio.map((audio,i)=>({label:'AUDIO '+(i+1)+(audio.linkedVideoId?' · LINKED':''),kind:'audio',track:i+1,items:[audio]}))
  ];
  function createLane(spec){
   const lane=document.createElement('div');lane.className='st-lane st-pro-lane';lane.dataset.laneKind=spec.kind;lane.dataset.track=String(spec.track||0);
