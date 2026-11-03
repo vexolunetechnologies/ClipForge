@@ -360,23 +360,7 @@
   $("stInner")?.addEventListener("pointerup",finishPointer);
   $("stInner")?.addEventListener("pointercancel",finishPointer);
 
-  document.addEventListener("keydown", event => {
-    if (event.target.matches("input,textarea,select,[contenteditable=true]")) return;
-    if (event.code==="Space") { event.preventDefault(); $("stPlay")?.click(); }
-    if ((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="d") {
-      event.preventDefault(); const x=getClip(S.sel); if(!x)return; snapshot();
-      const copy={...x,id:uid(),keyframes:(x.keyframes||[]).map(k=>({...k})),name:(x.name||"Clip")+" copy",start:x.start+len(x)};
-      if(S.clips.includes(x))S.clips.push(copy);else if(S.titles.includes(x))S.titles.push(copy);else if(S.overlays.includes(x))S.overlays.push(copy);else if(S.captions.includes(x))S.captions.push(copy);else if((S.audioTracks||[]).includes(x)){S.audioTracks.push(copy);if(!S.audio)S.audio=copy;}
-      S.sel=copy.id;api.render();
-    }
-    if(event.key==="Delete"||event.key==="Backspace"){
-      const x=getClip(S.sel);if(!x)return;snapshot();
-      S.clips=S.clips.filter(y=>y.id!==x.id);S.titles=S.titles.filter(y=>y.id!==x.id);
-      S.overlays=S.overlays.filter(y=>y.id!==x.id);S.captions=S.captions.filter(y=>y.id!==x.id);
-      S.audioTracks=(S.audioTracks||[]).filter(y=>y.id!==x.id);if(S.audio&&S.audio.id===x.id)S.audio=S.audioTracks[0]||null;
-      S.sel=null;api.render();
-    }
-  });
+  // Keyboard shortcuts are centralized in app.js to prevent duplicate key handling.
 
 
   actions();
