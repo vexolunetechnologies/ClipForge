@@ -1,0 +1,265 @@
+/* ClipForge Studio: extended timeline tools, subtitle cues and local project exchange. */
+(() => {
+  "use strict";
+  const api = window.ClipForgeEditor;
+  if (!api || !api.state) return;
+  const S = api.state;
+  S.overlays = S.overlays || [];
+  S.captions = S.captions || [];
+  S.snapEnabled = true;
+  const $ = (id) => document.getElementById(id);
+  const uid = () => crypto.randomUUID();
+  const say = (message) => { if ($("stStatus")) $("stStatus").textContent = message; };
+  const safe = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const getClip = (id) => S.clips.find(x => x.id === id) || S.titles.find(x => x.id === id) || S.overlays.find(x => x.id === id) || S.captions.find(x => x.id === id) || (S.audio && S.audio.id === id ? S.audio : null);
+  const len = (x) => Math.max(.1, Number(x.duration) || .1);
+
+  function snapshot() {
+    S.undo.push({
+      clips: S.clips.map(x => ({...x})), titles: S.titles.map(x => ({...x})),
+      overlays: S.overlays.map(x => ({...x})), captions: S.captions.map(x => ({...x})),
+      audio: S.audio ? {...S.audio} : null
+    });
+    if (S.undo.length > 40) S.undo.shift();
+    S.redo = [];
+  }
+
+  function clipButton(x, kind) {
+    return '<button type="button" class="st-clip-block ' + kind + (S.sel === x.id ? ' is-selected' : '')
+      + '" data-id="' + safe(x.id) + '" style="left:' + (x.start * S.zoom) + 'px;width:' + Math.max(46, len(x) * S.zoom) + 'px">'
+      + '<span class="st-trim-handle left" data-trim="left"></span><b>' + safe(x.name || x.text || kind)
+      + '</b><small>' + len(x).toFixed(1) + 's</small><span class="st-trim-handle right" data-trim="right"></span></button>';
+  }
+
+  function lane(id, label, after, items, kind) {
+    let row = $(id);
+    if (!row) {
+      row = document.createElement("div");
+      row.id = id;
+      row.className = "st-lane";
+      row.innerHTML = '<div class="st-track-label">' + label + '</div><div class="st-lane-content"></div>';
+      const anchor = $(after);
+      if (anchor && anchor.parentElement) anchor.parentElement.after(row);
+      else $("stInner").append(row);
+    }
+    row.querySelector(".st-lane-content").innerHTML = items.map(x => clipButton(x, kind)).join("");
+  }
+
+  function renderLanes() {
+    if (!$("stInner")) return;
+    lane("stVideoLane3Row", "VIDEO 3", "stVideoLane2", S.clips.filter(x => x.track === 3), "video");
+    lane("stOverlayLaneRow", "OVERLAYS", "stTextLane", S.overlays, "overlay");
+    lane("stCaptionLaneRow", "CAPTIONS", "stOverlayLaneRow", S.captions, "caption");
+  }
+
+  function actions() {
+    if ($("stCreativeTools")) return;
+    const panel = document.createElement("section");
+    panel.id = "stCreativeTools";
+    panel.className = "st-advanced-tools";
+    panel.innerHTML = '<div class="st-panel-title">CREATIVE TOOLS</div>'
+      + '<button class="st-tool" id="stShape">＋ Add shape</button>'
+      + '<button class="st-tool" id="stSticker">＋ Add sticker</button>'
+      + '<button class="st-tool" id="stCaption">＋ Add caption</button>'
+      + '<label class="st-tool st-file-action">Import subtitles (.srt / .vtt)<input id="stSubFile" type="file" accept=".srt,.vtt,text/vtt" hidden></label>'
+      + '<div class="st-panel-title st-spaced">TIMELINE</div>'
+      + '<label class="st-toggle"><input id="stSnap" type="checkbox" checked> Snap to clips</label>'
+      + '<button class="st-tool" id="stProjectSave">↓ Export project file</button>'
+      + '<label class="st-tool st-file-action">Load project file<input id="stProjectLoad" type="file" accept=".clipforge,.json,application/json" hidden></label>'
+      + '<small class="st-hint">Project files store edit decisions only. Re-import original media after loading. Nothing is uploaded or autosaved.</small>';
+    document.querySelector(".st-assets")?.append(panel);
+    $("stShape").onclick = () => addOverlay("rect");
+    $("stSticker").onclick = () => addOverlay("sticker");
+    $("stCaption").onclick = () => addCaption("Your caption");
+    $("stSnap").onchange = e => { S.snapEnabled = e.target.checked; };
+    $("stSubFile").onchange = importSubtitles;
+    $("stProjectSave").onclick = saveProject;
+    $("stProjectLoad").onchange = loadProject;
+  }
+
+  function addOverlay(shape) {
+    snapshot();
+    const x = { id:uid(), name:shape === "sticker" ? "Sticker" : "Shape overlay", shape,
+      text:shape === "sticker" ? "★" : "", color:"#8b7cff", x:50, y:50, w:28, h:16,
+      size:9, opacity:1, start:S.time, duration:4 };
+    S.overlays.push(x); S.sel = x.id; api.render();
+    say("Overlay added. Select it to adjust its position, size and color.");
+  }
+
+  function addCaption(text) {
+    snapshot();
+    const x = { id:uid(), name:"Caption", text, start:S.time, duration:3, color:"#ffffff" };
+    S.captions.push(x); S.sel = x.id; api.render();
+  }
+
+  function seconds(value) {
+    const p = value.trim().replace(",", ".").split(":");
+    const s = Number(p.pop()), m = Number(p.pop() || 0), h = Number(p.pop() || 0);
+    return h * 3600 + m * 60 + s;
+  }
+
+  async function importSubtitles(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    try {
+      const raw = (await file.text()).replace(/\r/g, "").replace(/^WEBVTT[^\n]*\n/, "");
+      const cues = [];
+      raw.split(/\n{2,}/).forEach(part => {
+        const lines = part.split("\n").map(x => x.trim()).filter(Boolean);
+        const index = lines.findIndex(x => x.includes("-->"));
+        if (index < 0) return;
+        const times = lines[index].split("-->").map(x => x.trim().split(/\s+/)[0]);
+        const start = seconds(times[0]), end = seconds(times[1]);
+        const text = lines.slice(index + 1).join(" ").replace(/<[^>]*>/g, "");
+        if (text && end > start) cues.push({ id:uid(), name:"Subtitle", text, start, duration:end-start, color:"#ffffff" });
+      });
+      if (!cues.length) throw new Error("No valid subtitle cues found.");
+      snapshot(); S.captions.push(...cues); api.render(); say(cues.length + " subtitle cues imported.");
+    } catch (error) { say(error.message || "Could not read subtitle file."); }
+    event.target.value = "";
+  }
+
+  function saveProject() {
+    const data = {
+      format:"clipforge-project", version:1, ratio:$("stRatio")?.value || "16:9",
+      clips:S.clips.map(x => ({name:x.name,kind:x.kind || "video",start:x.start,in:x.in,out:x.out,duration:x.duration,track:x.track,filter:x.filter,brightness:x.brightness,contrast:x.contrast,saturation:x.saturation,scale:x.scale,rotation:x.rotation,speed:x.speed})),
+      titles:S.titles.map(x => ({name:x.name,text:x.text,start:x.start,duration:x.duration,color:x.color,size:x.size,animation:x.animation})),
+      overlays:S.overlays.map(x => ({...x})), captions:S.captions.map(x => ({...x})),
+      audio:S.audio ? {name:S.audio.name,start:S.audio.start,in:S.audio.in,duration:S.audio.duration,volume:S.audio.volume} : null
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:"application/json"}));
+    const a = document.createElement("a"); a.href=url; a.download="clipforge-project.clipforge"; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    say("Project edit file exported. Media remains on this device.");
+  }
+
+  async function loadProject(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (data.format !== "clipforge-project" || !Array.isArray(data.clips)) throw new Error("Invalid ClipForge project file.");
+      snapshot();
+      const assets = new Map(S.media.map(x => [x.name,x]));
+      const missing = [];
+      S.clips = data.clips.flatMap(saved => {
+        const m = assets.get(saved.name);
+        if (!m) { missing.push(saved.name); return []; }
+        return [{...saved,id:uid(),video:m.video || null,image:m.image || null,url:m.url,kind:m.kind}];
+      });
+      S.titles = (data.titles || []).map(x => ({...x,id:uid()}));
+      S.overlays = (data.overlays || []).map(x => ({...x,id:uid()}));
+      S.captions = (data.captions || []).map(x => ({...x,id:uid()}));
+      if ($("stRatio") && data.ratio) $("stRatio").value = data.ratio;
+      S.sel = null; api.render();
+      say(missing.length ? "Project loaded. Re-import media: " + missing.join(", ") : "Project loaded.");
+    } catch (error) { say(error.message || "Could not load project."); }
+    event.target.value = "";
+  }
+
+  function drawExtras() {
+    const canvas = $("stCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d"), w = canvas.width, h = canvas.height;
+    S.overlays.forEach(x => {
+      if (S.time < x.start || S.time >= x.start + x.duration) return;
+      ctx.save(); ctx.globalAlpha = Number(x.opacity ?? 1); ctx.fillStyle = x.color || "#8b7cff";
+      if (x.shape === "circle") { ctx.beginPath(); ctx.arc(w*x.x/100,h*x.y/100,h*x.size/100,0,Math.PI*2); ctx.fill(); }
+      else if (x.shape === "sticker") { ctx.font = Math.round(h*x.size/100)+"px system-ui"; ctx.textAlign="center"; ctx.fillText(x.text || "★",w*x.x/100,h*x.y/100); }
+      else ctx.fillRect(w*x.x/100-w*x.w/200,h*x.y/100-h*x.h/200,w*x.w/100,h*x.h/100);
+      ctx.restore();
+    });
+    S.captions.forEach(x => {
+      if (S.time < x.start || S.time >= x.start + x.duration) return;
+      ctx.save(); ctx.font = "700 "+Math.round(h*.035)+"px system-ui"; ctx.textAlign="center";
+      ctx.lineWidth = Math.max(3,h*.004); ctx.strokeStyle="#000"; ctx.fillStyle=x.color || "#fff";
+      ctx.strokeText(x.text,w/2,h*.91,w*.88); ctx.fillText(x.text,w/2,h*.91,w*.88); ctx.restore();
+    });
+  }
+
+  function inspectExtra() {
+    const x = getClip(S.sel), panel = $("stInspector");
+    if (!x || !panel) return;
+    if (S.overlays.includes(x)) {
+      panel.innerHTML = '<div class="st-inspector-name">'+safe(x.name)+'</div>'
+        + '<div class="st-prop"><label>SHAPE</label><select id="oxShape"><option value="rect">Rectangle</option><option value="circle">Circle</option><option value="sticker">Sticker</option></select></div>'
+        + '<div class="st-prop"><label>TEXT / SYMBOL</label><input id="oxText" value="'+safe(x.text)+'"></div>'
+        + '<div class="st-prop"><label>COLOR</label><input id="oxColor" type="color" value="'+x.color+'"></div>'
+        + '<div class="st-prop"><label>HORIZONTAL POSITION</label><input id="oxX" type="range" min="0" max="100" value="'+x.x+'"></div>'
+        + '<div class="st-prop"><label>VERTICAL POSITION</label><input id="oxY" type="range" min="0" max="100" value="'+x.y+'"></div>'
+        + '<div class="st-prop"><label>SIZE</label><input id="oxSize" type="range" min="2" max="30" value="'+x.size+'"></div>'
+        + '<div class="st-prop"><label>START</label><input id="oxStart" type="number" step=".1" value="'+x.start+'"></div>'
+        + '<div class="st-prop"><label>DURATION</label><input id="oxDuration" type="number" step=".1" value="'+x.duration+'"></div>'
+        + '<button class="st-btn st-danger" id="oxDelete">Remove overlay</button>';
+      $("oxShape").value = x.shape;
+      [["oxShape","shape"],["oxText","text"],["oxColor","color"],["oxX","x"],["oxY","y"],["oxSize","size"],["oxStart","start"],["oxDuration","duration"]].forEach(([id,key]) => {
+        $(id).onchange = e => { snapshot(); x[key] = ["oxX","oxY","oxSize","oxStart","oxDuration"].includes(id) ? Number(e.target.value) : e.target.value; api.render(); };
+      });
+      $("oxDelete").onclick = () => { snapshot(); S.overlays = S.overlays.filter(y => y.id !== x.id); S.sel=null; api.render(); };
+    } else if (S.captions.includes(x)) {
+      panel.innerHTML = '<div class="st-inspector-name">Caption</div><div class="st-prop"><label>TEXT</label><textarea id="cxText">'+safe(x.text)+'</textarea></div>'
+        + '<div class="st-prop"><label>START</label><input id="cxStart" type="number" step=".1" value="'+x.start+'"></div>'
+        + '<div class="st-prop"><label>DURATION</label><input id="cxDuration" type="number" step=".1" value="'+x.duration+'"></div>'
+        + '<div class="st-prop"><label>COLOR</label><input id="cxColor" type="color" value="'+x.color+'"></div>';
+      [["cxText","text"],["cxStart","start"],["cxDuration","duration"],["cxColor","color"]].forEach(([id,key]) => {
+        $(id).onchange = e => { snapshot(); x[key] = ["cxStart","cxDuration"].includes(id) ? Number(e.target.value) : e.target.value; api.render(); };
+      });
+    }
+  }
+
+  const originalRender = api.render;
+  api.render = function() { originalRender(); renderLanes(); actions(); inspectExtra(); };
+  window.addEventListener("clipforge:image-imported", event => {
+    const a = event.detail;
+    if (!a || S.media.some(x => x.id === a.id)) return;
+    S.media.push({id:a.id,name:a.file.name,file:a.file,url:a.url,kind:"image",image:a.image,duration:5});
+    api.render();
+  });
+
+  let pointer = null;
+  $("stInner")?.addEventListener("pointerdown", event => {
+    const node = event.target.closest(".st-clip-block[data-id]");
+    if (!node) return;
+    const x = getClip(node.dataset.id);
+    if (!x) return;
+    event.preventDefault(); api.stop(); S.sel=x.id; snapshot();
+    pointer={x, id:x.id, px:event.clientX, start:x.start, duration:len(x), mode:event.target.closest("[data-trim]")?.dataset.trim || "move"};
+  });
+  $("stInner")?.addEventListener("pointermove", event => {
+    if (!pointer) return;
+    const delta=(event.clientX-pointer.px)/Math.max(10,S.zoom), x=pointer.x;
+    if (pointer.mode==="left") { const shift=Math.max(-Number(x.in||0),Math.min(pointer.duration-.1,delta)); x.start=Math.max(0,pointer.start+shift); x.in=Math.max(0,Number(x.in||0)+x.start-pointer.start); x.duration=Math.max(.1,pointer.duration-(x.start-pointer.start)); }
+    else if (pointer.mode==="right") x.duration=Math.max(.1,pointer.duration+delta);
+    else x.start=Math.max(0,pointer.start+delta);
+    const node=document.querySelector('[data-id="'+CSS.escape(pointer.id)+'"]');
+    if (node) { node.style.left=(x.start*S.zoom)+"px"; node.style.width=Math.max(46,x.duration*S.zoom)+"px"; }
+  });
+  const finishPointer=()=>{ if(pointer){pointer=null;api.render();} };
+  $("stInner")?.addEventListener("pointerup",finishPointer);
+  $("stInner")?.addEventListener("pointercancel",finishPointer);
+
+  document.addEventListener("keydown", event => {
+    if (event.target.matches("input,textarea,select,[contenteditable=true]")) return;
+    if (event.code==="Space") { event.preventDefault(); $("stPlay")?.click(); }
+    if ((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="d") {
+      event.preventDefault(); const x=getClip(S.sel); if(!x)return; snapshot();
+      const copy={...x,id:uid(),name:(x.name||"Clip")+" copy",start:x.start+len(x)};
+      if(S.clips.includes(x))S.clips.push(copy);else if(S.titles.includes(x))S.titles.push(copy);else if(S.overlays.includes(x))S.overlays.push(copy);else if(S.captions.includes(x))S.captions.push(copy);
+      S.sel=copy.id;api.render();
+    }
+    if(event.key==="Delete"||event.key==="Backspace"){
+      const x=getClip(S.sel);if(!x)return;snapshot();
+      S.clips=S.clips.filter(y=>y.id!==x.id);S.titles=S.titles.filter(y=>y.id!==x.id);
+      S.overlays=S.overlays.filter(y=>y.id!==x.id);S.captions=S.captions.filter(y=>y.id!==x.id);
+      S.sel=null;api.render();
+    }
+  });
+
+  function frame() {
+    if (document.visibilityState==="visible" && $("editorTool")?.offsetParent!==null) drawExtras();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  actions();
+  renderLanes();
+})();
