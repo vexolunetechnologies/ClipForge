@@ -86,7 +86,7 @@ const PLATFORM_HOSTS={youtube:["youtube.com","youtu.be"],facebook:["facebook.com
 function detectVideoPlatform(value){
  let u;try{u=new URL(value)}catch{return null}
  if(!["http:","https:"].includes(u.protocol)||u.username||u.password)return null;
- const host=u.hostname.toLowerCase().replace(/^www\\./,"");
+ const host=u.hostname.toLowerCase().replace(/^www\./,"");
  for(const [platform,roots] of Object.entries(PLATFORM_HOSTS)){if(roots.some(root=>host===root||host.endsWith("."+root)))return platform;}
  return null;
 }
@@ -112,7 +112,7 @@ async function importSocialVideo(request,env){
   const type=(video.headers.get("content-type")||String(data.content_type||"")).split(";")[0].trim().toLowerCase();
   if(!type.startsWith("video/")){try{await video.body?.cancel()}catch{}return json({error:"The provider URL did not return a video file."},502)}
   const size=Number(video.headers.get("content-length")||0);if(size>VIDEO_IMPORT_MAX_BYTES){try{await video.body?.cancel()}catch{}return json({error:"This video exceeds the 1 GB import limit."},413)}
-  const safeName=String(data.filename||"imported-video.mp4").replace(/[\\r\\n"]/g,"").slice(0,120)||"imported-video.mp4";
+  const safeName=String(data.filename||"imported-video.mp4").replace(/[\r\n"/\\]/g,"").slice(0,120)||"imported-video.mp4";
   const headers=new Headers({"content-type":type,"content-disposition":'attachment; filename="'+safeName+'"',"cache-control":"no-store","x-content-type-options":"nosniff","access-control-expose-headers":"content-disposition"});if(size)headers.set("content-length",String(size));
   return new Response(video.body,{status:200,headers});
  }catch(error){return json({error:"Video import failed: "+String(error&&error.message||error).slice(0,160)},502)}
