@@ -2330,3 +2330,10 @@ body.solo[data-tool="captions"] footer{display:none}
 .cf-fullcap-preview .cf-caption-frame{width:100%;max-width:520px;aspect-ratio:16/9;margin:auto}
 .cf-fullcap-preview .cf-caption-frame b{max-width:90%;font-size:clamp(18px,4vw,34px)}
 @media(max-width:620px){.cf-fullcap-actions>*{flex:1 1 100%}.cf-fullcap-upload{padding:12px}}
+
+/* Standalone Captions Studio route visibility */
+#captionsTool{display:none}
+body.solo[data-tool=captions] #captionsTool{display:block}
+body.solo[data-tool=captions] #tool{display:none!important}
+body.solo[data-tool=captions] #rvTool,
+body.solo[data-tool=captions] #iaTool{display:none!important}
