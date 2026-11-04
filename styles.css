@@ -2561,3 +2561,16 @@ body.solo[data-tool=highlights] #how,body.solo[data-tool=highlights] #features,b
   font-size:23px!important;
   letter-spacing:-.04em!important;
 }
+
+/* About, contact and policy information sections */
+.cf-info-page{margin:26px auto 0;padding:clamp(18px,3vw,30px);max-width:100%;border:1px solid var(--bd);border-radius:16px;background:var(--card);color:var(--tx);scroll-margin-top:90px}
+.cf-info-page h2{margin:0 0 14px;font-size:clamp(22px,3vw,30px);letter-spacing:-.03em}
+.cf-info-page h3{margin:22px 0 7px;font-size:16px}
+.cf-info-page p,.cf-info-page li{font-size:14px;line-height:1.75;color:var(--mu)}
+.cf-info-page ul{padding-left:22px}
+.cf-info-page a{color:var(--ac);text-underline-offset:3px}
+.cf-info-page p:first-of-type{margin-top:0}
+footer .fg{grid-template-columns:1.7fr 1fr 1.2fr 1.2fr}
+footer .copy a{display:inline;color:inherit;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:760px){footer .fg{grid-template-columns:repeat(2,minmax(0,1fr))}footer .fg>:first-child{grid-column:1/-1}}
+@media(max-width:420px){footer .fg{grid-template-columns:1fr}footer .fg>:first-child{grid-column:auto}}
