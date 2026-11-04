@@ -2323,6 +2323,8 @@ body.solo[data-tool="captions"] footer{display:none}
 .cf-fullcap-upload,.cf-fullcap-template,.cf-fullcap-preview{padding:16px;border:1px solid var(--bd);border-radius:14px;background:var(--card);display:grid;gap:9px}
 .cf-fullcap-upload input,.cf-fullcap-template select{width:100%;max-width:100%;padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);font:inherit}
 .cf-fullcap-upload small,.cf-fullcap-workspace .note{color:var(--mu)}
+/* Keep the standalone Captions Studio file picker visible; the shared Shorts dropzone hides file inputs globally. */
+.cf-fullcap-upload input[type=file]{display:block!important;visibility:visible!important;opacity:1!important;position:static!important;clip:auto!important;height:auto!important;cursor:pointer}
 .cf-fullcap-actions{display:flex;gap:10px;flex-wrap:wrap}
 #cfFullCapVideo{width:100%;max-height:460px;background:#000;border-radius:12px}
 #cfFullCapTranscript{width:100%;box-sizing:border-box;padding:13px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);font:inherit;line-height:1.7;resize:vertical}
