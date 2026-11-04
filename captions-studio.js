@@ -45,15 +45,43 @@ function download(name,type,text){const u=URL.createObjectURL(new Blob([text],{t
 function subs(vtt){sync();const text=vtt?'WEBVTT\n\n'+cues.map(q=>stamp(q.s,true)+' --> '+stamp(q.e,true)+'\n'+q.text).join('\n\n'):cues.map((q,i)=>(i+1)+'\n'+stamp(q.s,false)+' --> '+stamp(q.e,false)+'\n'+q.text).join('\n\n');download((file.name||'captions').replace(/\.[^.]+$/,'')+(vtt?'.vtt':'.srt'),vtt?'text/vtt':'application/x-subrip',text)}
 function paint(ctx,w,h){if(!video.videoWidth)return;let sc=Math.max(w/video.videoWidth,h/video.videoHeight),dw=video.videoWidth*sc,dh=video.videoHeight*sc;ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);ctx.drawImage(video,(w-dw)/2,(h-dh)/2,dw,dh);let q=cues.find(x=>video.currentTime>=x.s&&video.currentTime<=x.e);if(q)draw(ctx,q.text,style,w,h,video.currentTime-q.s,Math.max(.2,q.e-q.s))}
 async function exportVideo(){
- sync();if(!cues.length||busy)return;if(!video.captureStream&&!video.mozCaptureStream){status('Video capture is unavailable. Please use latest Chrome.');return}
- busy=true;stop=false;enabled();let cs,vs,raf=0;
- try{video.pause();video.currentTime=0;await new Promise((r,j)=>{if(video.readyState>=2)return r();video.addEventListener('loadeddata',r,{once:true});video.addEventListener('error',()=>j(Error('Video decode failed.')),{once:true})});
-  await document.fonts?.ready;let q=Number($('cfCapQuality').value),ratio=video.videoWidth/video.videoHeight,w=ratio>=1?Math.round(q*ratio):q,h=ratio>=1?q:Math.round(q/ratio),cv=document.createElement('canvas');cv.width=w;cv.height=h;let cx=cv.getContext('2d');cs=cv.captureStream(30);vs=(video.captureStream||video.mozCaptureStream).call(video);let tracks=[...cs.getVideoTracks(),...vs.getAudioTracks()],stream=new MediaStream(tracks);if(!tracks.length)throw Error('No export tracks available.');
-  let types=['video/mp4;codecs=avc1.42E01F,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'],mime=types.find(x=>MediaRecorder.isTypeSupported(x));if(!mime)throw Error('This browser cannot encode MP4 or WebM.');
-  let chunks=[];rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:q===1080?6500000:3500000});rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};let done=new Promise(r=>rec.onstop=r);
-  const loop=()=>{paint(cx,w,h);if(!stop&&!video.ended)raf=requestAnimationFrame(loop)};loop();rec.start(1000);video.muted=false;await video.play();status('Rendering in real time. Keep this page open.');await new Promise(resolve=>{video.addEventListener('ended',resolve,{once:true});const check=()=>{if(stop||video.ended)resolve();else setTimeout(check,250)};check()});if(rec.state!=='inactive')rec.stop();await done;cancelAnimationFrame(raf);if(stop){status('Export stopped.');return}
-  const blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<1500)throw Error('Exported video is empty.');if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(blob);let ext=mime.includes('mp4')?'mp4':'webm';$('cfCapOutput').innerHTML='<a class="sm p" href="'+outUrl+'" download="'+esc(file.name.replace(/\.[^.]+$/,'')+'-captioned.'+ext)+'">Save captioned video</a>';status('Export complete · '+(blob.size/1048576).toFixed(1)+' MB.');
- }catch(e){status('Export failed: '+e.message)}finally{cancelAnimationFrame(raf);try{if(rec&&rec.state!=='inactive')rec.stop()}catch(e){}try{cs&&cs.getTracks().forEach(t=>t.stop());vs&&vs.getTracks().forEach(t=>t.stop())}catch(e){}video.pause();busy=false;rec=null;enabled()}
+ sync();if(!file||!cues.length||busy)return;
+ if(!window.MediaRecorder||!video.captureStream&&!video.mozCaptureStream){status('Video export is not supported in this browser. Please use the latest Chrome.');return}
+ busy=true;stop=false;enabled();let cs=null,vs=null,raf=0,progressTimer=null;
+ const output=$('cfCapOutput');output.innerHTML='<p class="cf-muted" id="cfExportState">Preparing your video…</p><div class="cf-cap-export-progress"><i id="cfExportBar"></i></div>';
+ const setExport=(msg,p)=>{const n=$('cfExportState'),b=$('cfExportBar');if(n)n.textContent=msg;if(b)b.style.width=Math.max(0,Math.min(100,p))+'%'};
+ try{
+  if(video.readyState<2)await new Promise((resolve,reject)=>{video.addEventListener('loadeddata',resolve,{once:true});video.addEventListener('error',()=>reject(Error('The uploaded video could not be decoded.')),{once:true})});
+  const quality=Number($('cfCapQuality').value),ratio=video.videoWidth/video.videoHeight;
+  if(!ratio||!Number.isFinite(ratio))throw Error('Could not read the uploaded video dimensions.');
+  const w=Math.round(quality*ratio),h=quality,canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d');if(!ctx)throw Error('Canvas rendering is unavailable.');
+  cs=canvas.captureStream(30);vs=(video.captureStream||video.mozCaptureStream).call(video);
+  const tracks=[...cs.getVideoTracks(),...vs.getAudioTracks()];if(!tracks.length)throw Error('No video or audio tracks were found.');
+  const candidates=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
+  const mime=candidates.find(t=>MediaRecorder.isTypeSupported(t));if(!mime)throw Error('This Chrome version does not support video recording.');
+  const chunks=[];rec=new MediaRecorder(new MediaStream(tracks),{mimeType:mime,videoBitsPerSecond:quality===1080?6500000:3500000});
+  let resolveDone,rejectDone;const done=new Promise((resolve,reject)=>{resolveDone=resolve;rejectDone=reject});
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  rec.onstop=()=>resolveDone();rec.onerror=e=>rejectDone(e.error||Error('The browser video recorder failed.'));
+  const frame=()=>{paint(ctx,w,h);if(!stop&&!video.ended)raf=requestAnimationFrame(frame)};
+  video.pause();video.currentTime=0;
+  const playPromise=video.play();
+  frame();rec.start(1000);
+  await playPromise;
+  setExport('Rendering video… keep this page open.',0);
+  progressTimer=setInterval(()=>{const p=video.duration?video.currentTime/video.duration*100:0;setExport('Rendering video · '+Math.round(p)+'%',p)},300);
+  await new Promise((resolve,reject)=>{video.addEventListener('ended',resolve,{once:true});video.addEventListener('error',()=>reject(Error('Video playback stopped before export finished.')),{once:true});const poll=()=>{if(stop||video.ended){resolve();return}setTimeout(poll,250)};poll()});
+  if(rec.state!=='inactive')rec.stop();await done;
+  cancelAnimationFrame(raf);if(progressTimer)clearInterval(progressTimer);
+  if(stop){setExport('Export stopped.',0);return}
+  const blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<1500)throw Error('The browser returned an empty video. Try a shorter video or update Chrome.');
+  if(outUrl)URL.revokeObjectURL(outUrl);outUrl=URL.createObjectURL(blob);
+  const ext=mime.includes('mp4')?'mp4':'webm',name=(file.name||'video').replace(/\.[^.]+$/,'')+'-captioned.'+ext;
+  output.innerHTML='<p class="cf-muted">Your captioned video is ready · '+(blob.size/1048576).toFixed(1)+' MB</p><video class="cf-cap-output-video" controls playsinline src="'+outUrl+'"></video><a class="sm p" style="display:inline-block;margin-top:10px" href="'+outUrl+'" download="'+esc(name)+'">Download captioned video</a>';
+  status('Export complete. Preview the finished video below, then download it.');
+ }catch(e){setExport('Export failed: '+(e.message||e),0);status('Export failed: '+(e.message||e))}
+ finally{cancelAnimationFrame(raf);if(progressTimer)clearInterval(progressTimer);try{if(rec&&rec.state!=='inactive')rec.stop()}catch(e){}try{cs&&cs.getTracks().forEach(t=>t.stop());vs&&vs.getTracks().forEach(t=>t.stop())}catch(e){}video.pause();busy=false;rec=null;enabled()}
 }
 function init(){
  workspace();video=$('cfCapVideo');
