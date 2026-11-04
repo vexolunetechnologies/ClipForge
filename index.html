@@ -284,6 +284,13 @@
   body.classList.toggle('solo',page==='workspace');
   body.classList.toggle('studio-app',page==='workspace'&&hash==='editor');
   body.dataset.tool=tools.indexOf(hash)>=0?hash:'shorts';
+  // One authoritative visibility pass prevents legacy CSS/router rules from blanking tool workspaces.
+  var activeTool=tools.indexOf(hash)>=0?hash:'';
+  var panels={shorts:'tool',trailer:'tool',animator:'iaTool',reverse:'rvTool',montage:'vmTool',editor:'editorTool',captions:'cfCaptionsWorkspace'};
+  ['tool','iaTool','rvTool','vmTool','editorTool','cfCaptionsWorkspace'].forEach(function(id){
+   var el=document.getElementById(id);
+   if(el)el.style.setProperty('display',page==='workspace'&&panels[activeTool]===id?'block':'none','important');
+  });
   var section=document.getElementById('tools');
   if(section)section.style.setProperty('display',page==='tools'?'block':'none','important');
   document.querySelectorAll('[data-tool-route]').forEach(function(a){
