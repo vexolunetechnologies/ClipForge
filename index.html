@@ -49,7 +49,7 @@
   <a class="cf-nav-link" data-route="features" href="#features"><span class="cf-nav-icon">✦</span><span>Features</span></a>
   <a class="cf-nav-link" data-route="faq" href="#faq"><span class="cf-nav-icon">?</span><span>Help & FAQ</span></a>
 </nav>
- <span class="pill">Videos stay on your device</span><button class="tbtn" id="theme" type="button" aria-label="Switch light or dark theme" title="Switch theme">◐</button></div></header>
+ <span class="pill">Local-first video processing</span><button class="tbtn" id="theme" type="button" aria-label="Switch light or dark theme" title="Switch theme">◐</button></div></header>
 
 
 <!-- ===== PAGE WRAPPER: everything below until the footer sits in this centred column ===== -->
@@ -61,7 +61,7 @@
   <h1>Every idea deserves<br><span> a better frame.</span></h1>
   <p>One workspace to create shorts, trailers, animated visuals and polished video edits — with powerful tools that run right in your browser.</p>
   <div class="hero-actions"><a class="hero-primary" href="#editor">Open Studio Editor <b>↗</b></a><a class="hero-secondary" href="#tools">Explore all tools</a></div>
-  <div class="hero-proof"><span>✓ No account required</span><span>✓ Your media stays on your device</span><span>✓ Built for creators</span></div>
+  <div class="hero-proof"><span>✓ No account required</span><span>✓ Local-first media processing</span><span>✓ Built for creators</span></div>
  </div>
  <div class="hero-visual" aria-label="Illustration of a video editing timeline">
   <div class="hero-window"><div class="hero-window-top"><span></span><span></span><span></span><b>STUDIO EDITOR</b></div>
@@ -254,7 +254,7 @@
 <!-- ===== HOW IT WORKS ===== -->
 <section id="how"><h2>How it works</h2>
 <div class="grid">
-<div class="card"><div class="num">1</div><h3>Pick a video</h3><p>Choose a file from your device. Nothing is uploaded anywhere.</p></div>
+<div class="card"><div class="num">1</div><h3>Pick a video</h3><p>Choose a file from your device. Most video processing happens in your browser; some AI features send audio or transcript data to external services.</p></div>
 <div class="card"><div class="num">2</div><h3>Analyze</h3><p>Speech activity, emotional peaks and strong openings are scored second by second.</p></div>
 <div class="card"><div class="num">3</div><h3>Export</h3><p>The top moments become 9:16 clips. Save each one to your device.</p></div></div></section>
 
@@ -265,7 +265,7 @@
 <div class="card"><h3>Engagement scoring</h3><p>Every short gets a score and tags like “Strong hook” or “Dialogue”.</p></div>
 <div class="card"><h3>Spread across the story</h3><p>Picks come from the whole video, and “Different picks” re-rolls them.</p></div>
 <div class="card"><h3>Face-aware framing</h3><p>The 9:16 window follows faces and snaps on scene cuts.</p></div>
-<div class="card"><h3>Private by design</h3><p>Your video never leaves the device. Only the optional AI models are downloaded.</p></div></div></section>
+<div class="card"><h3>Local-first processing</h3><p>Source video processing happens in your browser for many workflows. Selected AI features send limited audio or transcript data to external AI services.</p></div></div></section>
 
 <!-- ===== FAQ ===== -->
 <section id="faq"><h2>FAQ</h2>
@@ -277,14 +277,81 @@
 <details><summary>How do auto captions work?</summary><p>Cloudflare Workers AI Whisper transcribes the audio for each selected short. No local speech-model download is required. The app captures each short’s audio in the browser and sends it to the Worker; transcription time depends on clip length, server availability and network speed.</p></details>
 <details><summary>What does Trim silence do?</summary><p>While a short is recorded, ClipForge jumps over quiet stretches, so the result is tighter than the chosen length. Aggressive removes shorter pauses.</p></details>
 <details><summary>Which browser works best?</summary><p>Latest Chrome or Edge (v126 or newer) on Android and desktop, or Safari. Shorts are always saved as MP4. Firefox cannot record MP4, so it is not supported.</p></details>
-</section></div>
+<details><summary>Are my videos uploaded to ClipForge?</summary><p>Most video workflows process the source video in your browser. Some AI features send short audio chunks, transcript text, timestamps or analysis requests to the relevant AI service so the feature can work. The source video itself is not uploaded by the Shorts workflow. Check the Privacy Policy for details.</p></details>
+<details><summary>Do I need an account?</summary><p>No account is currently required to use the available tools.</p></details>
+<details><summary>Can I use music, images and videos I find online?</summary><p>Only use media that you own, have permission to use, or are otherwise legally allowed to use. You are responsible for checking the rights to material you upload or export.</p></details>
+<details><summary>How can I contact ClipForge?</summary><p>Email <a href="mailto:shahzabahmed38@gmail.com">shahzabahmed38@gmail.com</a> for support, privacy questions or copyright concerns.</p></details>
+</section>
+
+<section class="cf-info-page" id="about"><h2>About ClipForge Studio</h2>
+<p>ClipForge Studio is a browser-based creative workspace for making short-form videos, trailers, highlights, montages, captions and detailed edits.</p>
+<p>ClipForge Studio is developed by <strong>Vexolune Technologies</strong>. Our goal is to make practical video-creation tools accessible through a simple workspace, with local browser processing wherever the workflow supports it.</p>
+<p>Some optional AI-powered features use external AI services for tasks such as audio transcription and moment analysis. Please review our <a href="#privacy">Privacy Policy</a> to understand how those features handle information.</p></section>
+
+<section class="cf-info-page" id="contact"><h2>Contact Us</h2>
+<p>For product support, feedback, privacy requests, business enquiries or copyright concerns, contact:</p>
+<p><strong>Vexolune Technologies</strong><br>Email: <a href="mailto:shahzabahmed38@gmail.com">shahzabahmed38@gmail.com</a></p>
+<p>Please include the tool you were using and a clear description of the issue. Do not email private videos or sensitive personal information unless necessary and you are comfortable sharing it.</p></section>
+
+<section class="cf-info-page" id="privacy"><h2>Privacy Policy</h2>
+<p><strong>Last updated: November 5, 2026</strong></p>
+<p>This Privacy Policy explains how ClipForge Studio, a product developed by Vexolune Technologies, handles information when you visit or use this website.</p>
+<h3>1. Information you provide</h3>
+<p>ClipForge Studio does not currently require an account to use its tools. You may choose files from your device, enter a direct media URL, adjust tool settings, or contact us by email. If you email us, we receive the email address and the information you include in your message.</p>
+<h3>2. Video, image and audio processing</h3>
+<p>Many tools process the selected source media locally in your browser. The website does not need to receive the complete source video for the Shorts workflow. However, some AI-powered features send limited data needed for the requested operation—such as short audio chunks, transcript text, timestamps or analysis prompts—to external AI services, including Cloudflare Workers AI and the applicable AI moment-selection service. Auto-caption and AI moment-selection features may therefore process audio or transcript data outside your device.</p>
+<p>Do not use these features with confidential or sensitive media unless you are comfortable with this processing. Your exported files are generally created in your browser and saved by you to your device.</p>
+<h3>3. Cookies, advertising and analytics</h3>
+<p>The website or its infrastructure may use essential technical storage, security mechanisms and similar technologies to operate the service. If analytics tools are enabled, they may collect usage and device information to help us understand site performance.</p>
+<p>If Google AdSense or other advertising services are enabled, Google and its advertising partners may use cookies, web beacons, IP addresses or similar technologies to serve, measure and personalize ads, subject to applicable settings and consent requirements. Third-party vendors, including Google, may use information about visits to this and other websites to provide advertising. You can manage cookies through your browser settings and review Google's advertising controls and privacy information.</p>
+<h3>4. Service providers</h3>
+<p>Some website hosting, security, AI processing, analytics or advertising functions may be provided by third-party service providers. Those providers process information under their own terms and privacy policies. We do not control the independent data practices or retention periods of third-party providers.</p>
+<h3>5. Data retention and security</h3>
+<p>Files selected for local browser processing remain under the control of your browser unless a feature explicitly sends limited data to an external service as described above. Email correspondence may be retained for as long as reasonably necessary to respond and maintain support records. We use reasonable measures to protect the website, but no internet transmission or storage method can be guaranteed completely secure.</p>
+<h3>6. Your choices</h3>
+<p>You can choose not to use AI features that send audio or transcript data to external services, close the website, manage cookies through your browser, and contact us with privacy questions. Some features may not work if required processing or storage is blocked.</p>
+<h3>7. Children's privacy</h3>
+<p>ClipForge Studio is a general-purpose creative tool and is not designed to knowingly collect personal information from children. If you believe a child has sent us personal information by email, contact us so we can review the request.</p>
+<h3>8. Changes and contact</h3>
+<p>We may update this policy as the website or its services change. The latest version will be posted on this page. For privacy questions, email <a href="mailto:shahzabahmed38@gmail.com">shahzabahmed38@gmail.com</a>.</p></section>
+
+<section class="cf-info-page" id="terms"><h2>Terms of Service</h2>
+<p><strong>Last updated: November 5, 2026</strong></p>
+<p>By accessing or using ClipForge Studio, you agree to these terms. If you do not agree, do not use the service.</p>
+<h3>Using the tools</h3>
+<p>ClipForge Studio provides browser-based video and creative tools. Features may change, be limited, or become unavailable. You are responsible for maintaining copies of your original media and exported work.</p>
+<h3>Your content and permissions</h3>
+<p>You retain the rights you already hold in the files and content you select. You must own or have permission to use and process any video, image, audio, subtitle or other material you upload or provide. Do not use the service to infringe copyright, violate privacy, break the law or misuse another person's content.</p>
+<h3>AI-generated results</h3>
+<p>AI-assisted selections, transcripts, captions and other outputs may be inaccurate or incomplete. Review outputs before publishing or relying on them. ClipForge Studio does not guarantee that generated results will be suitable for a particular purpose.</p>
+<h3>Acceptable use</h3>
+<p>Do not attempt to disrupt, reverse engineer, abuse or interfere with the website or its infrastructure; bypass reasonable service limits; or use the service for unlawful or harmful purposes.</p>
+<h3>Third-party services and availability</h3>
+<p>Some features rely on third-party services, browser capabilities and network access. We do not guarantee uninterrupted availability or control the terms and availability of those third-party services.</p>
+<h3>Disclaimer and changes</h3>
+<p>The service is provided on an “as available” basis to the extent permitted by law. These terms may be updated from time to time. Continued use after an update means you accept the revised terms.</p>
+<h3>Contact</h3>
+<p>Questions about these terms can be sent to <a href="mailto:shahzabahmed38@gmail.com">shahzabahmed38@gmail.com</a>.</p></section>
+
+<section class="cf-info-page" id="cookies"><h2>Cookie Policy</h2>
+<p><strong>Last updated: November 5, 2026</strong></p>
+<p>Cookies and similar technologies are small pieces of information stored by a website or its service providers in your browser or on your device.</p>
+<h3>How they may be used</h3>
+<ul><li><strong>Essential technologies:</strong> help deliver pages, maintain security and support basic website operation.</li><li><strong>Analytics technologies:</strong> if enabled, help measure visits, performance and feature usage.</li><li><strong>Advertising technologies:</strong> if Google AdSense or another advertising service is enabled, cookies or similar technologies may be used to deliver, measure or personalize advertisements.</li></ul>
+<p>You can manage or delete cookies through your browser settings. Blocking some cookies may affect website functionality. Where required by law, applicable consent choices must be provided before non-essential cookies or personalized advertising technologies are used.</p>
+<p>For more information about data handling, read the <a href="#privacy">Privacy Policy</a>. Questions: <a href="mailto:shahzabahmed38@gmail.com">shahzabahmed38@gmail.com</a>.</p></section>
+
+<section class="cf-info-page" id="copyright"><h2>Copyright Policy</h2>
+<p>Users must only select or upload content they own, have permission to use, or are otherwise legally entitled to process. ClipForge Studio does not grant rights to third-party music, footage, photographs, artwork or other material.</p>
+<p>If you believe content or activity involving ClipForge Studio infringes your copyright, email <a href="mailto:shahzabahmed38@gmail.com">shahzabahmed38@gmail.com</a> with the relevant details, the material concerned, your contact information and a good-faith explanation of your rights. We will review legitimate notices and respond as appropriate.</p></section></div>
 
 <!-- ===== FOOTER ===== -->
 <footer><div class="wrap"><div class="fg">
-<div><a class="brand" href="#top"><svg width="24" height="24" viewBox="0 0 26 26"><rect x="7" y="1" width="12" height="24" rx="3" fill="#8b7cff"/><path d="M11 9l6 4-6 4z" fill="#141413"/></svg>ClipForge</a><p>Find the best moments in long videos and export them as vertical shorts, privately on your device.</p></div>
-<div><h4>Product</h4><a href="#tool">Create shorts</a><a href="#features">Features</a><a href="#how">How it works</a></div>
-<div><h4>Help</h4><a href="#faq">FAQ</a><a href="#faq">Browser support</a><a href="#top">Back to top</a></div></div>
-<div class="copy"><span>© <span id="yr">2026</span> ClipForge Studio. All rights reserved.</span><span>Your videos never leave your device.</span></div></div></footer>
+<div><a class="brand" href="#top"><svg width="24" height="24" viewBox="0 0 26 26"><rect x="7" y="1" width="12" height="24" rx="3" fill="#8b7cff"/><path d="M11 9l6 4-6 4z" fill="#141413"/></svg>ClipForge Studio</a><p>Browser-based creative tools for shorts, trailers, highlights, captions and video editing. Developed by Vexolune Technologies.</p></div>
+<div><h4>Product</h4><a href="#tool">Create shorts</a><a href="#tools">All tools</a><a href="#features">Features</a><a href="#how">How it works</a></div>
+<div><h4>Company &amp; Support</h4><a href="#about">About Us</a><a href="#faq">FAQ</a><a href="#contact">Contact Us</a></div>
+<div><h4>Legal</h4><a href="#privacy">Privacy Policy</a><a href="#terms">Terms of Service</a><a href="#cookies">Cookie Policy</a><a href="#copyright">Copyright Policy</a></div></div>
+<div class="copy"><span>© <span id="yr">2026</span> ClipForge Studio. All rights reserved. Developed by Vexolune Technologies.</span><span>Support: <a href="mailto:shahzabahmed38@gmail.com">shahzabahmed38@gmail.com</a></span></div></div></footer>
 
 <!-- Error message box (red toast); shown by the err() function in the script -->
 <div id="toast" style="position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:#b42318;color:#fff;padding:12px 14px;border-radius:12px;z-index:50;display:none;font-size:14px"></div>
