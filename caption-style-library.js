@@ -1,6 +1,6 @@
 /* Shared caption-style library: previews and all exports use this renderer. */
 (()=>{'use strict';
-const list=[["classic","Classic"],["pop","Pop"],["box","Box"],["karaoke","Karaoke"],["hl","Highlight"],["neon","Neon"],["min","Minimal"],["pill","Pill"],["news","News bar"],["outline","Bold outline"],["urdu","Urdu Nastaliq"],["hormozi","Hormozi Style"],["mrbeast","MrBeast Style"],["alex","Alex Style"],["word","Word-by-Word Captions"],["dynamic","Dynamic Captions"],["popup","Pop-up Captions"],["glow","Glow Captions"],["impact","Bold Impact Captions"],["highlight-word","Highlight Word Captions"],["bounce","Bounce Captions"],["neon-pro","Neon Captions"],["podcast","Podcast Captions"],["tiktok","TikTok Viral Captions"],["reels","Instagram Reels Captions"],["kinetic","Kinetic Typography"],["typewriter","Typewriter Captions"],["boxed","Boxed Captions"],["minimal-white","Minimal White Captions"],["animated","Animated Subtitles"],["punch","Punch Captions"],["gaming","Gaming Captions"],["news-caption","News Captions"],["cinematic","Cinematic Captions"],["red","Red Highlight Captions"],["sliding","Sliding Captions"],["bubble","Bubble Captions"],["aesthetic","Aesthetic Captions"],["multi","Multi-Color Captions"],["trending","Trending Shorts Captions"]];
+const list=[["classic","Classic"],["pop","Pop"],["box","Box"],["karaoke","Karaoke"],["karaoke-pro","Karaoke Captions"],["hl","Highlight"],["neon","Neon"],["min","Minimal"],["pill","Pill"],["news","News bar"],["outline","Bold outline"],["urdu","Urdu Nastaliq"],["hormozi","Hormozi Style"],["mrbeast","MrBeast Style"],["alex","Alex Style"],["word","Word-by-Word Captions"],["dynamic","Dynamic Captions"],["popup","Pop-up Captions"],["glow","Glow Captions"],["impact","Bold Impact Captions"],["highlight-word","Highlight Word Captions"],["bounce","Bounce Captions"],["neon-pro","Neon Captions"],["podcast","Podcast Captions"],["tiktok","TikTok Viral Captions"],["reels","Instagram Reels Captions"],["kinetic","Kinetic Typography"],["typewriter","Typewriter Captions"],["boxed","Boxed Captions"],["minimal-white","Minimal White Captions"],["animated","Animated Subtitles"],["punch","Punch Captions"],["gaming","Gaming Captions"],["news-caption","News Captions"],["cinematic","Cinematic Captions"],["red","Red Highlight Captions"],["sliding","Sliding Captions"],["bubble","Bubble Captions"],["aesthetic","Aesthetic Captions"],["multi","Multi-Color Captions"],["trending","Trending Shorts Captions"]];
 const normalize=k=>k==='minimal'?'min':k==='news-bar'?'news':(k||'classic');
 function draw(ctx,text,key,w,h,t=0,d=2){
  key=normalize(key);text=String(text||'').trim();if(!text||!w||!h)return;
@@ -20,7 +20,7 @@ function draw(ctx,text,key,w,h,t=0,d=2){
  if(key==='aesthetic'){ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=fs*.3;ctx.shadowOffsetY=2*scale}
  const active=Math.min(words.length-1,Math.floor(Math.max(0,Math.min(.999,t/Math.max(.1,d)))*words.length));let wordIndex=0;
  lines.forEach((ln,i)=>{const y=center-(lines.length-1)*lh/2+i*lh,parts=ln.split(/\s+/);
-  if(['word','dynamic','popup','kinetic','animated','sliding','bounce','highlight-word','red','multi','karaoke','hl','punch'].includes(key)){
+  if(['word','dynamic','popup','kinetic','animated','sliding','bounce','highlight-word','red','multi','karaoke','karaoke-pro','hl','punch'].includes(key)){
    const total=ctx.measureText(ln).width,space=ctx.measureText(' ').width;let x=w/2-total/2;
    parts.forEach(p=>{const ww=ctx.measureText(p).width,idx=wordIndex++,on=idx===active,done=idx<=active;let yy=y;
     if(['bounce','popup','punch'].includes(key)&&on)yy-=Math.abs(Math.sin(t*8))*fs*.16;
@@ -28,7 +28,7 @@ function draw(ctx,text,key,w,h,t=0,d=2){
     if(['highlight-word','hl'].includes(key)&&on){ctx.fillStyle='#ffc629';round(x-pad*.3,yy-fs*.8,ww+pad*.6,fs*1.15,5);ctx.fillStyle='#171717'}
     else if(key==='red'&&on){ctx.fillStyle='#e53935';round(x-pad*.3,yy-fs*.8,ww+pad*.6,fs*1.15,4);ctx.fillStyle='#fff'}
     else if(key==='multi')ctx.fillStyle=['#ffdf4d','#55e6ff','#ff77ad','#a6ff78'][idx%4];
-    else if(['karaoke','hl'].includes(key))ctx.fillStyle=done?'#ffe14d':'#fff';
+    else if(['karaoke','karaoke-pro','hl'].includes(key))ctx.fillStyle=done?'#ffe14d':'#fff';
     else if(['word','dynamic','popup','kinetic','animated','bounce','punch'].includes(key))ctx.fillStyle=on?'#ffe14d':'#fff';
     else ctx.fillStyle='#fff';
     if(key==='kinetic'&&on){ctx.shadowColor='#ffb000';ctx.shadowBlur=fs*.5}
