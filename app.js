@@ -619,7 +619,7 @@ $('#trlgo').onclick=async()=>{if(busy)return;if(!LAST)return err('Run "Find shor
   if(S.align==='on'){const _m=S.model;try{if(S.model==='tiny')S.model='base';const ns=segs.filter(g=>!g.a3&&!g.a4);
    let skipped=false;const tStart=Date.now(),sp=new Promise(r=>{['#skipAlign','#skipAlign2'].forEach(id=>{const bt=$(id);bt.hidden=false;bt.onclick=()=>{skipped=true;r()}})});
    for(let i=0;i<ns.length;i++){if(skipped||Date.now()-tStart>150000){note=skipped?'dialogue alignment skipped':'dialogue alignment took too long and was skipped';break}const g=ns[i];stat('al','dialogue '+(i+1)+' of '+ns.length+(AUD?'':' (real time, keep this screen on)'));alive(tok);
-    const t0=Math.max(0,g.s-2),t1=Math.min(dur,g.e+4),got=await Promise.race([sp,new Promise(r=>setTimeout(()=>r('SLOW'),60000)),(async()=>{const pcm=await clipPCM({s:t0,e:t1,pcm:null},tok);alive(tok);return buildCues(await transcribe(pcm),t0,pcm)})()]);if(skipped){note='dialogue alignment skipped';break}if(got==='SLOW'){note='dialogue alignment was too slow on this device and was skipped';break}const q=got;
+    const t0=Math.max(0,g.s-2),t1=Math.min(dur,g.e+4),got=await Promise.race([sp,new Promise(r=>setTimeout(()=>r('SLOW'),60000)),(async()=>{const pcm=await clipPCM({s:t0,e:t1,pcm:null},tok);alive(tok);return buildCues(await transcribe(pcm,tok),t0,pcm)})()]);if(skipped){note='dialogue alignment skipped';break}if(got==='SLOW'){note='dialogue alignment was too slow on this device and was skipped';break}const q=got;
     const a=q.find(x=>x.s<=g.s+.3&&x.e>g.s+.3),b=q.find(x=>x.s<g.e-.3&&x.e>=g.e-.3);let s2=a?Math.max(t0,a.s-.1):g.s,e2=b?Math.min(t1,b.e+.2):g.e;if(e2-s2<=10){g.s=s2;g.e=e2}}}
    catch(e){if(e.message==='Stopped')throw e;note=/dynamically imported|Failed to fetch|NetworkError|network/i.test(e.message||'')?'speech model could not be downloaded (check your internet), so cuts were not aligned to dialogue':'dialogue alignment failed ('+(e.message||e)+')'}finally{S.model=_m;stat('al','');stat('cap','');['#skipAlign','#skipAlign2'].forEach(id=>$(id).hidden=true)}}
 // Keep the opening dialogues first, sort the other parts by time and remove overlaps.
@@ -797,7 +797,7 @@ const rmsRange=(a,s,e)=>{const i=Math.max(0,Math.floor(s*16000)),j=Math.min(a.le
 async function speechSkip(c,tok){const pcm=await clipPCM(c,tok);alive(tok);
  if(rmsRange(pcm,0,pcm.length/16000)<.003)return[];
  let q;if(S.cap==='auto'){await ensureCaps(c,tok);q=cues.filter(x=>x.e>c.s&&x.s<c.e)}
- else{stat('cap','finding dialogue…');q=buildCues(await transcribe(pcm),c.s,pcm);stat('cap','')}
+ else{stat('cap','finding dialogue…');q=buildCues(await transcribe(pcm,tok),c.s,pcm);stat('cap','')}
  alive(tok);q.sort((x,y)=>x.s-y.s);
  if(!q.length){$('#capnote').textContent='Dialogue trim: no speech found in this short, so nothing was cut.';return[]}
  const out=[],pad=.1,add=(x,y)=>{if(y-x>.3)out.push([x,y])};
@@ -824,16 +824,48 @@ function loadASR(){const m=S.model;if(ASRP[m])return ASRP[m];
   const cb=x=>{lastEv=Date.now();if(x.status==='progress'&&/onnx/.test(x.file||'')){const pc=Math.round(x.progress);stat('cap',pc>=100?'starting speech model (can take up to a minute)…':'downloading speech model '+pc+'%')}else if(x.status==='ready'){stat('cap','')}};
   try{return await Promise.race([guard(T.pipeline('automatic-speech-recognition','onnx-community/whisper-'+m,{revision:'main',progress_callback:cb}),900000,'Speech model download'),stuck])}finally{clearInterval(wd)}})();
  ASRP[m].catch(()=>{delete ASRP[m]});return ASRP[m]}
-// Transcribe audio with Whisper and return the text chunks.
-async function transcribe(pcm){const p=await loadASR(),o={task:'transcribe',chunk_length_s:30,stride_length_s:5,return_timestamps:true};if(S.lang!=='auto')o.language=S.lang;
- const secs=pcm.length/16000;stat('cap','transcribing…');
- const r=await guard(p(pcm,o),120000+secs*10000,'Transcription');return r.chunks||[]}
+// Encode a 16 kHz mono Float32 audio slice as a compact PCM WAV upload.
+function pcmWavBase64(pcm){
+ const bytes=new Uint8Array(44+pcm.length*2),v=new DataView(bytes.buffer);
+ const put=(o,s)=>{for(let i=0;i<s.length;i++)bytes[o+i]=s.charCodeAt(i)};
+ put(0,'RIFF');v.setUint32(4,36+pcm.length*2,true);put(8,'WAVE');put(12,'fmt ');
+ v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);
+ v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);put(36,'data');v.setUint32(40,pcm.length*2,true);
+ for(let i=0;i<pcm.length;i++){const x=Math.max(-1,Math.min(1,pcm[i]));v.setInt16(44+i*2,x<0?x*32768:x*32767,true)}
+ let bin='';for(let i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,Math.min(bytes.length,i+0x8000)));
+ return btoa(bin)
+}
+// Run transcription on Cloudflare AI instead of downloading a large speech model to the device.
+async function transcribe(pcm,tok=RUN){
+ const sr=16000,chunkSec=30,overlapSec=1.25,total=Math.ceil(pcm.length/sr),count=Math.ceil(total/chunkSec),out=new Array(count);
+ if(!pcm||!pcm.length)return [];
+ stat('cap','AI transcription · preparing audio…');
+ let next=0,done=0;const workers=Array.from({length:Math.min(3,count)},async()=>{
+  while(true){
+   const i=next++;if(i>=count)return;alive(tok);
+   const start=Math.max(0,Math.floor(i*chunkSec*sr-(i?overlapSec*sr:0)));
+   const end=Math.min(pcm.length,Math.ceil((i+1)*chunkSec*sr+(i<count-1?overlapSec*sr:0)));
+   const audio=pcmWavBase64(pcm.subarray(start,end));
+   stat('cap','AI transcription · '+Math.min(total,(i+1)*chunkSec)+'s / '+total+'s');
+   const req=fetch('/api/v1/shorts/transcribe',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({audio,language:S.lang==='auto'?undefined:S.lang})});
+   const res=await guard(req,180000,'AI transcription'),raw=await res.text();alive(tok);
+   let data;try{data=JSON.parse(raw)}catch{throw new Error('Speech service returned an invalid response ('+res.status+').')}
+   if(!res.ok)throw new Error(data.error||('Speech transcription failed ('+res.status+').'));
+   const segs=Array.isArray(data.segments)?data.segments:[];
+   out[i]=segs.map(q=>({text:String(q.text||''),timestamp:[Math.max(0,Number(q.start)||0)+start/sr,Math.max(0,Number(q.end)||0)+start/sr]}));
+   if(!out[i].length&&data.text)out[i]=[{text:String(data.text),timestamp:[start/sr,end/sr]}];
+   done++;stat('cap','AI transcription · '+done+'/'+count+' audio parts');
+  }
+ });
+ await Promise.all(workers);alive(tok);
+ return out.flat().filter(q=>q.text&&q.timestamp[1]>q.timestamp[0])
+}
 
 const SEMANTIC_ENDPOINT='/api/v1/shorts/semantic-plan';
 // Whisper runs locally; only transcript text and timestamps are sent for semantic ranking.
 async function semanticShortPlan(tok,dur){
  if(!AUD||!AUD.length)throw new Error('AI dialogue analysis needs a full audio read. This file is too large for safe on-device transcription; try a shorter or smaller source video.');
- const raw=await transcribe(AUD);alive(tok);
+ const raw=await transcribe(AUD,tok);alive(tok);
  const segments=(raw||[]).map(q=>{
   const st=Number(q.timestamp&&q.timestamp[0]),en=Number(q.timestamp&&q.timestamp[1]);
   return{start:Number.isFinite(st)?Math.max(0,st):0,end:Number.isFinite(en)&&en>st?Math.min(dur,en):Math.min(dur,(Number.isFinite(st)?st:0)+3),text:normalizeCaptionText(q.text)};
@@ -878,7 +910,7 @@ function buildCues(ch,off,pcm){let out=[];
 function ensureCaps(c,tok){if(c.cap||S.cap!=='auto')return Promise.resolve();
  if(!c._cp)c._cp=(async()=>{const pcm=await clipPCM(c,tok);alive(tok);
   if(rmsRange(pcm,0,pcm.length/16000)<.003){c.cap=true;stat('cap','');$('#capnote').textContent='No speech detected in this short.';return}
-  const ch=await transcribe(pcm);alive(tok);
+  const ch=await transcribe(pcm,tok);alive(tok);
   cues=cues.filter(q=>q.e<=c.s||q.s>=c.e).concat(buildCues(ch,c.s,pcm)).sort((a,b)=>a.s-b.s);c.cap=true;stat('cap','');$('#capnote').textContent='Captions ready. '+cues.length+' lines.'})().finally(()=>{c._cp=null});
  return c._cp}
 // "Generate captions for all shorts" button.
