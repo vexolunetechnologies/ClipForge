@@ -1092,7 +1092,7 @@ async function exportClip(i,forceWC){
   if(S.tr!=='off'&&!TRL)jobs.push(soft('Silence trim',skipMap(c,tok).then(s=>{skip=s})));
 // Trailer: the "skip" ranges are the gaps between its parts.
   await Promise.all(jobs);alive(tok);if(TRL)skip=c.segs.slice(1).map((g,k)=>[c.segs[k].e,g.s]);
-  btn.textContent='Recording…';say('Recording… keep this tab open and the screen on.');
+  btn.textContent='Exporting…';say('Exporting… keep this tab open and the screen on.');
 // Canvas size for the chosen format and quality.
   const WIDE=TRL&&S.tasp==='wide',hq=(TRL?S.tres:S.res)==='1080',cw=WIDE?(hq?1920:1280):(hq?1080:720),ch=WIDE?cw*9/16:cw*16/9;if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch}WIDEREC=WIDE;
 // Switch audio on and move the video to the start of the clip.
@@ -1132,7 +1132,7 @@ async function exportClip(i,forceWC){
 // Report a failure.
  }catch(e){if(e.message!=='Stopped'){try{REC&&REC.state!=='inactive'&&REC.stop()}catch(_){}v.pause();
   // Native recorder gave an unusable file: try again once with the WebCodecs recorder.
-  if(!forceWC&&mime&&WCok&&/not usable/.test(e.message||'')){retry=true;say('The file was not usable. Trying the other recorder…')}else{say('Export failed: '+(e.message||e));err('Export failed: '+(e.message||e))}}}
+  if(!forceWC&&mime&&WCok&&(/not usable|recorder|recording/i.test(e.message||''))){retry=true;say('The first export was not usable. Retrying with the compatibility encoder…')}else{say('Export failed: '+(e.message||e));err('Export failed: '+(e.message||e))}}}
  try{wl&&wl.release()}catch(e){}
 // Always restore the settings and unlock the interface.
  S.fit=_fit;WIDEREC=false;ZOOM=1;SHX=SHY=0;v.playbackRate=1;if(tok===RUN){if(cv.width!==720||cv.height!==1280){cv.width=720;cv.height=1280}RECING=false;if(outG)outG.gain.value=1;if(recG)recG.gain.value=0;busy=false;lock(false);render();renderTrailer()}
