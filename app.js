@@ -2222,7 +2222,7 @@ sync();
     const frame=document.createElement('div');frame.className='cf-caption-frame cf-style-'+id;frame.dir=sample.dir;
     const b=document.createElement('b');b.textContent=sample.text;const sm=document.createElement('small');sm.textContent=S.brand==='off'?'':sample.brand;sm.hidden=S.brand==='off';frame.append(b,sm);
     const label=document.createElement('span');label.textContent=names[id];btn.append(frame,label);btn.addEventListener('click',()=>{selected=id;render()});grid.append(btn)})}
-  document.querySelectorAll('.cf-mini-template').forEach(btn=>{btn.classList.toggle('on',btn.dataset.v===selected);const b=btn.querySelector('b');if(b)b.textContent=sample.text});
+  document.querySelectorAll('.cf-mini-template').forEach(btn=>{btn.classList.toggle('on',btn.dataset.v===selected);const b=btn.querySelector('b'),sm=btn.querySelector('small');if(b)b.textContent=sample.text;if(sm){sm.textContent=S.brand==='off'?'':sample.brand;sm.hidden=S.brand==='off'}});
  }
  const lang=$id('cfCaptionLanguage');if(lang)lang.addEventListener('change',()=>{language=lang.value;render()});
  const brand=$id('cfCaptionBrand');if(brand)brand.addEventListener('click',()=>{S.brand=S.brand==='off'?'on':'off';brand.classList.toggle('on',S.brand==='on');brand.setAttribute('aria-pressed',String(S.brand==='on'));brand.textContent=S.brand==='on'?'✓ Vexolune branding on':'Branding off';render()});
