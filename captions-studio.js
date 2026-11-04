@@ -105,7 +105,7 @@ function init(){
   if(e.target.closest('#stylebox [data-k="cs"]')){shortGrid();livePreview()}
   if(e.target.closest('#autobox [data-k="lang"]'))setTimeout(shortGrid,0);
  });
- syncShortsCaptionPanels();
+ ensureShortStyleButtons();syncShortsCaptionPanels();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
