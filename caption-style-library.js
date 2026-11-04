@@ -22,9 +22,9 @@ function draw(ctx,text,key,w,h,t=0,d=2){
  lines.forEach((ln,i)=>{const y=center-(lines.length-1)*lh/2+i*lh,parts=ln.split(/\s+/);
   if(['word','dynamic','popup','kinetic','animated','sliding','bounce','highlight-word','red','multi','karaoke','karaoke-pro','hl','punch'].includes(key)){
    const total=ctx.measureText(ln).width,space=ctx.measureText(' ').width;let x=rtl?w/2+total/2:w/2-total/2;
-   parts.forEach(p=>{const ww=ctx.measureText(p).width,idx=wordIndex++,on=idx===active,done=idx<=active,x0=rtl?x-ww:x;let yy=y;
+   parts.forEach(p=>{const ww=ctx.measureText(p).width,idx=wordIndex++,on=idx===active,done=idx<=active;let yy=y,x0=rtl?x-ww:x;
     if(['bounce','popup','punch'].includes(key)&&on)yy-=Math.abs(Math.sin(t*8))*fs*.16;
-    if(key==='sliding'&&on)x+=Math.sin(t*8)*fs*.12;
+    if(key==='sliding'&&on){const shift=Math.sin(t*8)*fs*.12;x+=rtl?-shift:shift;x0+=rtl?-shift:shift}
     if(['highlight-word','hl'].includes(key)&&on){ctx.fillStyle='#ffc629';round(x0-pad*.3,yy-fs*.8,ww+pad*.6,fs*1.15,5);ctx.fillStyle='#171717'}
     else if(key==='red'&&on){ctx.fillStyle='#e53935';round(x0-pad*.3,yy-fs*.8,ww+pad*.6,fs*1.15,4);ctx.fillStyle='#fff'}
     else if(key==='multi')ctx.fillStyle=['#ffdf4d','#55e6ff','#ff77ad','#a6ff78'][idx%4];
