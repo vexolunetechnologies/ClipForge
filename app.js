@@ -146,7 +146,7 @@ function snapSeg(pcm,t0,t1){
 // Main elements: v = the video player, cv = preview / recording canvas, ctx = its 2D drawing context.
 const v=$('#src'),cv=$('#cv'),ctx=cv.getContext('2d');
 // S = every user setting (count, length, framing, captions, trailer options...). Option buttons write into it through their data-k / data-v attributes.
-let S={n:'auto',len:'auto',mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
+let S={n:'auto',len:30,mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
 // Runtime state: clips (the plan), busy flag, RUN token (changing it cancels running work), loaded file info, and audio analysis data (ENV = loudness every 0.1 s).
 let clips=[],busy=false,RUN=0,url=null,fname='video',file=null,PL=30,cues=[],capOn=false,AUD=null,ENV=null,LAST=null,REC=null,ALL=false,RECING=false;
 // Web Audio objects: actx = audio context, src = video as audio source, adest = stream that is recorded, outG = speaker volume, recG = recording volume.
@@ -889,8 +889,9 @@ async function semanticShortPlan(tok,dur){
  }
  if(!response.ok)throw new Error(data.error||('AI analysis failed ('+response.status+').'));
  if(!data||!Array.isArray(data.clips))throw new Error('The AI API response is missing its clips list. Please try again.');
+ const minClip=Math.max(8,Math.round(PL*.8)),maxClip=Math.min(110,Math.round(PL*1.25));
  const pool=(data.clips||[]).map(q=>({s:Number(q.start),e:Number(q.end),score:Math.max(0,Math.min(100,Math.round(Number(q.score)||0))),tags:[String(q.category||'AI selected').slice(0,32)],reason:String(q.reason||'').slice(0,240),hook:String(q.hook||'').slice(0,120),blob:null,pcm:null,cap:false,ai:true}))
-  .filter(q=>Number.isFinite(q.s)&&Number.isFinite(q.e)&&q.s>=0&&q.e<=dur&&q.e-q.s>=8&&q.e-q.s<=110);
+  .filter(q=>Number.isFinite(q.s)&&Number.isFinite(q.e)&&q.s>=0&&q.e<=dur&&q.e-q.s>=minClip&&q.e-q.s<=maxClip);
  if(!pool.length)throw new Error('AI could not find enough strong dialogue moments. Try another source or a longer target length.');
  pool.sort((a,b)=>b.score-a.score);LAST.semanticPool=pool;LAST.semanticCursor=Math.min(wanted,pool.length);
  stat('ai','');return pool.slice(0,wanted).map(q=>({...q,tags:[...q.tags]}));
@@ -1103,7 +1104,7 @@ async function exportClip(i,forceWC){
 // Create the recorder: the browser's MP4 MediaRecorder, or the WebCodecs fallback.
   const rbr=cv.width>720?8e6:4e6,rec=(mime&&!forceWC)?new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:rbr,bitrateMode:'constant'}):await makeWC(adest.stream.getAudioTracks()[0],rbr);REC=rec;const parts=[];rec.ondataavailable=e=>e.data.size&&parts.push(e.data);
 // Start recording and play the video.
-  const done=new Promise(r=>rec.onstop=r);if(TRL){ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height)}else draw();rec.start(500);
+  const done=new Promise(r=>{rec.onstop=r;rec.onerror=e=>{rec.err=e.error||new Error('The browser video recorder failed')}});if(TRL){ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height)}else draw();rec.start(500);
   try{await guard(v.play(),15000,'Video play')}catch(e){throw e.message==='Stopped'?e:new Error('Video could not play: '+(e.message||e))}
   if(ALL&&S.cap==='auto'&&clips[i+1])ensureCaps(clips[i+1],tok).catch(()=>{});
 // Loop state.
@@ -1137,12 +1138,14 @@ async function exportClip(i,forceWC){
  S.fit=_fit;WIDEREC=false;ZOOM=1;SHX=SHY=0;v.playbackRate=1;if(tok===RUN){if(cv.width!==720||cv.height!==1280){cv.width=720;cv.height=1280}RECING=false;if(outG)outG.gain.value=1;if(recG)recG.gain.value=0;busy=false;lock(false);render();renderTrailer()}
  if(retry&&tok===RUN)return exportClip(i,true)}
 // Open the finished file in a hidden video to prove that it is playable.
-function verifyVideo(b){return new Promise(res=>{const u=URL.createObjectURL(b),x=document.createElement('video');x.muted=true;x.preload='auto';x.playsInline=true;let done=false,tm=null;
- const fin=o=>{if(done)return;done=true;clearTimeout(tm);x.onerror=x.onloadeddata=x.ondurationchange=x.onseeked=null;x.removeAttribute('src');try{x.load()}catch(e){}URL.revokeObjectURL(u);res(o)};
+function verifyVideo(b){return new Promise(res=>{const u=URL.createObjectURL(b),x=document.createElement('video');x.muted=true;x.preload='auto';x.playsInline=true;let done=false,tm=null,dt=null;
+ const fin=o=>{if(done)return;done=true;clearTimeout(tm);clearTimeout(dt);x.onerror=x.onloadeddata=x.ondurationchange=x.onseeked=null;x.removeAttribute('src');try{x.load()}catch(e){}URL.revokeObjectURL(u);res(o)};
+ const seekEnd=()=>{const d=x.duration;if(!Number.isFinite(d)||d<=.5)return fin({ok:false,why:'the MP4 duration was not finalized',dur:null,w:x.videoWidth,h:x.videoHeight,seek:false});
+  x.onseeked=()=>fin({ok:x.videoWidth>0&&x.videoHeight>0&&x.readyState>=2,why:'the end of the file cannot be decoded',dur:d,w:x.videoWidth,h:x.videoHeight,seek:true});
+  try{x.currentTime=Math.max(0,d-.3)}catch(e){fin({ok:false,why:'the end of the file cannot be reached',dur:d,w:x.videoWidth,h:x.videoHeight,seek:false})}};
  tm=setTimeout(()=>fin({ok:false,why:'the check timed out'}),20000);x.onerror=()=>fin({ok:false,why:'the file cannot be read'});
- x.onloadeddata=()=>{if(!(x.videoWidth>0&&x.videoHeight>0))return fin({ok:false,why:'the file has no picture'});const w=x.videoWidth,h=x.videoHeight;
-  const seekEnd=()=>{const d=x.duration;if(!isFinite(d)||d<=.5)return fin({ok:true,dur:null,w,h,seek:false});x.onseeked=()=>fin({ok:x.videoWidth>0,why:'the end of the file cannot be reached',dur:d,w,h,seek:true});x.currentTime=Math.max(0,d-.3)};
-  if(x.duration===Infinity){x.ondurationchange=()=>{if(isFinite(x.duration)){x.ondurationchange=null;seekEnd()}};x.currentTime=1e7;setTimeout(()=>{if(!done&&!isFinite(x.duration))fin({ok:true,dur:null,w,h,seek:false})},6000)}else seekEnd()};
+ x.onloadeddata=()=>{if(!(x.videoWidth>0&&x.videoHeight>0))return fin({ok:false,why:'the file has no picture'});
+  if(Number.isFinite(x.duration))seekEnd();else{x.ondurationchange=()=>{if(Number.isFinite(x.duration)){x.ondurationchange=null;seekEnd()}};dt=setTimeout(()=>fin({ok:false,why:'the MP4 duration was not finalized',dur:null,w:x.videoWidth,h:x.videoHeight,seek:false}),6000)}};
  x.src=u})}
 // Download a finished clip.
 function save(c,i){const a=document.createElement('a');a.href=URL.createObjectURL(c.blob);a.download=fname+(c.trailer?'-trailer':c.full?'-full-9x16':'-short-'+(i+1))+'.'+ext;document.body.append(a);a.click();a.remove()}
