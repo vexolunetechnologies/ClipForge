@@ -274,16 +274,25 @@ async function decodeFullAudioForAI(tok){
  if(!track)throw new Error('No audio track was found in this video.');
  if(!await track.canDecode())throw new Error('This video uses an audio codec that this browser cannot decode.');
  const duration=Math.max(1,Number(v.duration)||1);
- const sink=new mb.AudioSampleSink(track),blockSize=30*16000;
- let parts=[],length=0,blockStart=0,started=false,lastProgress=0,overallProgress=8;
- const reportProgress=(label,p)=>{overallProgress=Math.max(overallProgress,Math.min(70,p));workProgress(label,overallProgress)};
- const transcript=[];
- const flush=async()=>{
+ const sink=new mb.AudioSampleSink(track),blockSize=30*16000,totalBlocks=Math.max(1,Math.ceil(duration/30));
+ let parts=[],length=0,blockStart=0,started=false,lastProgress=0,overallProgress=8,doneBlocks=0;
+ const reportProgress=(label,p)=>{overallProgress=Math.max(overallProgress,Math.min(65,p));workProgress(label,overallProgress)};
+ const transcript=[],queue=[],waiters=[];let extractionDone=false;
+ const take=()=>queue.length?Promise.resolve(queue.shift()):extractionDone?Promise.resolve(null):new Promise(resolve=>waiters.push(resolve));
+ const enqueue=job=>{const wake=waiters.shift();if(wake)wake(job);else queue.push(job)};
+ const workers=Array.from({length:3},async()=>{
+  while(true){const job=await take();if(!job)return;alive(tok);
+   const slot=job.index,span=26/totalBlocks,start=24+slot*span;
+   const rows=await transcribe(job.pcm,tok,{start,span,report:reportProgress});
+   rows.forEach(q=>transcript.push({...q,timestamp:[q.timestamp[0]+job.offset,q.timestamp[1]+job.offset]}));
+   doneBlocks++;reportProgress('Transcribing audio · '+doneBlocks+'/'+totalBlocks+' parts',24+26*doneBlocks/totalBlocks);
+  }
+ });
+ const flush=()=>{
   if(!length)return;
-  const pcm=cat(parts),offset=blockStart,span=Math.max(.15,25*Math.min(length/blockSize,1)/duration);
+  const pcm=cat(parts),offset=blockStart,index=Math.max(0,Math.round(offset/30));
   parts=[];length=0;blockStart=offset+pcm.length/16000;
-  const rows=await transcribe(pcm,tok,{start:35+25*offset/duration,span,report:reportProgress});
-  rows.forEach(q=>transcript.push({...q,timestamp:[q.timestamp[0]+offset,q.timestamp[1]+offset]}));
+  enqueue({pcm,offset,index});
  };
  try{
   for await(const sample of sink.samples()){
@@ -299,16 +308,19 @@ async function decodeFullAudioForAI(tok){
     while(p<pcm.length){
      const take=Math.min(blockSize-length,pcm.length-p);
      parts.push(pcm.subarray(p,p+take));length+=take;p+=take;
-     if(length>=blockSize)await flush();
+     if(length>=blockSize)flush();
     }
    }finally{try{sample.close()}catch(_){}}
-   if(timestamp-lastProgress>=2){lastProgress=timestamp;reportProgress('Extracting audio · '+fmt(timestamp)+' / '+fmt(duration),Math.min(34,8+26*timestamp/duration))}
+   if(timestamp-lastProgress>=2){lastProgress=timestamp;reportProgress('Extracting audio · '+fmt(timestamp)+' / '+fmt(duration),Math.min(24,8+16*timestamp/duration))}
   }
-  await flush();
- }catch(e){if(e.message==='Stopped')throw e;throw new Error('Fast audio extraction failed: '+(e.message||e))}
+  flush();
+  extractionDone=true;while(waiters.length)waiters.shift()(null);
+  await Promise.all(workers);
+ }catch(e){extractionDone=true;while(waiters.length)waiters.shift()(null);if(e.message==='Stopped')throw e;throw new Error('Fast audio extraction failed: '+(e.message||e))}
  if(!transcript.length)throw new Error('No speech could be extracted from this video. Check that it contains an audio track.');
+ transcript.sort((a,b)=>a.timestamp[0]-b.timestamp[0]);
  SHORTS_TRANSCRIPT=transcript;AUD=null;
- workProgress('Audio ready for AI analysis',62);
+ workProgress('Audio ready for AI analysis',65);
  return transcript;
 }
 async function audioFeats(D,tok){
@@ -1110,7 +1122,7 @@ async function makeWC(aTrack,br){
   try{await Promise.race([e.flush(),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))])}catch(x){bad=true}
   try{e.close()}catch(x){}return got>0&&!bad}catch(x){return false}};
  const lv=W*H>1280*720?'28':'1f';
- find:for(const pr of ['64','4d','42'])for(const hw of ['no-preference','prefer-software','prefer-hardware']){const cfg={codec:'avc1.'+pr+'00'+lv,width:W,height:H,bitrate:br,framerate:30,hardwareAcceleration:hw};if(await probe(cfg)){vc=cfg.codec;vhw=hw;break find}}
+ find:for(const pr of ['64','4d','42'])for(const hw of ['no-preference','prefer-software','prefer-hardware']){const cfg={codec:'avc1.'+pr+'00'+lv,width:W,height:H,bitrate:br,framerate:30,hardwareAcceleration:hw,avc:{format:'avc'}};if(await probe(cfg)){vc=cfg.codec;vhw=hw;break find}}
  if(!vc){const cfg={codec:'vp09.00.40.08',width:W,height:H,bitrate:br,framerate:30};if(await probe(cfg)){vc=cfg.codec;vm='vp9'}}
  if(!vc)throw new Error('This device could not start a video encoder at '+W+'×'+H+'. Choose 720p, or use Chrome or Edge on a computer.');
 // Audio: AAC if supported, otherwise Opus.
@@ -1123,8 +1135,11 @@ async function makeWC(aTrack,br){
 // Timing state: pt = total paused time, aAcc = running position of the audio track.
  let kfNext=false,nV=0,t0=0,pt=0,ps=0,lastV=-1,n=0,timer=null,stopping=false,aFirst=null,lastA=-1,aAcc=0,rd=null;
 // Video encoder: collects the encoded picture chunks.
- const ve=new VideoEncoder({output:(c,m)=>{nV++;mux.addVideoChunk(c,m)},error:e=>{R.err=e}});
- ve.configure({codec:vc,width:W,height:H,bitrate:br,framerate:30,hardwareAcceleration:vhw});
+ const ve=new VideoEncoder({output:(c,m)=>{
+  if(vm==='avc'&&!(m&&m.decoderConfig&&m.decoderConfig.description)){R.err=new Error('H.264 encoder did not provide MP4 decoder configuration; refusing to create a broken video.');return}
+  nV++;try{mux.addVideoChunk(c,m)}catch(e){R.err=e}
+ },error:e=>{R.err=e}});
+ ve.configure({codec:vc,width:W,height:H,bitrate:br,framerate:30,hardwareAcceleration:vhw,...(vm==='avc'?{avc:{format:'avc'}}:{})});
 // Audio encoder: chunk times come from the running audio duration, so pauses cannot break the file.
  const ae=new AudioEncoder({output:(c,m)=>{const du=c.duration||Math.round((am==='aac'?1024:960)*1e6/sr);let ts=Math.max(aAcc,lastA+1);lastA=ts;aAcc=ts+du;mux.addAudioChunk(c,m,ts)},error:e=>{R.err=e}});
  ae.configure({codec:ac,sampleRate:sr,numberOfChannels:2,bitrate:128000});
