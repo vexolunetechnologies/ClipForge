@@ -80,11 +80,50 @@ async function semanticPlan(request,env){
   }
 }
 
+const VIDEO_IMPORT_MAX_URL=4096;
+const VIDEO_IMPORT_MAX_BYTES=1024*1024*1024;
+const PLATFORM_HOSTS={youtube:["youtube.com","youtu.be"],facebook:["facebook.com","fb.watch"],instagram:["instagram.com"],tiktok:["tiktok.com","vm.tiktok.com","vt.tiktok.com"]};
+function detectVideoPlatform(value){
+ let u;try{u=new URL(value)}catch{return null}
+ if(!["http:","https:"].includes(u.protocol)||u.username||u.password)return null;
+ const host=u.hostname.toLowerCase().replace(/^www\\./,"");
+ for(const [platform,roots] of Object.entries(PLATFORM_HOSTS)){if(roots.some(root=>host===root||host.endsWith("."+root)))return platform;}
+ return null;
+}
+async function importSocialVideo(request,env){
+ if(request.method!=="POST")return json({error:"Method not allowed."},405);
+ const origin=request.headers.get("Origin");
+ if(origin){try{if(new URL(origin).host!==new URL(request.url).host)return json({error:"Origin not allowed."},403)}catch{return json({error:"Invalid origin."},403)}}
+ if(!env.VIDEO_IMPORT_API_URL||!env.VIDEO_IMPORT_API_KEY)return json({error:"Social video import is not connected yet. Configure VIDEO_IMPORT_API_URL and VIDEO_IMPORT_API_KEY as Cloudflare Pages secrets."},503);
+ let input;try{const raw=await request.text();if(raw.length>6000)return json({error:"Request is too large."},413);input=JSON.parse(raw)}catch{return json({error:"Invalid import request."},400)}
+ const sourceUrl=String(input.url||"").trim();if(sourceUrl.length>VIDEO_IMPORT_MAX_URL)return json({error:"Video URL is too long."},400);
+ const platform=detectVideoPlatform(sourceUrl);if(!platform)return json({error:"Paste a supported YouTube, Facebook, Instagram or TikTok link."},400);
+ try{
+  const endpoint=new URL(env.VIDEO_IMPORT_API_URL);if(endpoint.protocol!=="https:")return json({error:"The configured import provider must use HTTPS."},503);
+  const provider=await fetch(endpoint.toString(),{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+env.VIDEO_IMPORT_API_KEY,"accept":"application/json"},body:JSON.stringify({url:sourceUrl,platform,access_mode:"authorized_or_public"})});
+  const providerType=provider.headers.get("content-type")||"";
+  if(!provider.ok){let detail="The import provider could not retrieve this video.";if(providerType.includes("application/json")){try{const data=await provider.json();if(data&&typeof data.error==="string")detail=data.error.slice(0,220)}catch{}}return json({error:detail},provider.status===429?429:502)}
+  if(!providerType.includes("application/json"))return json({error:"The import provider returned an invalid response. Expected JSON metadata."},502);
+  const data=await provider.json();const mediaUrl=String(data.video_url||"");let media;try{media=new URL(mediaUrl)}catch{return json({error:"The import provider did not return a valid video_url."},502)}
+  if(media.protocol!=="https:"||media.username||media.password)return json({error:"The provider returned an unsafe media URL."},502);
+  const video=await fetch(media.toString(),{redirect:"manual",headers:{accept:"video/*,application/octet-stream"}});
+  if(video.status>=300&&video.status<400){try{await video.body?.cancel()}catch{}return json({error:"The provider media URL redirects. Configure it to return a final HTTPS media URL."},502)}
+  if(!video.ok){try{await video.body?.cancel()}catch{}return json({error:"The provider video file could not be fetched."},502)}
+  const type=(video.headers.get("content-type")||String(data.content_type||"")).split(";")[0].trim().toLowerCase();
+  if(!type.startsWith("video/")){try{await video.body?.cancel()}catch{}return json({error:"The provider URL did not return a video file."},502)}
+  const size=Number(video.headers.get("content-length")||0);if(size>VIDEO_IMPORT_MAX_BYTES){try{await video.body?.cancel()}catch{}return json({error:"This video exceeds the 1 GB import limit."},413)}
+  const safeName=String(data.filename||"imported-video.mp4").replace(/[\\r\\n"]/g,"").slice(0,120)||"imported-video.mp4";
+  const headers=new Headers({"content-type":type,"content-disposition":'attachment; filename="'+safeName+'"',"cache-control":"no-store","x-content-type-options":"nosniff","access-control-expose-headers":"content-disposition"});if(size)headers.set("content-length",String(size));
+  return new Response(video.body,{status:200,headers});
+ }catch(error){return json({error:"Video import failed: "+String(error&&error.message||error).slice(0,160)},502)}
+}
+
 export default {
   async fetch(request,env) {
     const url=new URL(request.url);
     if(url.pathname==="/api/v1/shorts/semantic-plan")return semanticPlan(request,env);
     if(url.pathname==="/api/v1/shorts/transcribe")return transcribeAudio(request,env);
+    if(url.pathname==="/api/v1/media/import")return importSocialVideo(request,env);
     return env.ASSETS.fetch(request);
   }
 };
