@@ -211,7 +211,7 @@ const lenVal=()=>S.len==='custom'?Math.max(10,Math.min(90,+$('#cl').value||30)):
 // Show the custom-seconds box only when "Custom" is selected.
 $$('#lens .chip').forEach(b=>b.addEventListener('click',()=>{$('#cl').classList.toggle('hide',S.len!=='custom');$('#fullnote').classList.toggle('hide',S.len!=='full')}));
 // Generic option buttons: a button with data-k / data-v sets S[data-k] = data-v and highlights itself.
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-k][data-v]');if(!b)return;const k=b.dataset.k;S[k]=b.dataset.v;$('[data-k="'+k+'"]').forEach(c=>c.classList.toggle('on',c===b));
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-k][data-v]');if(!b)return;const k=b.dataset.k;S[k]=b.dataset.v;$$('[data-k="'+k+'"]').forEach(c=>c.classList.toggle('on',c===b));
  $('#posbox').classList.toggle('hide',S.fit!=='crop');$('#depthbox').classList.toggle('hide',S.mode!=='best');
  capOn=S.cap!=='off';$('#capbox').classList.toggle('hide',S.cap!=='file');$('#autobox').classList.toggle('hide',!(S.cap==='auto'||S.tr==='speech'));$('#stylebox').classList.toggle('hide',!capOn);
  if(k==='fit'||k==='cap'||k==='cs'){$('#pnote').textContent=S.fit==='smart'?'Preview is centered. Faces are tracked per shot while exporting.':'';if(v.videoWidth)draw()}});
