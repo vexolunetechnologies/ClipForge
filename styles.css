@@ -2540,3 +2540,33 @@ body.solo[data-tool=highlights] #how,body.solo[data-tool=highlights] #features,b
     overflow:visible!important;
   }
 }
+
+
+/* Refined flagship card: quiet editorial label, neutral surface, subtle emphasis */
+#tools .flagship-studio-card{
+  border:1px solid rgba(148,163,184,.18)!important;
+  background:rgba(255,255,255,.025)!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.12)!important;
+}
+#tools .flagship-studio-card:before{
+  display:block!important;
+  align-self:flex-start!important;
+  margin:0 0 12px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:none!important;
+  color:#9aa9c2!important;
+  font-size:9px!important;
+  font-weight:750!important;
+  letter-spacing:.16em!important;
+}
+#tools .flagship-studio-card .tool-icon{
+  background:rgba(148,163,184,.12)!important;
+  color:#c5d0e0!important;
+  border:1px solid rgba(148,163,184,.12)!important;
+}
+#tools .flagship-studio-card h3{
+  font-size:23px!important;
+  letter-spacing:-.04em!important;
+}
