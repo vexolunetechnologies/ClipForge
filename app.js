@@ -868,7 +868,7 @@ async function transcribe(pcm,tok=RUN){
 }
 
 const SEMANTIC_ENDPOINT='/api/v1/shorts/semantic-plan';
-// Whisper runs locally; only transcript text and timestamps are sent for semantic ranking.
+// Audio is transcribed by the Cloudflare Worker; transcript text and timestamps are then sent for semantic ranking.
 async function semanticShortPlan(tok,dur){
  if(!AUD||!AUD.length)throw new Error('AI dialogue analysis needs a full audio read. This file is too large for safe on-device transcription; try a shorter or smaller source video.');
  const raw=await transcribe(AUD,tok);alive(tok);
