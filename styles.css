@@ -640,7 +640,7 @@ details{border-color:var(--line)!important}
 summary{color:var(--text)!important}
 .solo .hero,.solo #tools{display:none!important}
 body.solo[data-tool=montage] #vmTool,body.solo[data-tool=editor] #editorTool{display:block!important}
-#vmTool,#editorTool{display:none}
+#vmTool,#highlightsTool,#editorTool{display:none}
 body.solo[data-tool=montage] #tool,body.solo[data-tool=montage] #iaTool,body.solo[data-tool=montage] #rvTool,
 body.solo[data-tool=editor] #tool,body.solo[data-tool=editor] #iaTool,body.solo[data-tool=editor] #rvTool{display:none!important}
 body.solo[data-tool=montage] #vmTool,body.solo[data-tool=editor] #editorTool{display:block!important}
@@ -2379,3 +2379,8 @@ body.solo[data-tool="captions"] #cfCaptionsWorkspace{display:block!important}
   font-weight:700;
   cursor:pointer;
 }
+
+/* Highlights Studio is an independent workspace; keep every existing tool layout untouched. */
+body.solo[data-tool=highlights] #highlightsTool{display:block!important}
+body.solo[data-tool=highlights] #tool,body.solo[data-tool=highlights] #iaTool,body.solo[data-tool=highlights] #rvTool,body.solo[data-tool=highlights] #vmTool,body.solo[data-tool=highlights] #editorTool,body.solo[data-tool=highlights] #cfCaptionsWorkspace{display:none!important}
+body.solo[data-tool=highlights] #how,body.solo[data-tool=highlights] #features,body.solo[data-tool=highlights] #faq,body.solo[data-tool=highlights] footer{display:none!important}
