@@ -231,6 +231,8 @@ const dr=$('#drop');dr.ondragover=e=>e.preventDefault();dr.ondrop=e=>{e.preventD
 
 // Update the progress bar (p = 0..1).
 function prog(p){const b=$('#pbar');b.classList.remove('hide');const i=b.querySelector('i');if(i)i.style.width=Math.round(Math.max(0,Math.min(1,p))*100)+'%'}
+// User-facing progress: show only the current task and its overall progress, never backend or data-routing details.
+function workProgress(label,p){const pc=Math.max(0,Math.min(100,Math.round(p)));prog(pc/100);say(label+' · '+pc+'%')}
 // How many bytes of audio this device can safely decode in memory; bigger files are scanned by sampling instead.
 const decodeLimit=()=>navigator.deviceMemory?Math.min(600e6,navigator.deviceMemory*60e6):250e6;
 
@@ -649,10 +651,10 @@ $('#go').onclick=async()=>{
    let lo=0,hi=D;if(S.skip==='on'&&D>300){lo=Math.min(90,Math.round(D*.04));hi=D-Math.min(120,Math.round(D*.05))}
    if(S.tool==='shorts'){
     if(file.size>decodeLimit())throw new Error('This video is too large for reliable on-device dialogue analysis on this device. Try a shorter or smaller source video.');
-    say('Preparing audio for dialogue transcription…');
+    workProgress('Preparing audio',8);
     try{await decodeFullAudioForAI(tok)}catch(e){if(e.message==='Stopped')throw e;AUD=null;throw new Error('Could not decode this video’s audio for AI dialogue analysis: '+(e.message||e))}
     alive(tok);LAST={D,lo,hi,dur,seen:[]};
-    say('Understanding dialogue with AI…');clips=await semanticShortPlan(tok,dur);
+    workProgress('Transcribing audio',12);clips=await semanticShortPlan(tok,dur);
    }else{
     let A=null,M=null;
     if(file.size<=decodeLimit()){say('Reading audio…');try{A=await audioFeats(D,tok)}catch(e){if(e.message==='Stopped')throw e;A=null;AUD=null;ENV=null}}
@@ -845,14 +847,14 @@ function whisperLanguageCode(value){
 async function transcribe(pcm,tok=RUN){
  const sr=16000,chunkSec=30,overlapSec=1.25,total=Math.ceil(pcm.length/sr),count=Math.ceil(total/chunkSec),out=new Array(count);
  if(!pcm||!pcm.length)return [];
- stat('cap','AI transcription · preparing audio…');
+ workProgress('Transcribing audio',12);
  let next=0,done=0;const workers=Array.from({length:Math.min(3,count)},async()=>{
   while(true){
    const i=next++;if(i>=count)return;alive(tok);
    const start=Math.max(0,Math.floor(i*chunkSec*sr-(i?overlapSec*sr:0)));
    const end=Math.min(pcm.length,Math.ceil((i+1)*chunkSec*sr+(i<count-1?overlapSec*sr:0)));
    const audio=pcmWavBase64(pcm.subarray(start,end));
-   stat('cap','AI transcription · '+Math.min(total,(i+1)*chunkSec)+'s / '+total+'s');
+   workProgress('Transcribing audio · '+Math.min(total,(i+1)*chunkSec)+'s of '+total+'s',12+Math.round(done/Math.max(1,count)*48));
    const req=fetch('/api/v1/shorts/transcribe',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({audio,language:whisperLanguageCode(S.lang)})});
    const res=await guard(req,180000,'AI transcription'),raw=await res.text();alive(tok);
    let data;try{data=JSON.parse(raw)}catch{throw new Error('Speech service returned an invalid response ('+res.status+').')}
@@ -860,7 +862,7 @@ async function transcribe(pcm,tok=RUN){
    const segs=Array.isArray(data.segments)?data.segments:[];
    out[i]=segs.map(q=>({text:String(q.text||''),timestamp:[Math.max(0,Number(q.start)||0)+start/sr,Math.max(0,Number(q.end)||0)+start/sr]}));
    if(!out[i].length&&data.text)out[i]=[{text:String(data.text),timestamp:[start/sr,end/sr]}];
-   done++;stat('cap','AI transcription · '+done+'/'+count+' audio parts');
+   done++;workProgress('Transcribing audio · '+done+'/'+count+' parts',12+Math.round(done/Math.max(1,count)*48));
   }
  });
  await Promise.all(workers);alive(tok);
@@ -879,9 +881,9 @@ async function semanticShortPlan(tok,dur){
  if(!segments.length)throw new Error('No clear dialogue was detected. Check that the video has audible speech.');
  if(segments.length>2500)throw new Error('This video has too much dialogue for one analysis pass. Try a shorter section first.');
  const wanted=S.n==='auto'?Math.min(10,Math.max(3,Math.round(dur/180))):Math.max(1,Math.min(50,+S.n||3));
- stat('ai','understanding dialogue and finding the strongest moments…');
+ workProgress('Finding the best moments',66);
  const response=await guard(fetch(SEMANTIC_ENDPOINT,{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({duration:dur,targetLength:PL,count:wanted,language:S.lang,segments})}),120000,'AI dialogue analysis');
- const responseText=await response.text();alive(tok);
+ const responseText=await response.text();alive(tok);workProgress('Selecting the strongest moments',86);
  let data=null;try{data=JSON.parse(responseText)}catch(e){
   const preview=String(responseText||'').replace(/\s+/g,' ').slice(0,160);
   if(/<\s*!doctype|<\s*html/i.test(responseText))throw new Error('The AI API returned an HTML page instead of JSON. The live Worker route or deployment is not serving this API response. Please check the Cloudflare Pages deployment.');
@@ -894,7 +896,7 @@ async function semanticShortPlan(tok,dur){
   .filter(q=>Number.isFinite(q.s)&&Number.isFinite(q.e)&&q.s>=0&&q.e<=dur&&q.e-q.s>=minClip&&q.e-q.s<=maxClip);
  if(!pool.length)throw new Error('AI could not find enough strong dialogue moments. Try another source or a longer target length.');
  pool.sort((a,b)=>b.score-a.score);LAST.semanticPool=pool;LAST.semanticCursor=Math.min(wanted,pool.length);
- stat('ai','');return pool.slice(0,wanted).map(q=>({...q,tags:[...q.tags]}));
+ workProgress('Preparing your Shorts',96);return pool.slice(0,wanted).map(q=>({...q,tags:[...q.tags]}));
 }
 
 // Phrases Whisper invents on silence (like "thanks for watching"); they are removed.
