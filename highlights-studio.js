@@ -11,7 +11,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 function setBusy(on){state.busy=on;el.generate.disabled=on;el.stop.style.display=on?'inline-block':'none';el.file.disabled=on;el.duration.disabled=on;el.ratio.disabled=on;el.mood.disabled=on;el.music.disabled=on;el.sfx.disabled=on}
 el.file.addEventListener('change',()=>{
  const f=el.file.files&&el.file.files[0];if(!f)return;
- if(state.url)URL.revokeObjectURL(state.url);
+ if(state.url)URL.revokeObjectURL(state.url);if(state.outputUrl){URL.revokeObjectURL(state.outputUrl);state.outputUrl=null}
  state.file=f;state.url=URL.createObjectURL(f);el.video.src=state.url;el.video.style.display='block';
  el.video.onloadedmetadata=()=>{el.videoInfo.textContent=f.name+' · '+fmt(el.video.duration)+' · '+(f.size/1048576).toFixed(1)+' MB';say('Video ready. Choose your final duration and generate. ');};
  state.clips=[];el.plan.innerHTML='';el.empty.style.display='block';el.count.textContent='0 scenes';el.planDuration.textContent='No highlight plan yet';el.output.innerHTML='';
