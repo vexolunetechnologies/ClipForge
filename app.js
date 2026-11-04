@@ -211,7 +211,7 @@ const lenVal=()=>S.len==='custom'?Math.max(10,Math.min(90,+$('#cl').value||30)):
 // Show the custom-seconds box only when "Custom" is selected.
 $$('#lens .chip').forEach(b=>b.addEventListener('click',()=>{$('#cl').classList.toggle('hide',S.len!=='custom');$('#fullnote').classList.toggle('hide',S.len!=='full')}));
 // Generic option buttons: a button with data-k / data-v sets S[data-k] = data-v and highlights itself.
-$$('[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;S[k]=b.dataset.v;$$('[data-k="'+k+'"]').forEach(c=>c.classList.toggle('on',c===b));
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-k][data-v]');if(!b)return;const k=b.dataset.k;S[k]=b.dataset.v;$$('[data-k="'+k+'"]').forEach(c=>c.classList.toggle('on',c===b));
  $('#posbox').classList.toggle('hide',S.fit!=='crop');$('#depthbox').classList.toggle('hide',S.mode!=='best');
  capOn=S.cap!=='off';$('#capbox').classList.toggle('hide',S.cap!=='file');$('#autobox').classList.toggle('hide',!(S.cap==='auto'||S.tr==='speech'));$('#stylebox').classList.toggle('hide',!capOn);
  if(k==='fit'||k==='cap'||k==='cs'){$('#pnote').textContent=S.fit==='smart'?'Preview is centered. Faces are tracked per shot while exporting.':'';if(v.videoWidth)draw()}});
@@ -807,6 +807,7 @@ function drawCapWords(c,t){
  try{ctx.direction='ltr'}catch(e){}ctx.textAlign='center'}
 // Draw the caption text for the current time (Classic, Pop, Box, Neon, Minimal here; Karaoke and Highlight in drawCapWords).
 function drawCap(){if(!capOn||!cues.length)return;const t=v.currentTime,c=cues.find(q=>t>=q.s&&t<=q.e);if(!c)return;
+ if(window.ClipForgeCaptionStyles){window.ClipForgeCaptionStyles.draw(ctx,c.text,S.cs,cv.width,cv.height,t-c.s,Math.max(.2,c.e-c.s));return;}
  if(S.cs==='karaoke'||S.cs==='hl')return drawCapWords(c,t);
  const w=cv.width,k=w/720,pop=S.cs==='pop',pill=S.cs==='pill',news=S.cs==='news',urduStyle=S.cs==='urdu',outline=S.cs==='outline',rtl=/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(c.text),dev=/[\u0900-\u097F]/.test(c.text),txt=(pop&&!rtl&&!dev)?c.text.toUpperCase():c.text;
  ctx.font=(rtl||dev?'700 ':'800 ')+Math.round(pop?54*k:(urduStyle&&rtl?56*k:S.cs==='min'?38*k:46*k))+'px '+(rtl?FONT_RTL:dev?FONT_DEV:FONT_LATIN);ctx.textAlign='center';ctx.lineJoin='round';
@@ -1332,7 +1333,9 @@ new MutationObserver(sendTheme).observe(document.documentElement,{attributes:tru
 addEventListener('message',e=>{if(!fr||e.source!==fr.contentWindow)return;const d=e.data||{};if(d.ia==='busy')iaBusy=!!d.v;else if(d.ia==='h')fr.style.height=Math.max(700,+d.v+8)+'px'});
 // Show the animator when the address is #animator; refuse to leave while it is busy.
 function route(){const h=location.hash.replace('#','');
- if(h==='animator'){onIa=true;document.body.classList.add('solo');document.body.dataset.tool='animator';document.title='Image Animator – ClipForge Studio';note.textContent='';mount();window.scrollTo(0,0)}
+ // The page-level router in index.html is the single authority for body state and visibility.
+ // This handler only mounts the isolated animator and protects an active render from navigation.
+ if(h==='animator'){onIa=true;if(note)note.textContent='';mount()}
  else if(onIa){if(iaBusy){location.hash='#animator';return}onIa=false}}
 // Block other links while the animator is busy and show a message.
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#"]');if(a&&onIa&&iaBusy&&a.getAttribute('href')!=='#animator'){e.preventDefault();note.textContent='Image Animator is working. Wait for it to finish (or press Cancel inside it) before leaving this page.'}},true);
@@ -1664,6 +1667,7 @@ function mountTimeline(prefix,mode){
  const musicInput=el('Music');
  musicInput.addEventListener('change',e=>{const f=e.target.files[0];if(state.music)URL.revokeObjectURL(state.music);state.music=f?URL.createObjectURL(f):null;setStatus(f?'Music track ready.':'Music removed.');e.target.value=''});
  const captionInput=el('Captions'),captionStyleInput=el('CaptionStyle'),captionStatus=el('CaptionStatus'),captionClear=el('CaptionClear');
+ if(captionStyleInput&&window.ClipForgeCaptionStyles)window.ClipForgeCaptionStyles.populateSelect(captionStyleInput);
  const parseSubtitle=source=>{const src=String(source||'').replace(/^\uFEFF/,'').replace(/\r/g,'');const blocks=src.split(/\n\s*\n/);const out=[];const toSec=value=>{const p=value.replace(',','.').split(':');return p.reduce((n,x)=>n*60+Number(x),0)};for(const block of blocks){const lines=block.split('\n').map(x=>x.trim()).filter(Boolean);const ti=lines.findIndex(x=>/(?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3}\s*-->\s*(?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3}/.test(x));if(ti<0)continue;const m=lines[ti].match(/((?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*((?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3})/);if(!m)continue;const start=toSec(m[1]),end=toSec(m[2]),caption=lines.slice(ti+1).join(' ').replace(/<[^>]+>/g,'').trim();if(end>start&&caption)out.push({start,end,text:caption})}return out.sort((a,b)=>a.start-b.start)};
  if(captionInput)captionInput.addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;try{const cues=parseSubtitle(await file.text());if(!cues.length)throw new Error('No valid SRT/VTT caption cues were found.');state.captions=cues;if(captionStatus)captionStatus.textContent=cues.length+' caption cues loaded. Times follow the final combined timeline.';setStatus('Captions loaded for export.')}catch(err){state.captions=[];if(captionStatus)captionStatus.textContent=err.message||'Could not read captions.';setStatus(err.message||'Could not read captions.')}e.target.value=''});
  if(captionStyleInput)captionStyleInput.addEventListener('change',()=>{state.captionStyle=captionStyleInput.value||'classic'});
@@ -1679,7 +1683,7 @@ function mountTimeline(prefix,mode){
   ctx.filter=filter==='mono'?'grayscale(1)':filter==='warm'?'sepia(.28) saturate(1.2)':filter==='cinema'?'contrast(1.12) saturate(1.08)':'none';
   ctx.drawImage(v,(w-dw)/2,(h-dh)/2,dw,dh);ctx.filter='none';
   if(title){const size=Math.max(24,Math.round(w*.042)),y=h*.82;ctx.font='800 '+size+'px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=Math.max(4,size*.13);ctx.strokeStyle='rgba(0,0,0,.82)';ctx.fillStyle='#fff';const words=title.split(/\s+/);let lines=[],line='';for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>w*.84&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);lines.slice(0,3).forEach((t,i)=>{const yy=y+(i-(Math.min(3,lines.length)-1)/2)*size*1.2;ctx.strokeText(t,w/2,yy);ctx.fillText(t,w/2,yy)})}
-  if(caption){const fs=Math.max(22,Math.round(w*.035)),maxW=w*.86;ctx.save();ctx.globalAlpha=1;ctx.font='700 '+fs+'px "Noto Naskh Arabic","Noto Sans",system-ui,sans-serif';ctx.textAlign=/[\u0600-\u06FF]/.test(caption)?'right':'center';ctx.textBaseline='middle';const words=caption.split(/\s+/),lines=[];let line='';for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);const visible=lines.slice(0,3),lineH=fs*1.28,base=h*.82,boxH=visible.length*lineH+fs*.55,x=ctx.textAlign==='right'?w*.91:w/2;if(state.captionStyle!=='minimal'){ctx.fillStyle=state.captionStyle==='news'?'rgba(12,12,12,.94)':'rgba(0,0,0,.72)';ctx.fillRect(w*.06,base-boxH/2,w*.88,boxH)}ctx.fillStyle=state.captionStyle==='news'?'#f7d34a':'#fff';visible.forEach((t,i)=>{const y=base+(i-(visible.length-1)/2)*lineH;if(state.captionStyle==='classic'||state.captionStyle==='minimal'){ctx.lineWidth=Math.max(3,fs*.12);ctx.strokeStyle='rgba(0,0,0,.9)';ctx.strokeText(t,x,y)}ctx.fillText(t,x,y)});ctx.restore()}
+  if(caption&&window.ClipForgeCaptionStyles){window.ClipForgeCaptionStyles.draw(ctx,caption,state.captionStyle,w,h,1,2)}
   ctx.restore();
  }
  async function exportTimeline(){

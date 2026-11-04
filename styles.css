@@ -994,7 +994,7 @@ body[data-page="home"] #tools{display:none!important}
 body[data-page="tools"] .hero,body[data-page="tools"] #how,body[data-page="tools"] .capability-strip,body[data-page="tools"] #features,body[data-page="tools"] #faq{display:none!important}
 body[data-page="tools"] #tools{display:block!important}
 body[data-page="tools"] #tool,body[data-page="tools"] #iaTool,body[data-page="tools"] #rvTool,body[data-page="tools"] #vmTool,body[data-page="tools"] #editorTool{display:none!important}
-body[data-page="workspace"] .hero,body[data-page="workspace"] #tools,body[data-page="workspace"] #how,body[data-page="workspace"] .capability-strip,body[data-page="workspace"] #features,body[data-page="workspace"] #faq,body[data-page="workspace"] footer{display:none!important}
+body[data-page="workspace"] .hero,body[data-page="workspace"] .studio-spotlight,body[data-page="workspace"] #tools,body[data-page="workspace"] #how,body[data-page="workspace"] .capability-strip,body[data-page="workspace"] #features,body[data-page="workspace"] #faq,body[data-page="workspace"] footer{display:none!important}
 body[data-page="workspace"][data-tool="shorts"] #tool,body[data-page="workspace"][data-tool="trailer"] #tool{display:block!important}
 body[data-page="workspace"][data-tool="animator"] #iaTool{display:block!important}
 body[data-page="workspace"][data-tool="reverse"] #rvTool{display:block!important}
