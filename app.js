@@ -146,7 +146,7 @@ function snapSeg(pcm,t0,t1){
 // Main elements: v = the video player, cv = preview / recording canvas, ctx = its 2D drawing context.
 const v=$('#src'),cv=$('#cv'),ctx=cv.getContext('2d');
 // S = every user setting (count, length, framing, captions, trailer options...). Option buttons write into it through their data-k / data-v attributes.
-let S={n:'auto',len:30,mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
+let S={n:'auto',len:30,mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on',brand:'on'};
 // Runtime state: clips (the plan), busy flag, RUN token (changing it cancels running work), loaded file info, and audio analysis data (ENV = loudness every 0.1 s).
 let clips=[],busy=false,RUN=0,url=null,fname='video',file=null,PL=30,cues=[],capOn=false,AUD=null,SHORTS_TRANSCRIPT=null,ENV=null,LAST=null,REC=null,ALL=false,RECING=false;
 // Web Audio objects: actx = audio context, src = video as audio source, adest = stream that is recorded, outG = speaker volume, recG = recording volume.
@@ -759,13 +759,30 @@ const cam={x:.5,tx:.5,k:0,keys:[{t:0,t0:0,x:.5,cut:true}],ww:.316,pg:null,lc:nul
 const srcX=(cx,ww,vw)=>Math.max(0,Math.min(vw-ww,cx*vw-ww/2));
 // Draw the current video frame on the canvas with the chosen framing (smart reframe or centre crop), then the captions.
 function draw(){const w=cv.width,h=cv.height,vw=v.videoWidth,vh=v.videoHeight;if(!vw)return;
- if(WIDEREC){ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);const sc=Math.min(w/vw,h/vh)*ZOOM,dw=vw*sc,dh=vh*sc;ctx.drawImage(v,(w-dw)/2+SHX,(h-dh)/2+SHY,dw,dh);return}
+ if(WIDEREC){ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);const sc=Math.min(w/vw,h/vh)*ZOOM,dw=vw*sc,dh=vh*sc;ctx.drawImage(v,(w-dw)/2+SHX,(h-dh)/2+SHY,dw,dh);drawBrand();return}
  if(S.fit==='crop'){const sc=Math.max(w/vw,h/vh),dw=vw*sc,dh=vh*sc,p=$('#pos').value/100;ctx.drawImage(v,-(dw-w)*p,-(dh-h)/2,dw,dh)}
  else if(S.fit==='smart'){const ww=Math.min(vw,vh*w/h),wh=ww*h/w;ctx.drawImage(v,srcX(RECING?cam.x:.5,ww,vw),(vh-wh)/2,ww,wh,0,0,w,h)}
  else{const sc=Math.max(w/vw,h/vh),dw=vw*sc,dh=vh*sc,t=draw.t||(draw.t=document.createElement('canvas'));t.width=24;t.height=42;
   t.getContext('2d').drawImage(v,-(dw/30-24)/2,-(dh/30-42)/2,dw/30,dh/30);ctx.drawImage(t,0,0,w,h);ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(0,0,w,h);
   const fh=vh*w/vw;ctx.drawImage(v,0,(h-fh)/2,w,fh)}
  drawCap()}
+
+// Add the Vexolune brand mark to every rendered Shorts frame (preview and export).
+function drawBrand(){
+ if(S.brand==='off')return;
+ const k=cv.width/720,w=cv.width,h=cv.height;
+ const active=cues.find(q=>v.currentTime>=q.s&&v.currentTime<=q.e);
+ const rtl=S.lang==='urdu'||(S.lang==='auto'&&active&&/[\\u0590-\\u08FF\\uFB1D-\\uFDFF\\uFE70-\\uFEFF]/.test(active.text));
+ const hindi=S.lang==='hindi';
+ const label=rtl?'ویکسولون ٹیکنالوجیز':hindi?'वेक्सोलून टेक्नोलॉजीज़':'VEXOLUNE TECHNOLOGIES';
+ ctx.save();ctx.globalAlpha=.88;ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.font=(rtl?'700 ':'800 ')+Math.round(17*k)+'px '+(rtl?FONT_RTL:hindi?FONT_DEV:FONT_LATIN);
+ try{ctx.direction=rtl?'rtl':'ltr'}catch(e){}
+ const tw=ctx.measureText(label).width,pad=13*k,bh=30*k,y=h-42*k;
+ ctx.fillStyle='rgba(5,9,18,.58)';ctx.beginPath();
+ if(ctx.roundRect)ctx.roundRect(w/2-tw/2-pad,y-bh/2,tw+pad*2,bh,9*k);else ctx.rect(w/2-tw/2-pad,y-bh/2,tw+pad*2,bh);ctx.fill();
+ ctx.fillStyle='#f2f5ff';ctx.fillText(label,w/2,y);ctx.restore();
+}
 // Fonts for the captions (Latin, Arabic / Urdu, Devanagari).
 const FONT_LATIN='system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',
  FONT_RTL='"Noto Nastaliq Urdu","Noto Naskh Arabic","Jameel Noori Nastaleeq","Segoe UI",Tahoma,"Geeza Pro","Arial Unicode MS",Arial,sans-serif',
@@ -2180,3 +2197,43 @@ document.addEventListener('click',e=>{if(e.target.closest('#theme'))requestAnima
 sync();
 })();
 
+
+
+// ===== CAPTIONS STUDIO: language-aware template previews =====
+(function initCaptionsStudio(){
+ const names={classic:'Classic',pop:'Pop',box:'Box',karaoke:'Karaoke',hl:'Highlight',neon:'Neon',min:'Minimal',pill:'Pill',news:'News bar',outline:'Bold outline',urdu:'Urdu Nastaliq'};
+ const styles=Object.keys(names),samples={
+  english:{text:'YOUR STORY\nSTARTS HERE',brand:'VEXOLUNE TECHNOLOGIES',dir:'ltr'},
+  urdu:{text:'آپ کی کہانی\nیہاں سے شروع',brand:'ویکسولون ٹیکنالوجیز',dir:'rtl'},
+  hindi:{text:'आपकी कहानी\nयहाँ से शुरू होती है',brand:'वेक्सोलून टेक्नोलॉजीज़',dir:'ltr'}
+ };
+ let selected='classic',language='english';
+ const $id=id=>document.getElementById(id);
+ function paintFrame(frame,text,brand,dir){
+  if(!frame)return;frame.className='cf-caption-frame cf-style-'+selected;frame.dir=dir;
+  const b=frame.querySelector('b'),sm=frame.querySelector('small');if(b)b.textContent=text;if(sm){sm.textContent=brand;sm.hidden=!brand}
+ }
+ function render(){
+  const sample=samples[language],name=names[selected];
+  const hero=$id('cfCaptionHeroPreview');if(hero){hero.className='cf-caption-frame cf-style-'+selected;hero.dir=sample.dir;$id('cfCaptionHeroText').textContent=sample.text;$id('cfCaptionHeroBrand').textContent=S.brand==='off'?'':sample.brand;$id('cfCaptionHeroBrand').hidden=S.brand==='off'}
+  if($id('cfCaptionSelectedName'))$id('cfCaptionSelectedName').textContent=name;
+  if($id('cfCaptionSelectedLabel'))$id('cfCaptionSelectedLabel').textContent=name;
+  const grid=$id('cfCaptionTemplateGrid');if(grid){grid.innerHTML='';styles.forEach(id=>{const btn=document.createElement('button');btn.type='button';btn.className='cf-template-option';btn.setAttribute('aria-pressed',String(id===selected));
+    const frame=document.createElement('div');frame.className='cf-caption-frame cf-style-'+id;frame.dir=sample.dir;
+    const b=document.createElement('b');b.textContent=sample.text;const sm=document.createElement('small');sm.textContent=S.brand==='off'?'':sample.brand;sm.hidden=S.brand==='off';frame.append(b,sm);
+    const label=document.createElement('span');label.textContent=names[id];btn.append(frame,label);btn.addEventListener('click',()=>{selected=id;render()});grid.append(btn)})}
+  document.querySelectorAll('.cf-mini-template').forEach(btn=>{btn.classList.toggle('on',btn.dataset.v===selected);const b=btn.querySelector('b');if(b)b.textContent=sample.text});
+ }
+ const lang=$id('cfCaptionLanguage');if(lang)lang.addEventListener('change',()=>{language=lang.value;render()});
+ const brand=$id('cfCaptionBrand');if(brand)brand.addEventListener('click',()=>{S.brand=S.brand==='off'?'on':'off';brand.classList.toggle('on',S.brand==='on');brand.setAttribute('aria-pressed',String(S.brand==='on'));brand.textContent=S.brand==='on'?'✓ Vexolune branding on':'Branding off';render()});
+ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.cf-mini-template');if(b){selected=b.dataset.v;render()}});
+ const use=$id('cfUseCaptionInShorts');if(use)use.addEventListener('click',()=>{
+  S.cs=selected;S.cap='auto';S.lang=language;
+  const style=document.querySelector('[data-k="cs"][data-v="'+selected+'"]');if(style)style.click();
+  const cap=document.querySelector('[data-k="cap"][data-v="auto"]');if(cap)cap.click();
+  const langValue=language==='english'?'english':language;
+  const langButton=document.querySelector('[data-k="lang"][data-v="'+langValue+'"]');if(langButton)langButton.click();
+  location.hash='shorts';
+ });
+ render();
+})();
