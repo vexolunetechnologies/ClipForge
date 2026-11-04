@@ -2202,7 +2202,7 @@ sync();
   const hero=$id('cfCaptionHeroPreview');if(hero){hero.className='cf-caption-frame cf-style-'+selected;hero.dir=sample.dir;$id('cfCaptionHeroText').textContent=sample.text;const extra=$id('cfCaptionHeroBrand');if(extra)extra.remove()}
   if($id('cfCaptionSelectedName'))$id('cfCaptionSelectedName').textContent=name;
   if($id('cfCaptionSelectedLabel'))$id('cfCaptionSelectedLabel').textContent=name;
-  const grid=$id('cfCaptionTemplateGrid');if(grid){grid.innerHTML='';styles.forEach(id=>{const btn=document.createElement('button');btn.type='button';btn.className='cf-template-option';btn.setAttribute('aria-pressed',String(id===selected));
+  const fullStyle=$id('cfFullCapStyle');if(fullStyle)fullStyle.value=selected;const grid=$id('cfCaptionTemplateGrid');if(grid){grid.innerHTML='';styles.forEach(id=>{const btn=document.createElement('button');btn.type='button';btn.className='cf-template-option';btn.setAttribute('aria-pressed',String(id===selected));
     const frame=document.createElement('div');frame.className='cf-caption-frame cf-style-'+id;frame.dir=sample.dir;
     const b=document.createElement('b');b.textContent=sample.text;frame.append(b);
     const label=document.createElement('span');label.textContent=names[id];btn.append(frame,label);btn.addEventListener('click',()=>{selected=id;render()});grid.append(btn)})}
