@@ -2263,3 +2263,56 @@ body.solo[data-tool="editor"] #editorTool #stRatio,body.solo[data-tool="editor"]
 /* AI-selected Shorts: keep the explanation readable without adding another settings panel. */
 .ai-privacy-note{margin:8px 2px 12px;padding:9px 11px;border:1px solid var(--bd);border-radius:10px;background:color-mix(in srgb,var(--ac) 6%,var(--card));}
 .ai-reason{display:block;margin-top:5px;color:var(--mu);font-size:12px;line-height:1.45}
+
+
+/* ===== CAPTIONS STUDIO: language-aware template previews ===== */
+#captionsTool{display:none}
+body.solo[data-tool="captions"] #captionsTool{display:block;margin:18px 0 40px}
+body.solo[data-tool="captions"] #tool,body.solo[data-tool="captions"] #iaTool,body.solo[data-tool="captions"] #rvTool,body.solo[data-tool="captions"] #vmTool,body.solo[data-tool="captions"] #editorTool{display:none!important}
+body.solo[data-tool="captions"] footer{display:none}
+.cf-caption-heading h1{font-size:clamp(32px,5vw,48px);letter-spacing:-.045em;margin:12px 0 6px;color:var(--text)}
+.cf-caption-heading p{color:var(--muted);max-width:650px}
+.cf-caption-controls{display:flex;align-items:end;gap:14px;flex-wrap:wrap;margin:22px 0;padding:15px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.cf-caption-controls>div{display:grid;gap:7px;min-width:180px}
+.cf-caption-controls label{font-size:11px;font-weight:750;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.cf-caption-controls select{min-height:40px}
+.cf-caption-preview-feature{display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,270px);align-items:center;gap:24px;padding:18px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,var(--panel),var(--panel-2))}
+.cf-caption-feature-copy>span{font-size:10px;font-weight:800;letter-spacing:.16em;color:var(--accent-2)}
+.cf-caption-feature-copy h2{margin:8px 0!important}
+.cf-caption-feature-copy p{color:var(--muted);font-size:13px;max-width:420px}
+.cf-caption-frame{aspect-ratio:9/16;width:100%;max-width:270px;margin:auto;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:18px;background:radial-gradient(ellipse at 50% 30%,#43516d,#111827 62%,#070b14);border:1px solid #59657b;border-radius:14px;color:white;text-align:center}
+.cf-caption-frame>b{position:relative;z-index:1;font-size:clamp(17px,2.5vw,25px);line-height:1.35;font-weight:900;text-shadow:0 3px 8px #000;white-space:normal}
+.cf-caption-frame>small{position:absolute;bottom:13px;left:8px;right:8px;font-size:8px;font-weight:800;letter-spacing:.12em;color:#e7edff;text-align:center;direction:ltr}
+.cf-caption-frame[dir=rtl]>b{font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",serif;font-size:clamp(20px,2.8vw,30px);line-height:1.8}
+.cf-style-pop>b{color:#ffe14d}
+.cf-style-box>b{background:#080b12d9;padding:9px 13px;border-radius:7px}
+.cf-style-karaoke>b{color:#ffe14d;text-shadow:0 0 14px #ffe14d,0 3px 8px #000}
+.cf-style-hl>b{background:linear-gradient(transparent 56%,#ff5a1f 56%);padding:3px 6px}
+.cf-style-neon>b{color:#8ffaff;text-shadow:0 0 7px #00e5ff,0 0 20px #00e5ff}
+.cf-style-min>b{font-size:clamp(14px,2vw,19px);font-weight:650}
+.cf-style-pill>b{background:#080b12d9;padding:10px 16px;border-radius:999px}
+.cf-style-news{background:linear-gradient(145deg,#172a49,#080d18)}
+.cf-style-news>b{background:#081426ed;border-left:6px solid #ffd84d;padding:10px 12px}
+.cf-style-outline>b{-webkit-text-stroke:1.4px #000;text-shadow:0 2px 3px #000,2px 0 #000}
+.cf-style-urdu>b{font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",serif;line-height:1.8}
+.cf-caption-template-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:28px 0 12px}
+.cf-caption-template-heading h2{margin:0!important}
+.cf-caption-template-heading>span{color:var(--muted);font-size:12px}
+.cf-caption-template-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
+.cf-template-option{min-width:0;padding:9px;border:1px solid var(--line);border-radius:13px;background:var(--panel);color:var(--text);text-align:left;cursor:pointer}
+.cf-template-option[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
+.cf-template-option .cf-caption-frame{max-width:none;width:100%;border-radius:8px;aspect-ratio:9/13;padding:10px}
+.cf-template-option .cf-caption-frame>b{font-size:clamp(12px,1.6vw,17px)}
+.cf-template-option .cf-caption-frame[dir=rtl]>b{font-size:clamp(15px,1.9vw,20px)}
+.cf-template-option .cf-caption-frame>small{font-size:6px;bottom:7px}
+.cf-template-option>span{display:block;padding:9px 2px 2px;font-size:12px;font-weight:750}
+.cf-caption-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:18px 0;padding:15px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.cf-caption-footer p{margin:0;color:var(--muted);font-size:13px}
+.cf-mini-template-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:9px;margin-top:10px}
+.cf-mini-template{min-width:0;padding:7px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);cursor:pointer;font:inherit;font-size:11px}
+.cf-mini-template.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.cf-mini-frame{display:flex;aspect-ratio:9/12;position:relative;overflow:hidden;align-items:center;justify-content:center;padding:8px;border-radius:7px;background:linear-gradient(145deg,#43516d,#101827);color:#fff;text-align:center}
+.cf-mini-frame>b{font-size:12px;line-height:1.25;font-weight:900;text-shadow:0 2px 5px #000}
+.cf-mini-frame>small{position:absolute;bottom:6px;left:3px;right:3px;font-size:5px;font-weight:800;letter-spacing:.05em}
+.cf-mini-template>span:last-child{display:block;margin-top:6px;font-weight:700}
+@media(max-width:650px){.cf-caption-preview-feature{grid-template-columns:1fr}.cf-caption-feature-copy{order:2}.cf-caption-frame{max-width:230px}.cf-caption-template-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cf-mini-template-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
