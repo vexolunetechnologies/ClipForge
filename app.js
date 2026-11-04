@@ -1134,11 +1134,24 @@ async function makeWC(aTrack,br){
  const R={state:'inactive',out:null,err:null,onstop:null};
 // Timing state: pt = total paused time, aAcc = running position of the audio track.
  let kfNext=false,nV=0,t0=0,pt=0,ps=0,lastV=-1,n=0,timer=null,stopping=false,aFirst=null,lastA=-1,aAcc=0,rd=null;
-// Video encoder: collects the encoded picture chunks.
- const ve=new VideoEncoder({output:(c,m)=>{
-  if(vm==='avc'&&!(m&&m.decoderConfig&&m.decoderConfig.description)){R.err=new Error('H.264 encoder did not provide MP4 decoder configuration; refusing to create a broken video.');return}
-  nV++;try{mux.addVideoChunk(c,m)}catch(e){R.err=e}
- },error:e=>{R.err=e}});
+// Video encoder: some browsers attach decoderConfig only to the first keyframe
+// (and may omit metadata on subsequent chunks). Buffer until the AVC config arrives,
+// then pass that config with the first chunk and reuse it for later chunks.
+ let videoConfig=null,pendingVideo=[];
+ const addVideo=(c,m)=>{
+  const meta=m&&typeof m==='object'?m:{};
+  if(vm==='avc'&&meta.decoderConfig&&meta.decoderConfig.description)videoConfig=meta.decoderConfig;
+  if(vm==='avc'&&!videoConfig){pendingVideo.push({chunk:c,meta});return}
+  try{
+   if(vm==='avc'&&pendingVideo.length){
+    const queued=pendingVideo;pendingVideo=[];
+    queued.forEach(q=>mux.addVideoChunk(q.chunk,{...q.meta,decoderConfig:videoConfig}));
+   }
+   mux.addVideoChunk(c,vm==='avc'?{...meta,decoderConfig:videoConfig}:m);
+   nV++;
+  }catch(e){R.err=e}
+ };
+ const ve=new VideoEncoder({output:(c,m)=>addVideo(c,m),error:e=>{R.err=e}});
  ve.configure({codec:vc,width:W,height:H,bitrate:br,framerate:30,hardwareAcceleration:vhw,...(vm==='avc'?{avc:{format:'avc'}}:{})});
 // Audio encoder: chunk times come from the running audio duration, so pauses cannot break the file.
  const ae=new AudioEncoder({output:(c,m)=>{const du=c.duration||Math.round((am==='aac'?1024:960)*1e6/sr);let ts=Math.max(aAcc,lastA+1);lastA=ts;aAcc=ts+du;mux.addAudioChunk(c,m,ts)},error:e=>{R.err=e}});
@@ -1156,7 +1169,7 @@ async function makeWC(aTrack,br){
  R.pause=()=>{if(R.state==='recording'){ps=performance.now();R.state='paused'}};
  R.resume=()=>{if(R.state==='paused'){kfNext=true;pt+=performance.now()-ps;R.state='recording'}};
  R.stop=async()=>{if(stopping)return;stopping=true;R.state='inactive';clearTimeout(timer);try{rd&&rd.cancel()}catch(e){}
-  try{await ve.flush();if(R.err)throw R.err;if(nV===0)throw new Error('The video encoder produced no picture on this device. Choose 720p and try again.');if(aFirst!==null)await ae.flush();if(R.err)throw R.err;mux.finalize();R.out=new Blob([tg.buffer],{type:'video/mp4'})}catch(e){R.err=R.err||e}
+  try{await ve.flush();if(R.err)throw R.err;if(vm==='avc'&&!videoConfig)throw new Error('This browser did not expose the H.264 MP4 configuration. Please retry in the latest Chrome or Edge.');if(pendingVideo.length){const queued=pendingVideo;pendingVideo=[];queued.forEach(q=>mux.addVideoChunk(q.chunk,{...q.meta,decoderConfig:videoConfig}))}if(nV===0)throw new Error('The video encoder produced no picture on this device. Choose 720p and try again.');if(aFirst!==null)await ae.flush();if(R.err)throw R.err;mux.finalize();R.out=new Blob([tg.buffer],{type:'video/mp4'})}catch(e){R.err=R.err||e}
   R.onstop&&R.onstop()};
  return R}
 
