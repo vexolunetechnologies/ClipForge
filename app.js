@@ -2262,7 +2262,7 @@ sync();
   if(busy)return;if(!input.files||!input.files[0]){say('Please upload a video first.');return}
   busy=true;const btn=$('cfFullCapGenerate');btn.disabled=true;const tok=RUN;
   try{
-   const f=input.files[0];say('Reading audio track…');
+   const f=input.files[0];S.lang=$('cfCaptionLanguage').value;say('Reading audio track…');
    const mb=await guard(import('https://cdn.jsdelivr.net/npm/mediabunny@1.62.1/+esm'),45000,'Audio extractor download');alive(tok);
    const inp=new mb.Input({formats:mb.ALL_FORMATS,source:new mb.BlobSource(f)}),track=await inp.getPrimaryAudioTrack();
    if(!track||!await track.canDecode())throw new Error('This video has no supported audio track.');
