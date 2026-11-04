@@ -5,6 +5,30 @@ const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:
 const MODEL="@cf/zai-org/glm-4.7-flash";
 const MAX_BODY=120000,MAX_SEGMENTS=2500,DAILY_LIMIT=20;
 
+const ASR_MODEL="@cf/openai/whisper-large-v3-turbo";
+const MAX_AUDIO_BASE64=2300000;
+async function transcribeAudio(request,env){
+  if(request.method!=="POST")return json({error:"Method not allowed."},405);
+  if(!env.AI)return json({error:"Cloudflare Workers AI binding is not configured."},503);
+  try{
+    const origin=request.headers.get("Origin");
+    if(origin){try{if(new URL(origin).host!==new URL(request.url).host)return json({error:"Origin not allowed."},403)}catch{return json({error:"Invalid origin."},403)}}
+    const raw=await request.text();
+    if(raw.length>MAX_AUDIO_BASE64+1000)return json({error:"Audio chunk is too large. Please retry."},413);
+    let input;try{input=JSON.parse(raw)}catch{return json({error:"Invalid audio request."},400)}
+    const audio=String(input.audio||"");
+    if(!audio||audio.length>MAX_AUDIO_BASE64||!/^[A-Za-z0-9+/]+={0,2}$/.test(audio))return json({error:"Audio data is missing or invalid."},400);
+    const language=String(input.language||"").slice(0,12);
+    const result=await env.AI.run(ASR_MODEL,{audio,task:"transcribe",vad_filter:true,beam_size:1,...(language?{language}:{})});
+    const rawSegments=Array.isArray(result&&result.segments)?result.segments:[];
+    const segments=rawSegments.map(q=>({start:Number(q.start),end:Number(q.end),text:String(q.text||"").trim()}))
+      .filter(q=>Number.isFinite(q.start)&&Number.isFinite(q.end)&&q.end>q.start&&q.text);
+    return json({text:String(result&&result.text||""),segments,model:ASR_MODEL});
+  }catch(error){
+    return json({error:"Speech transcription failed: "+String(error&&error.message||error).slice(0,160)},502);
+  }
+}
+
 async function semanticPlan(request,env){
   if(request.method!=="POST")return json({error:"Method not allowed."},405);
   if(!env.AI)return json({error:"Cloudflare Workers AI binding is not configured yet. Add the AI binding in the Pages project."},503);
@@ -59,6 +83,7 @@ export default {
   async fetch(request,env) {
     const url=new URL(request.url);
     if(url.pathname==="/api/v1/shorts/semantic-plan")return semanticPlan(request,env);
+    if(url.pathname==="/api/v1/shorts/transcribe")return transcribeAudio(request,env);
     return env.ASSETS.fetch(request);
   }
 };
