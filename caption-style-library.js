@@ -21,7 +21,7 @@ function draw(ctx,text,key,w,h,t=0,d=2){
  const active=Math.min(words.length-1,Math.floor(Math.max(0,Math.min(.999,t/Math.max(.1,d)))*words.length));let wordIndex=0;
  lines.forEach((ln,i)=>{const y=center-(lines.length-1)*lh/2+i*lh,parts=ln.split(/\s+/);
   if(['word','dynamic','popup','kinetic','animated','sliding','bounce','highlight-word','red','multi','karaoke','karaoke-pro','hl','punch'].includes(key)){
-   const total=ctx.measureText(ln).width,space=ctx.measureText(' ').width;let x=w/2-total/2;
+   const total=ctx.measureText(ln).width,space=ctx.measureText(' ').width;let x=rtl?w/2+total/2:w/2-total/2;
    parts.forEach(p=>{const ww=ctx.measureText(p).width,idx=wordIndex++,on=idx===active,done=idx<=active;let yy=y;
     if(['bounce','popup','punch'].includes(key)&&on)yy-=Math.abs(Math.sin(t*8))*fs*.16;
     if(key==='sliding'&&on)x+=Math.sin(t*8)*fs*.12;
@@ -33,7 +33,7 @@ function draw(ctx,text,key,w,h,t=0,d=2){
     else ctx.fillStyle='#fff';
     if(key==='kinetic'&&on){ctx.shadowColor='#ffb000';ctx.shadowBlur=fs*.5}
     if(key==='gaming'){ctx.lineWidth=fs*.13;ctx.strokeStyle='#050505';ctx.strokeText(p,x+ww/2,yy)}
-    ctx.fillText(p,x+ww/2,yy);ctx.shadowBlur=0;ctx.font=(rtl||dev?'700 ':'800 ')+fs+'px '+font;x+=ww+space;
+    ctx.fillText(p,rtl?x-ww/2:x+ww/2,yy);ctx.shadowBlur=0;ctx.font=(rtl||dev?'700 ':'800 ')+fs+'px '+font;x+=rtl?-(ww+space):(ww+space);
    });
   }else{
    if(['classic','pop','min','outline','urdu','minimal-white','cinematic','aesthetic','hormozi','alex','mrbeast','impact','gaming','tiktok','reels','trending','punch'].includes(key)){ctx.lineWidth=fs*(['outline','impact','mrbeast'].includes(key)?.24:.13);ctx.strokeStyle='#050505';ctx.strokeText(ln,w/2,y)}
