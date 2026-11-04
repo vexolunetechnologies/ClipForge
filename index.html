@@ -1,7 +1,97 @@
 <!DOCTYPE html>
 <!--
-  ClipForge Studio: one single page (HTML<a class="card toolcard" href="#captions"><span class="ttag">CAPTION DESIGN STUDIO</span><h3>Captions Studio</h3><p>Explore caption templates with live English, Urdu and Hindi previews. Choose a style and carry it into Shorts.</p><ul><li>11 visual caption styles</li><li>Language-aware preview text and typography</li><li>Vexolune branding on by default</li></ul><span class="go">Open Captions Studio →</span></a>
- 
+  ClipForge Studio: one single page (HTML + CSS + JavaScript in one file)
+  Turns a long video into shorts, makes trailers, and animates pictures.
+  Video media stays on the device; dialogue transcripts are sent securely for AI moment selection.
+
+  FILE MAP (search for these markers):
+    1. HEAD    page title and fonts
+    2. STYLE   all CSS (look and layout)
+    3. BODY    all HTML (page structure)
+    4. SCRIPT  main JavaScript (app logic), section list at its top
+    5. SCRIPT  Image Animator (separate small tool)
+    6. SCRIPT  Video Reverser (separate small tool, last script block)
+
+  Libraries (mp4-muxer, MediaPipe face detector, Whisper) are loaded from CDNs
+  only when needed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ClipForge Studio – Long video to Shorts</title>
+<!-- ===== CSS: look and layout ===== -->
+<link rel="stylesheet" href="/styles.css">
+<!-- Fonts: Noto Naskh Arabic (Urdu / Arabic) and Noto Sans Devanagari (Hindi) for the captions -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@700&family=Noto+Sans+Devanagari:wght@700&display=swap" rel="stylesheet">
+</head>
+<body data-tool="shorts" data-page="home">
+<!-- ===== HTML: page structure ===== -->
+<!-- ===== SITE HEADER: logo, menu links, privacy badge, light/dark theme button ===== -->
+<header><div class="nav">
+ <a class="brand" href="#top"><svg width="26" height="26" viewBox="0 0 26 26"><rect x="7" y="1" width="12" height="24" rx="3" fill="var(--ac)"/><path d="M11 9l6 4-6 4z" fill="var(--acx)"/></svg>ClipForge Studio</a>
+ <nav class="cf-main-nav" aria-label="Main navigation">
+  <div class="cf-nav-label">WORKSPACE</div>
+  <a class="cf-nav-link" data-route="home" href="#top"><span class="cf-nav-icon">⌂</span><span>Home</span></a>
+  <a class="cf-nav-link" data-route="tools" href="#tools"><span class="cf-nav-icon">▦</span><span>All tools</span></a>
+  <div class="cf-nav-label cf-nav-create">CREATE</div>
+  <a class="cf-nav-link" data-tool-route="shorts" href="#shorts"><span class="cf-nav-icon">▣</span><span>Video to Shorts</span></a>
+  <a class="cf-nav-link" data-tool-route="trailer" href="#trailer"><span class="cf-nav-icon">▶</span><span>Trailer Maker</span></a>
+  <a class="cf-nav-link" data-tool-route="animator" href="#animator"><span class="cf-nav-icon">✧</span><span>Picture to Video</span></a>
+  <a class="cf-nav-link" data-tool-route="reverse" href="#reverse"><span class="cf-nav-icon">↶</span><span>Reverse Video</span></a>
+  <a class="cf-nav-link" data-tool-route="montage" href="#montage"><span class="cf-nav-icon">▤</span><span>Video Montage</span></a>
+  <a class="cf-nav-link" data-tool-route="editor" href="#editor"><span class="cf-nav-icon">▥</span><span>Studio Editor</span></a>
+  <a class="cf-nav-link" data-tool-route="captions" href="#captions"><span class="cf-nav-icon">T</span><span>Captions Studio</span></a>
+  <div class="cf-nav-label cf-nav-explore">MORE</div>
+  <a class="cf-nav-link" data-route="features" href="#features"><span class="cf-nav-icon">✦</span><span>Features</span></a>
+  <a class="cf-nav-link" data-route="faq" href="#faq"><span class="cf-nav-icon">?</span><span>Help & FAQ</span></a>
+</nav>
+ <span class="pill">Videos stay on your device</span><button class="tbtn" id="theme" type="button" aria-label="Switch light or dark theme" title="Switch theme">◐</button></div></header>
+
+
+<!-- ===== PAGE WRAPPER: everything below until the footer sits in this centred column ===== -->
+<div class="wrap" id="top">
+<!-- ===== HERO: main heading and one-line description ===== -->
+<section class="hero hero-banner">
+ <div class="hero-copy">
+  <span class="hero-eyebrow"><i></i> THE CREATIVE STUDIO BY VEXOLUNE</span>
+  <h1>Every idea deserves<br><span> a better frame.</span></h1>
+  <p>One workspace to create shorts, trailers, animated visuals and polished video edits — with powerful tools that run right in your browser.</p>
+  <div class="hero-actions"><a class="hero-primary" href="#editor">Open Studio Editor <b>↗</b></a><a class="hero-secondary" href="#tools">Explore all tools</a></div>
+  <div class="hero-proof"><span>✓ No account required</span><span>✓ Your media stays on your device</span><span>✓ Built for creators</span></div>
+ </div>
+ <div class="hero-visual" aria-label="Illustration of a video editing timeline">
+  <div class="hero-window"><div class="hero-window-top"><span></span><span></span><span></span><b>CLIPFORGE / STUDIO</b></div>
+   <div class="hero-screen"><div class="hero-screen-glow"></div><div class="hero-screen-play">▶</div><div class="hero-screen-caption">MAKE EVERY FRAME COUNT</div></div>
+   <div class="hero-track-label">TIMELINE</div><div class="hero-track"><i></i><i></i><i></i><i></i><i></i></div><div class="hero-track audio"><i></i><i></i><i></i></div>
+  </div><div class="hero-float">✦ <b>Creative freedom</b><small>All in one place</small></div>
+ </div>
+</section>
+<section class="studio-spotlight" id="studioSpotlight">
+ <div class="studio-spotlight-copy">
+  <span class="hero-eyebrow"><i></i> FLAGSHIP CREATIVE WORKSPACE</span>
+  <h2>Meet your new <span>editing desk.</span></h2>
+  <p>A full-screen, multi-track video editor for precise cuts, layered visuals, captions and sound — right in your browser.</p>
+  <div class="studio-spotlight-points"><span>✦ Frame-level timeline controls</span><span>✦ Multi-track video and audio</span><span>✦ Local-first editing and export</span></div>
+  <a class="studio-spotlight-cta" href="#editor">Launch ClipForge Studio <b>↗</b></a>
+ </div>
+ <div class="studio-spotlight-preview" aria-label="Illustration of the ClipForge Studio editing workspace">
+  <div class="ss-top"><span class="ss-mark">▶</span><b>CLIPFORGE <i>STUDIO</i></b><span class="ss-project">UNTITLED PROJECT</span><span class="ss-export">EXPORT</span></div>
+  <div class="ss-body"><div class="ss-rail"><i>▦</i><i>♫</i><i>T</i><i>✧</i><i>▤</i></div><div class="ss-stage"><div class="ss-frame"><span>PREVIEW</span><b>YOUR NEXT<br>GREAT EDIT</b><small>16:9 · 1080p</small></div><div class="ss-inspector"><b>INSPECTOR</b><i></i><i></i><i></i><i></i></div></div></div>
+  <div class="ss-timeline"><div class="ss-ruler"><span>00:00</span><span>00:05</span><span>00:10</span><span>00:15</span><span>00:20</span></div><div class="ss-track"><b>VIDEO 1</b><i></i><i></i><i></i></div><div class="ss-track audio"><b>AUDIO</b><i></i><i></i></div><div class="ss-track text"><b>TEXT</b><i></i></div></div>
+ </div>
+</section>
+<!-- ===== CREATIVE WORKSPACES: all ClipForge tools ===== -->
+<section id="tools"><div class="section-heading"><span class="hero-eyebrow"><i></i> PICK YOUR WORKFLOW</span><h2>One studio. Six ways to create.</h2><p>Start with a quick automated workflow or open the full editor when you need more control.</p></div><div class="grid tools">
+ <a class="card toolcard" href="#shorts"><span class="ttag">9:16 · vertical</span><h3>Long Video → Shorts</h3><ul><li>AI understands dialogue and selects engaging moments</li><li>Smart reframe that follows faces, steady per shot</li><li>AI captions: English, Urdu and Hindi (Cloudflare Workers AI)</li><li>Dialogue-only trim: cuts the gaps between spoken lines</li><li>Skips scenes with logos and sponsor banners</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard" href="#trailer"><span class="ttag">16:9 · wide or 9:16</span><h3>Trailer / Promo</h3><ul><li>45, 60 or 90 second trailer from the strongest moments</li><li>Title, tagline and “Releasing on” end card (your text)</li><li>Built-in sound effects: whooshes, impacts, riser</li><li>Review and remove parts before exporting</li><li>Skips logo and banner scenes, avoids end spoilers</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard" href="#animator"><span class="ttag">9:16 · 16:9 · 1:1</span><h3>Image Animator</h3><ul><li>Add many pictures and describe the camera motion in a prompt</li><li>Crossfades between pictures, 2 minutes or any length you ask for</li><li>Built-in music and sound effects, chosen from your prompt</li><li>Record your voice or add a voiceover file</li><li>MP4 export (WebM if your browser cannot make MP4)</li><li>Camera motion only: people and objects in a picture do not move</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard" href="#reverse"><span class="ttag">Any size · MP4</span><h3>Reverse Video</h3><ul><li>Upload a video and get it back playing backwards</li><li>The sound can be reversed too, or removed</li><li>Pick the size: original, up to 1080p or up to 720p</li><li>Keeps your video's own frame rate</li><li>Everything stays on your device</li><li>Rebuilt frame by frame, so best for clips up to a few minutes</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard studio-toolcard" href="#montage"><span class="tool-icon">▤</span><span class="ttag">MULTI-CLIP WORKFLOW</span><h3>Video Montage Maker</h3><p>Combine clips into a clean sequence with independent trimming, transitions, music and title text.</p><ul><li>Import and reorder multiple videos</li><li>Trim every clip independently</li><li>Choose vertical, landscape or square format</li><li>Preview and export your montage</li></ul><span class="go">Open workspace →</span></a>
+ <a class="card toolcard" href="#captions"><span class="ttag">CAPTION DESIGN STUDIO</span><h3>Captions Studio</h3><p>Explore caption templates with live English, Urdu and Hindi previews. Choose a style and carry it into Shorts.</p><ul><li>11 visual caption styles</li><li>Language-aware preview text and typography</li><li>Vexolune branding on by default</li></ul><span class="go">Open Captions Studio →</span></a>
+ <a class="card toolcard studio-toolcard flagship-studio-card" href="#editor"><span class="tool-icon">▥</span><span class="ttag">MULTI-TRACK CREATIVE WORKSPACE</span><h3>Studio Editor</h3><p>Take control of your edit with a timeline-based workspace built for detailed video projects.</p><ul><li>Video, overlay, caption and audio lanes</li><li>Trim, split, move and duplicate clips</li><li>Text, shapes, stickers and subtitles</li><li>Audio fades, speed, framing and export settings</li></ul><span class="go">Open Studio →</span></a>
 </div></section>
 
 <!-- ===== CAPTIONS STUDIO ===== -->
