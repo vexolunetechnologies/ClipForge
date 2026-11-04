@@ -2392,3 +2392,123 @@ body.solo[data-tool=highlights] #how,body.solo[data-tool=highlights] #features,b
 #highlightsTool .cf-upload-btn:hover{border-color:var(--accent-2)!important;background:rgba(139,124,255,.2)}
 #highlightsTool .cf-upload-btn-secondary{min-height:42px;background:var(--panel-2);font-weight:650}
 #highlightsTool .cf-field input[type="file"]:focus-visible + small{outline:2px solid var(--accent)}
+
+
+/* ClipForge mobile responsiveness pass — mobile-only layout overrides.
+   Desktop styling, navigation/topbar, application logic and tool workflows remain unchanged. */
+@media (max-width: 760px) {
+  html, body { max-width:100%; overflow-x:hidden; }
+  body:not(.studio-app) .wrap {
+    width:100%!important;
+    max-width:100%!important;
+    padding:16px 12px!important;
+    margin:0!important;
+  }
+  body:not(.studio-app) .hero { padding:18px 0 14px!important; }
+  body:not(.studio-app) .hero h1 { font-size:clamp(27px,8vw,40px)!important; overflow-wrap:anywhere; }
+  #tools, .tools, .grid { min-width:0!important; }
+  .tools, body:not(.studio-app) .grid {
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:12px!important;
+  }
+  .toolcard, .card, .cf-panel, .cf-advanced {
+    min-width:0!important;
+    max-width:100%!important;
+    overflow-wrap:anywhere;
+  }
+  #tool, #iaTool, #rvTool, #vmTool, #highlightsTool,
+  #editorTool, #cfCaptionsWorkspace, .cf-workspace {
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+  #tool .card, #rvTool .card, #iaTool .card,
+  #vmTool .cf-panel, #highlightsTool .cf-panel,
+  #cfCaptionsWorkspace .cf-panel {
+    padding:14px!important;
+  }
+  .cf-page-head {
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:10px!important;
+  }
+  .cf-page-head h2, .st-head h2 { overflow-wrap:anywhere; }
+  .cf-badge { white-space:normal!important; align-self:flex-start; }
+  .cf-grid, .cf-cap-layout {
+    grid-template-columns:minmax(0,1fr)!important;
+    min-width:0!important;
+  }
+  .cf-row, .cf-toolbar, .cf-clip-actions,
+  .st-head-actions, .cf-page-head-actions {
+    min-width:0!important;
+    flex-wrap:wrap!important;
+  }
+  .cf-row > *, .cf-toolbar > *, .cf-clip-actions > * {
+    max-width:100%!important;
+  }
+  .cf-panel, .cf-field, .cf-control, .cf-stat,
+  .st-assets, .st-preview-panel, .st-inspector,
+  .st-timeline-panel { min-width:0!important; }
+  #tool input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),
+  #tool select, #tool textarea,
+  #iaTool input, #iaTool select, #iaTool textarea,
+  #rvTool input, #rvTool select, #rvTool textarea,
+  #vmTool input:not([type=range]), #vmTool select, #vmTool textarea,
+  #highlightsTool input:not([type=range]), #highlightsTool select, #highlightsTool textarea,
+  #cfCaptionsWorkspace input:not([type=range]), #cfCaptionsWorkspace select,
+  #cfCaptionsWorkspace textarea {
+    max-width:100%!important;
+    min-width:0!important;
+  }
+  #tool video, #iaTool video, #rvTool video, #vmTool video,
+  #highlightsTool video, #cfCaptionsWorkspace video,
+  #tool canvas, #iaTool canvas, #rvTool canvas, #vmTool canvas,
+  #highlightsTool canvas, #cfCaptionsWorkspace canvas,
+  .cf-preview, .cf-cap-output-video {
+    max-width:100%!important;
+  }
+  .cf-preview, #highlightsTool video { height:auto!important; object-fit:contain!important; }
+  .cf-timeline, .cf-timeline-scroll, .st-timeline-scroll {
+    max-width:100%!important;
+    overscroll-behavior-x:contain;
+  }
+  table { display:block; max-width:100%; overflow-x:auto; }
+  pre, code { max-width:100%; overflow-x:auto; }
+  button, .st-btn, .cf-upload-btn, .drop, .st-import {
+    touch-action:manipulation;
+  }
+  .cf-upload-btn, #highlightsTool .cf-upload-btn {
+    width:100%!important;
+    min-height:48px!important;
+    text-align:center;
+  }
+  .cf-cap-template-grid, .cf-short-template-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  .cf-cap-template, .cf-short-template-grid .cf-cap-template { min-width:0!important; }
+  .cf-cap-template canvas, .cf-short-template-grid .cf-cap-template canvas {
+    width:100%!important; max-width:100%!important;
+  }
+  .st-workspace { grid-template-columns:minmax(0,1fr)!important; min-width:0!important; }
+  .st-preview-row { grid-template-columns:minmax(0,1fr)!important; min-width:0!important; }
+  .st-main, .st-preview-panel, .st-inspector { min-width:0!important; }
+  .st-head { min-width:0!important; }
+  .st-head-actions .st-btn { min-width:0!important; }
+}
+@media (max-width: 480px) {
+  body:not(.studio-app) .wrap { padding:12px 10px!important; }
+  .card, .toolcard, .cf-panel, .cf-advanced { padding:12px!important; border-radius:13px!important; }
+  .tools { grid-template-columns:minmax(0,1fr)!important; }
+  .cf-page-head h2 { font-size:24px!important; line-height:1.15!important; }
+  .cf-toolbar button, .cf-toolbar label,
+  .cf-row button, .cf-row a, .cf-clip-actions button {
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .cf-cap-template-grid, .cf-short-template-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .cf-control-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+  .clip { align-items:flex-start; }
+  .info { overflow-wrap:anywhere; }
+}
