@@ -836,6 +836,12 @@ function pcmWavBase64(pcm){
  return btoa(bin)
 }
 // Run transcription on Cloudflare AI instead of downloading a large speech model to the device.
+// Cloudflare Whisper requires ISO language codes, not UI labels such as "english".
+function whisperLanguageCode(value){
+ const v=String(value||'').trim().toLowerCase();if(!v||v==='auto'||v==='automatic'||v==='auto detect')return undefined;
+ const names={english:'en',urdu:'ur',hindi:'hi',arabic:'ar',spanish:'es',french:'fr',german:'de',italian:'it',portuguese:'pt',russian:'ru',turkish:'tr',persian:'fa',farsi:'fa',punjabi:'pa',bengali:'bn',chinese:'zh',japanese:'ja',korean:'ko',dutch:'nl',polish:'pl',swedish:'sv',danish:'da',norwegian:'no',finnish:'fi',greek:'el',hebrew:'he',thai:'th',vietnamese:'vi',indonesian:'id',malay:'ms',ukrainian:'uk',romanian:'ro',czech:'cs',hungarian:'hu',bulgarian:'bg',croatian:'hr',serbian:'sr',slovak:'sk',swahili:'sw',nepali:'ne',tamil:'ta',telugu:'te',marathi:'mr',gujarati:'gu',assamese:'as',odia:'or',oriya:'or'};
+ return names[v]||(/^[a-z]{2,3}$/.test(v)?v:undefined)
+}
 async function transcribe(pcm,tok=RUN){
  const sr=16000,chunkSec=30,overlapSec=1.25,total=Math.ceil(pcm.length/sr),count=Math.ceil(total/chunkSec),out=new Array(count);
  if(!pcm||!pcm.length)return [];
@@ -847,7 +853,7 @@ async function transcribe(pcm,tok=RUN){
    const end=Math.min(pcm.length,Math.ceil((i+1)*chunkSec*sr+(i<count-1?overlapSec*sr:0)));
    const audio=pcmWavBase64(pcm.subarray(start,end));
    stat('cap','AI transcription · '+Math.min(total,(i+1)*chunkSec)+'s / '+total+'s');
-   const req=fetch('/api/v1/shorts/transcribe',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({audio,language:S.lang==='auto'?undefined:S.lang})});
+   const req=fetch('/api/v1/shorts/transcribe',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({audio,language:whisperLanguageCode(S.lang)})});
    const res=await guard(req,180000,'AI transcription'),raw=await res.text();alive(tok);
    let data;try{data=JSON.parse(raw)}catch{throw new Error('Speech service returned an invalid response ('+res.status+').')}
    if(!res.ok)throw new Error(data.error||('Speech transcription failed ('+res.status+').'));
