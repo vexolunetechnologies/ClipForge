@@ -148,7 +148,7 @@ const v=$('#src'),cv=$('#cv'),ctx=cv.getContext('2d');
 // S = every user setting (count, length, framing, captions, trailer options...). Option buttons write into it through their data-k / data-v attributes.
 let S={n:'auto',len:30,mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
 // Runtime state: clips (the plan), busy flag, RUN token (changing it cancels running work), loaded file info, and audio analysis data (ENV = loudness every 0.1 s).
-let clips=[],busy=false,RUN=0,url=null,fname='video',file=null,PL=30,cues=[],capOn=false,AUD=null,ENV=null,LAST=null,REC=null,ALL=false,RECING=false;
+let clips=[],busy=false,RUN=0,url=null,fname='video',file=null,PL=30,cues=[],capOn=false,AUD=null,SHORTS_TRANSCRIPT=null,ENV=null,LAST=null,REC=null,ALL=false,RECING=false;
 // Web Audio objects: actx = audio context, src = video as audio source, adest = stream that is recorded, outG = speaker volume, recG = recording volume.
 let actx=null,src=null,adest=null,outG=null,recG=null,EL={v2:null,a:null};
 // Format seconds as m:ss.
@@ -264,30 +264,51 @@ function to16k(a,sr){if(sr===16000)return a;const r=sr/16000,n=Math.floor(a.leng
 /* ---------- analysis ---------- */
 // Decode the file's audio (when small enough) and measure loudness / speech-likeness per second; also fills ENV (loudness every 0.1 s).
 async function decodeFullAudioForAI(tok){
- // Capture audio through the browser's media decoder instead of decoding
- // the entire compressed video into one large in-memory AudioBuffer.
- workProgress('Preparing audio',9);
- // Let the browser's media decoder read the already-loaded video
- // and capture its audio stream. This avoids decodeAudioData codec failures.
- await audioReady();alive(tok);v.pause();await seek(v,0);
- const chunks=[];let samples=0;const sr=actx.sampleRate;
- const tap=startTap(src,b=>{chunks.push(b);samples+=b.length});
- try{
-  await guard(v.play(),15000,'Video audio start');
-  await guard(new Promise((resolve,reject)=>{
-   const started=performance.now(),expected=Math.max(1,Number(v.duration)||1);
-   const poll=()=>{
-    if(tok!==RUN){reject(new Error('Stopped'));return}
-    if(v.ended||v.currentTime>=expected-.08){resolve();return}
-    if(performance.now()-started>Math.max(120000,expected*1000+20000)){reject(new Error('Audio capture timed out'));return}
-    workProgress('Preparing audio',Math.min(16,9+7*v.currentTime/expected));
-    setTimeout(poll,120);
-   };poll();
-  }),Math.max(120000,(Number(v.duration)||1)*1000+25000),'Audio capture');
- }finally{v.pause();tap.stop()}
+ // Demux and decode the audio track directly from the local file. This does not
+ // play the video element, so processing time is not tied to the video's duration.
+ workProgress('Loading fast audio extractor',8);
+ const mb=await guard(import('https://cdn.jsdelivr.net/npm/mediabunny@1.62.1/+esm'),45000,'Audio extractor download');
  alive(tok);
- if(!samples)throw new Error('The browser could not read an audio track from this video.');
- AUD=to16k(cat(chunks),sr);return AUD;
+ const input=new mb.Input({formats:mb.ALL_FORMATS,source:new mb.BlobSource(file)});
+ const track=await input.getPrimaryAudioTrack();
+ if(!track)throw new Error('No audio track was found in this video.');
+ if(!await track.canDecode())throw new Error('This video uses an audio codec that this browser cannot decode.');
+ const duration=Math.max(1,Number(v.duration)||DURATION_FALLBACK||1);
+ const sink=new mb.AudioSampleSink(track),blockSize=30*16000;
+ let parts=[],length=0,blockStart=0,started=false,lastProgress=0;
+ const transcript=[];
+ const flush=async()=>{
+  if(!length)return;
+  const pcm=cat(parts),offset=blockStart,span=Math.max(.15,25*Math.min(length/blockSize,1)/duration);
+  parts=[];length=0;blockStart=offset+pcm.length/16000;
+  const rows=await transcribe(pcm,tok,{start:35+25*offset/duration,span});
+  rows.forEach(q=>transcript.push({...q,timestamp:[q.timestamp[0]+offset,q.timestamp[1]+offset]}));
+ };
+ try{
+  for await(const sample of sink.samples()){
+   alive(tok);
+   const timestamp=Number(sample.timestamp)||0;
+   try{
+    const b=sample.toAudioBuffer(),n=b.length,ch=b.numberOfChannels;
+    const mono=new Float32Array(n);
+    for(let c=0;c<ch;c++){const d=b.getChannelData(c);for(let i=0;i<n;i++)mono[i]+=d[i]/ch}
+    const pcm=to16k(mono,b.sampleRate);
+    if(!started){blockStart=timestamp;started=true}
+    let p=0;
+    while(p<pcm.length){
+     const take=Math.min(blockSize-length,pcm.length-p);
+     parts.push(pcm.subarray(p,p+take));length+=take;p+=take;
+     if(length>=blockSize)await flush();
+    }
+   }finally{try{sample.close()}catch(_){}}
+   if(timestamp-lastProgress>=2){lastProgress=timestamp;workProgress('Extracting audio · '+fmt(timestamp)+' / '+fmt(duration),Math.min(34,8+26*timestamp/duration))}
+  }
+  await flush();
+ }catch(e){if(e.message==='Stopped')throw e;throw new Error('Fast audio extraction failed: '+(e.message||e))}
+ if(!transcript.length)throw new Error('No speech could be extracted from this video. Check that it contains an audio track.');
+ SHORTS_TRANSCRIPT=transcript;AUD=null;
+ workProgress('Audio ready for AI analysis',62);
+ return transcript;
 }
 async function audioFeats(D,tok){
  const AC=window.OfflineAudioContext||window.webkitOfflineAudioContext,oc=new AC(1,1,16000);
@@ -673,7 +694,7 @@ $('#go').onclick=async()=>{
     // Compressed file size is not a reliable measure of decoded audio memory.
     // Do not reject a video solely because its upload is large; attempt decoding and
     // report a genuine decode failure only if the browser cannot process the source.
-    workProgress('Preparing audio',8);
+    SHORTS_TRANSCRIPT=null;AUD=null;workProgress('Preparing audio',8);
     try{await decodeFullAudioForAI(tok)}catch(e){if(e.message==='Stopped')throw e;AUD=null;throw new Error('Could not decode this video’s audio for AI dialogue analysis: '+(e.message||e))}
     alive(tok);LAST={D,lo,hi,dur,seen:[]};
     workProgress('Transcribing audio',12);clips=await semanticShortPlan(tok,dur);
@@ -866,17 +887,17 @@ function whisperLanguageCode(value){
  const names={english:'en',urdu:'ur',hindi:'hi',arabic:'ar',spanish:'es',french:'fr',german:'de',italian:'it',portuguese:'pt',russian:'ru',turkish:'tr',persian:'fa',farsi:'fa',punjabi:'pa',bengali:'bn',chinese:'zh',japanese:'ja',korean:'ko',dutch:'nl',polish:'pl',swedish:'sv',danish:'da',norwegian:'no',finnish:'fi',greek:'el',hebrew:'he',thai:'th',vietnamese:'vi',indonesian:'id',malay:'ms',ukrainian:'uk',romanian:'ro',czech:'cs',hungarian:'hu',bulgarian:'bg',croatian:'hr',serbian:'sr',slovak:'sk',swahili:'sw',nepali:'ne',tamil:'ta',telugu:'te',marathi:'mr',gujarati:'gu',assamese:'as',odia:'or',oriya:'or'};
  return names[v]||(/^[a-z]{2,3}$/.test(v)?v:undefined)
 }
-async function transcribe(pcm,tok=RUN){
- const sr=16000,chunkSec=30,overlapSec=1.25,total=Math.ceil(pcm.length/sr),count=Math.ceil(total/chunkSec),out=new Array(count);
+async function transcribe(pcm,tok=RUN,progress=null){
+ const sr=16000,chunkSec=30,overlapSec=1.25,total=Math.ceil(pcm.length/sr),count=Math.ceil(total/chunkSec),out=new Array(count),p0=progress?progress.start:12,ps=progress?progress.span:48;
  if(!pcm||!pcm.length)return [];
- workProgress('Transcribing audio',12);
+ workProgress('Transcribing audio',p0);
  let next=0,done=0;const workers=Array.from({length:Math.min(3,count)},async()=>{
   while(true){
    const i=next++;if(i>=count)return;alive(tok);
    const start=Math.max(0,Math.floor(i*chunkSec*sr-(i?overlapSec*sr:0)));
    const end=Math.min(pcm.length,Math.ceil((i+1)*chunkSec*sr+(i<count-1?overlapSec*sr:0)));
    const audio=pcmWavBase64(pcm.subarray(start,end));
-   workProgress('Transcribing audio · '+Math.min(total,(i+1)*chunkSec)+'s of '+total+'s',12+Math.round(done/Math.max(1,count)*48));
+   workProgress('Transcribing audio · '+Math.min(total,(i+1)*chunkSec)+'s of '+total+'s',p0+Math.round(done/Math.max(1,count)*ps));
    const req=fetch('/api/v1/shorts/transcribe',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({audio,language:whisperLanguageCode(S.lang)})});
    const res=await guard(req,180000,'AI transcription'),raw=await res.text();alive(tok);
    let data;try{data=JSON.parse(raw)}catch{throw new Error('Speech service returned an invalid response ('+res.status+').')}
@@ -894,8 +915,8 @@ async function transcribe(pcm,tok=RUN){
 const SEMANTIC_ENDPOINT='/api/v1/shorts/semantic-plan';
 // Audio is transcribed by the Cloudflare Worker; transcript text and timestamps are then sent for semantic ranking.
 async function semanticShortPlan(tok,dur){
- if(!AUD||!AUD.length)throw new Error('Audio could not be prepared for dialogue analysis. Try another video format or a shorter source clip.');
- const raw=await transcribe(AUD,tok);alive(tok);
+ if((!SHORTS_TRANSCRIPT||!SHORTS_TRANSCRIPT.length)&&(!AUD||!AUD.length))throw new Error('Audio could not be prepared for dialogue analysis. Try another video format or a shorter source clip.');
+ const raw=SHORTS_TRANSCRIPT&&SHORTS_TRANSCRIPT.length?SHORTS_TRANSCRIPT:await transcribe(AUD,tok);alive(tok);
  const segments=(raw||[]).map(q=>{
   const st=Number(q.timestamp&&q.timestamp[0]),en=Number(q.timestamp&&q.timestamp[1]);
   return{start:Number.isFinite(st)?Math.max(0,st):0,end:Number.isFinite(en)&&en>st?Math.min(dur,en):Math.min(dur,(Number.isFinite(st)?st:0)+3),text:normalizeCaptionText(q.text)};
