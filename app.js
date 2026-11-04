@@ -316,7 +316,7 @@ async function decodeFullAudioForAI(tok){
   flush();
   extractionDone=true;while(waiters.length)waiters.shift()(null);
   await Promise.all(workers);
- }catch(e){extractionDone=true;while(waiters.length)waiters.shift()(null);if(e.message==='Stopped')throw e;throw new Error('Fast audio extraction failed: '+(e.message||e))}
+ }catch(e){extractionDone=true;while(waiters.length)waiters.shift()(null);await Promise.allSettled(workers);if(e.message==='Stopped')throw e;throw new Error('Fast audio extraction failed: '+(e.message||e))}
  if(!transcript.length)throw new Error('No speech could be extracted from this video. Check that it contains an audio track.');
  transcript.sort((a,b)=>a.timestamp[0]-b.timestamp[0]);
  SHORTS_TRANSCRIPT=transcript;AUD=null;
