@@ -884,7 +884,7 @@ async function semanticShortPlan(tok,dur){
  if(!response.ok)throw new Error(data.error||('AI analysis failed ('+response.status+').'));
  if(!data||!Array.isArray(data.clips))throw new Error('The AI API response is missing its clips list. Please try again.');
  const pool=(data.clips||[]).map(q=>({s:Number(q.start),e:Number(q.end),score:Math.max(0,Math.min(100,Math.round(Number(q.score)||0))),tags:[String(q.category||'AI selected').slice(0,32)],reason:String(q.reason||'').slice(0,240),hook:String(q.hook||'').slice(0,120),blob:null,pcm:null,cap:false,ai:true}))
-  .filter(q=>Number.isFinite(q.s)&&Number.isFinite(q.e)&&q.s>=0&&q.e<=dur&&q.e-q.s>=8&&q.e-q.s<=95);
+  .filter(q=>Number.isFinite(q.s)&&Number.isFinite(q.e)&&q.s>=0&&q.e<=dur&&q.e-q.s>=8&&q.e-q.s<=110);
  if(!pool.length)throw new Error('AI could not find enough strong dialogue moments. Try another source or a longer target length.');
  pool.sort((a,b)=>b.score-a.score);LAST.semanticPool=pool;LAST.semanticCursor=Math.min(wanted,pool.length);
  stat('ai','');return pool.slice(0,wanted).map(q=>({...q,tags:[...q.tags]}));
