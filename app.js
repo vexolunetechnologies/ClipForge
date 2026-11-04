@@ -264,19 +264,10 @@ function to16k(a,sr){if(sr===16000)return a;const r=sr/16000,n=Math.floor(a.leng
 /* ---------- analysis ---------- */
 // Decode the file's audio (when small enough) and measure loudness / speech-likeness per second; also fills ENV (loudness every 0.1 s).
 async function decodeFullAudioForAI(tok){
- // Prefer a normal AudioContext for decoding. Some browsers expose an
- // OfflineAudioContext but fail to decode media through that context.
- const AC=window.AudioContext||window.webkitAudioContext;
- if(AC){
-  const ac=new AC();
-  try{
-   const bytes=await file.arrayBuffer();
-   const buf=await guard(ac.decodeAudioData(bytes.slice(0)),300000,'Audio decode');
-   alive(tok);AUD=to16k(buf.getChannelData(0),buf.sampleRate);return AUD;
-  }catch(e){if(e.message==='Stopped')throw e}
-  finally{try{await ac.close()}catch(_){}}
- }
- // Fallback: let the browser's media decoder read the already-loaded video
+ // Capture audio through the browser's media decoder instead of decoding
+ // the entire compressed video into one large in-memory AudioBuffer.
+ workProgress('Preparing audio',9);
+ // Let the browser's media decoder read the already-loaded video
  // and capture its audio stream. This avoids decodeAudioData codec failures.
  await audioReady();alive(tok);v.pause();await seek(v,0);
  const chunks=[];let samples=0;const sr=actx.sampleRate;
@@ -289,7 +280,7 @@ async function decodeFullAudioForAI(tok){
     if(tok!==RUN){reject(new Error('Stopped'));return}
     if(v.ended||v.currentTime>=expected-.08){resolve();return}
     if(performance.now()-started>Math.max(120000,expected*1000+20000)){reject(new Error('Audio capture timed out'));return}
-    workProgress('Preparing audio',Math.min(11,8+8*v.currentTime/expected));
+    workProgress('Preparing audio',Math.min(16,9+7*v.currentTime/expected));
     setTimeout(poll,120);
    };poll();
   }),Math.max(120000,(Number(v.duration)||1)*1000+25000),'Audio capture');
