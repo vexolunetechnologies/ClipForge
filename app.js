@@ -650,7 +650,9 @@ $('#go').onclick=async()=>{
   else{
    let lo=0,hi=D;if(S.skip==='on'&&D>300){lo=Math.min(90,Math.round(D*.04));hi=D-Math.min(120,Math.round(D*.05))}
    if(S.tool==='shorts'){
-    if(file.size>decodeLimit())throw new Error('This video is too large for reliable on-device dialogue analysis on this device. Try a shorter or smaller source video.');
+    // Compressed file size is not a reliable measure of decoded audio memory.
+    // Do not reject a video solely because its upload is large; attempt decoding and
+    // report a genuine decode failure only if the browser cannot process the source.
     workProgress('Preparing audio',8);
     try{await decodeFullAudioForAI(tok)}catch(e){if(e.message==='Stopped')throw e;AUD=null;throw new Error('Could not decode this video’s audio for AI dialogue analysis: '+(e.message||e))}
     alive(tok);LAST={D,lo,hi,dur,seen:[]};
@@ -872,7 +874,7 @@ async function transcribe(pcm,tok=RUN){
 const SEMANTIC_ENDPOINT='/api/v1/shorts/semantic-plan';
 // Audio is transcribed by the Cloudflare Worker; transcript text and timestamps are then sent for semantic ranking.
 async function semanticShortPlan(tok,dur){
- if(!AUD||!AUD.length)throw new Error('AI dialogue analysis needs a full audio read. This file is too large for safe on-device transcription; try a shorter or smaller source video.');
+ if(!AUD||!AUD.length)throw new Error('Audio could not be prepared for dialogue analysis. Try another video format or a shorter source clip.');
  const raw=await transcribe(AUD,tok);alive(tok);
  const segments=(raw||[]).map(q=>{
   const st=Number(q.timestamp&&q.timestamp[0]),en=Number(q.timestamp&&q.timestamp[1]);
