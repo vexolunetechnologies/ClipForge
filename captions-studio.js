@@ -9,7 +9,7 @@ function draw(ctx,text,key,w,h,t=0,d=2){window.ClipForgeCaptionStyles.draw(ctx,t
 function grid(host,lang,selected,pick){if(!host)return;host.innerHTML='';ST.forEach(([key,label])=>{const b=document.createElement('button');b.type='button';b.className='cf-cap-template'+(key===selected?' is-selected':'');const c=document.createElement('canvas');c.width=180;c.height=108;c.getContext('2d').fillStyle='#171b25';c.getContext('2d').fillRect(0,0,180,108);draw(c.getContext('2d'),SAMPLE[lang]||SAMPLE.english,key,180,108);const s=document.createElement('span');s.textContent=label;b.append(c,s);b.onclick=()=>pick(key);host.append(b)})}
 function shortLang(){const b=document.querySelector('#autobox [data-k="lang"].on');return b&&b.dataset.v!=='auto'?b.dataset.v:'english'}
 function ensureShortStyleButtons(){
- const row=$('#stylebox .row');if(!row)return;
+ const row=document.querySelector('#stylebox .row');if(!row)return;
  ST.forEach(([key,label])=>{if(document.querySelector('#stylebox [data-k="cs"][data-v="'+key+'"]'))return;
   const b=document.createElement('button');b.type='button';b.className='chip';b.dataset.k='cs';b.dataset.v=key;b.textContent=label;row.append(b);
  });
