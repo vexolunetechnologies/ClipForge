@@ -275,13 +275,14 @@ async function decodeFullAudioForAI(tok){
  if(!await track.canDecode())throw new Error('This video uses an audio codec that this browser cannot decode.');
  const duration=Math.max(1,Number(v.duration)||1);
  const sink=new mb.AudioSampleSink(track),blockSize=30*16000;
- let parts=[],length=0,blockStart=0,started=false,lastProgress=0;
+ let parts=[],length=0,blockStart=0,started=false,lastProgress=0,overallProgress=8;
+ const reportProgress=(label,p)=>{overallProgress=Math.max(overallProgress,Math.min(70,p));workProgress(label,overallProgress)};
  const transcript=[];
  const flush=async()=>{
   if(!length)return;
   const pcm=cat(parts),offset=blockStart,span=Math.max(.15,25*Math.min(length/blockSize,1)/duration);
   parts=[];length=0;blockStart=offset+pcm.length/16000;
-  const rows=await transcribe(pcm,tok,{start:35+25*offset/duration,span});
+  const rows=await transcribe(pcm,tok,{start:35+25*offset/duration,span,report:reportProgress});
   rows.forEach(q=>transcript.push({...q,timestamp:[q.timestamp[0]+offset,q.timestamp[1]+offset]}));
  };
  try{
@@ -301,7 +302,7 @@ async function decodeFullAudioForAI(tok){
      if(length>=blockSize)await flush();
     }
    }finally{try{sample.close()}catch(_){}}
-   if(timestamp-lastProgress>=2){lastProgress=timestamp;workProgress('Extracting audio · '+fmt(timestamp)+' / '+fmt(duration),Math.min(34,8+26*timestamp/duration))}
+   if(timestamp-lastProgress>=2){lastProgress=timestamp;reportProgress('Extracting audio · '+fmt(timestamp)+' / '+fmt(duration),Math.min(34,8+26*timestamp/duration))}
   }
   await flush();
  }catch(e){if(e.message==='Stopped')throw e;throw new Error('Fast audio extraction failed: '+(e.message||e))}
@@ -890,14 +891,15 @@ function whisperLanguageCode(value){
 async function transcribe(pcm,tok=RUN,progress=null){
  const sr=16000,chunkSec=30,overlapSec=1.25,total=Math.ceil(pcm.length/sr),count=Math.ceil(total/chunkSec),out=new Array(count),p0=progress?progress.start:12,ps=progress?progress.span:48;
  if(!pcm||!pcm.length)return [];
- workProgress('Transcribing audio',p0);
+ const report=progress&&typeof progress.report==='function'?progress.report:workProgress;
+ report('Transcribing audio',p0);
  let next=0,done=0;const workers=Array.from({length:Math.min(3,count)},async()=>{
   while(true){
    const i=next++;if(i>=count)return;alive(tok);
    const start=Math.max(0,Math.floor(i*chunkSec*sr-(i?overlapSec*sr:0)));
    const end=Math.min(pcm.length,Math.ceil((i+1)*chunkSec*sr+(i<count-1?overlapSec*sr:0)));
    const audio=pcmWavBase64(pcm.subarray(start,end));
-   workProgress('Transcribing audio · '+Math.min(total,(i+1)*chunkSec)+'s of '+total+'s',p0+Math.round(done/Math.max(1,count)*ps));
+   report('Transcribing audio · '+Math.min(total,(i+1)*chunkSec)+'s of '+total+'s',p0+Math.round(done/Math.max(1,count)*ps));
    const req=fetch('/api/v1/shorts/transcribe',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({audio,language:whisperLanguageCode(S.lang)})});
    const res=await guard(req,180000,'AI transcription'),raw=await res.text();alive(tok);
    let data;try{data=JSON.parse(raw)}catch{throw new Error('Speech service returned an invalid response ('+res.status+').')}
@@ -905,7 +907,7 @@ async function transcribe(pcm,tok=RUN,progress=null){
    const segs=Array.isArray(data.segments)?data.segments:[];
    out[i]=segs.map(q=>({text:String(q.text||''),timestamp:[Math.max(0,Number(q.start)||0)+start/sr,Math.max(0,Number(q.end)||0)+start/sr]}));
    if(!out[i].length&&data.text)out[i]=[{text:String(data.text),timestamp:[start/sr,end/sr]}];
-   done++;workProgress('Transcribing audio · '+done+'/'+count+' parts',12+Math.round(done/Math.max(1,count)*48));
+   done++;report('Transcribing audio · '+done+'/'+count+' parts',p0+Math.round(done/Math.max(1,count)*ps));
   }
  });
  await Promise.all(workers);alive(tok);
