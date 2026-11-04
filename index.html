@@ -43,7 +43,6 @@
   <a class="cf-nav-link" data-tool-route="reverse" href="#reverse"><span class="cf-nav-icon">↶</span><span>Reverse Video</span></a>
   <a class="cf-nav-link" data-tool-route="montage" href="#montage"><span class="cf-nav-icon">▤</span><span>Video Montage</span></a>
   <a class="cf-nav-link" data-tool-route="editor" href="#editor"><span class="cf-nav-icon">▥</span><span>Studio Editor</span></a>
-  <a class="cf-nav-link" data-tool-route="captions" href="#captions"><span class="cf-nav-icon">T</span><span>Captions Studio</span></a>
   <div class="cf-nav-label cf-nav-explore">MORE</div>
   <a class="cf-nav-link" data-route="features" href="#features"><span class="cf-nav-icon">✦</span><span>Features</span></a>
   <a class="cf-nav-link" data-route="faq" href="#faq"><span class="cf-nav-icon">?</span><span>Help & FAQ</span></a>
@@ -84,14 +83,13 @@
  </div>
 </section>
 <!-- ===== CREATIVE WORKSPACES: all ClipForge tools ===== -->
-<section id="tools"><div class="section-heading"><span class="hero-eyebrow"><i></i> PICK YOUR WORKFLOW</span><h2>One studio. Seven ways to create.</h2><p>Start with a quick automated workflow or open the full editor when you need more control.</p></div><div class="grid tools">
+<section id="tools"><div class="section-heading"><span class="hero-eyebrow"><i></i> PICK YOUR WORKFLOW</span><h2>One studio. Six ways to create.</h2><p>Start with a quick automated workflow or open the full editor when you need more control.</p></div><div class="grid tools">
  <a class="card toolcard" href="#shorts"><span class="ttag">9:16 · vertical</span><h3>Long Video → Shorts</h3><ul><li>AI understands dialogue and selects engaging moments</li><li>Smart reframe that follows faces, steady per shot</li><li>AI captions: English, Urdu and Hindi (Cloudflare Workers AI)</li><li>Dialogue-only trim: cuts the gaps between spoken lines</li><li>Skips scenes with logos and sponsor banners</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
  <a class="card toolcard" href="#trailer"><span class="ttag">16:9 · wide or 9:16</span><h3>Trailer / Promo</h3><ul><li>45, 60 or 90 second trailer from the strongest moments</li><li>Title, tagline and “Releasing on” end card (your text)</li><li>Built-in sound effects: whooshes, impacts, riser</li><li>Review and remove parts before exporting</li><li>Skips logo and banner scenes, avoids end spoilers</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
  <a class="card toolcard" href="#animator"><span class="ttag">9:16 · 16:9 · 1:1</span><h3>Image Animator</h3><ul><li>Add many pictures and describe the camera motion in a prompt</li><li>Crossfades between pictures, 2 minutes or any length you ask for</li><li>Built-in music and sound effects, chosen from your prompt</li><li>Record your voice or add a voiceover file</li><li>MP4 export (WebM if your browser cannot make MP4)</li><li>Camera motion only: people and objects in a picture do not move</li></ul><span class="go">Open tool →</span></a>
  <a class="card toolcard" href="#reverse"><span class="ttag">Any size · MP4</span><h3>Reverse Video</h3><ul><li>Upload a video and get it back playing backwards</li><li>The sound can be reversed too, or removed</li><li>Pick the size: original, up to 1080p or up to 720p</li><li>Keeps your video's own frame rate</li><li>Everything stays on your device</li><li>Rebuilt frame by frame, so best for clips up to a few minutes</li></ul><span class="go">Open tool →</span></a>
  <a class="card toolcard studio-toolcard" href="#montage"><span class="tool-icon">▤</span><span class="ttag">MULTI-CLIP WORKFLOW</span><h3>Video Montage Maker</h3><p>Combine clips into a clean sequence with independent trimming, transitions, music and title text.</p><ul><li>Import and reorder multiple videos</li><li>Trim every clip independently</li><li>Choose vertical, landscape or square format</li><li>Preview and export your montage</li></ul><span class="go">Open workspace →</span></a>
  <a class="card toolcard studio-toolcard flagship-studio-card" href="#editor"><span class="tool-icon">▥</span><span class="ttag">MULTI-TRACK CREATIVE WORKSPACE</span><h3>Studio Editor</h3><p>Take control of your edit with a timeline-based workspace built for detailed video projects.</p><ul><li>Video, overlay, caption and audio lanes</li><li>Trim, split, move and duplicate clips</li><li>Text, shapes, stickers and subtitles</li><li>Audio fades, speed, framing and export settings</li></ul><span class="go">Open Studio →</span></a>
- <a class="card toolcard studio-toolcard" href="#captions"><span class="tool-icon">T</span><span class="ttag">FULL VIDEO · 11 STYLES</span><h3>Captions Studio</h3><p>Transcribe a full video, review captions, choose a visual style and export.</p><ul><li>English, Urdu and Hindi transcription</li><li>11 always-visible style previews</li><li>Edit captions and download SRT / VTT</li><li>Export the captioned video</li></ul><span class="go">Open Captions Studio →</span></a>
 </div></section>
 
 <!-- ===== MAIN TOOL PANEL (Shorts and Trailer share this panel; the CSS shows or hides parts per tool) ===== -->
@@ -128,8 +126,6 @@
   <div id="autobox" class="hide"><div class="lbl">Speech language <small>(pick it for best accuracy)</small></div><div class="row"><button class="chip on" data-k="lang" data-v="auto">Auto</button><button class="chip" data-k="lang" data-v="english">English</button><button class="chip" data-k="lang" data-v="urdu">Urdu</button><button class="chip" data-k="lang" data-v="hindi">Hindi</button></div>
   <button class="sm" id="capgo" hidden style="margin-top:10px">Generate captions for all shorts now</button></div>
   <p class="note" id="capnote">Auto captions use Cloudflare Workers AI Whisper. Audio is sent to the ClipForge Worker for transcription; choose the spoken language for better results. Caption timing is currently phrase-level, not verified word-level alignment.</p>
-<div id="stylebox" class="hide"><div class="lbl">Caption style</div><div class="row"><button class="chip on" data-k="cs" data-v="classic">Classic</button><button class="chip" data-k="cs" data-v="pop">Pop (yellow)</button><button class="chip" data-k="cs" data-v="box">Box</button><button class="chip" data-k="cs" data-v="karaoke">Karaoke</button><button class="chip" data-k="cs" data-v="hl">Highlight</button><button class="chip" data-k="cs" data-v="neon">Neon</button><button class="chip" data-k="cs" data-v="min">Minimal</button><button class="chip" data-k="cs" data-v="pill">Pill</button><button class="chip" data-k="cs" data-v="news">News bar</button><button class="chip" data-k="cs" data-v="outline">Bold outline</button><button class="chip" data-k="cs" data-v="urdu">Urdu Nastaliq</button></div>
-  <p class="note">Karaoke and Highlight styles animate caption emphasis. Caption timing is currently estimated from phrase timestamps; exact word-level highlighting is not guaranteed. Urdu Nastaliq uses a dedicated Urdu font, while transcription accuracy depends on the audio and selected language.</p><div class="lbl">Caption style previews <small>(shown when captions are enabled)</small></div><div id="cfShortTemplateGrid" class="cf-cap-template-grid cf-short-template-grid"></div></div>
 <details class="optional-settings"><summary>More editing controls (optional)</summary>
 <!-- More options. Only Framing, Crop position and Caption style are shown; the other settings keep their best default and are hidden (wrapped in hidden divs, so the script still finds them) -->
 <div id="adv">
@@ -152,7 +148,8 @@
   <div class="lbl">Trim silence <small>(skips quiet gaps while exporting)</small></div><div class="row"><button class="chip on" data-k="tr" data-v="off">Off</button><button class="chip" data-k="tr" data-v="gentle">Gentle</button><button class="chip" data-k="tr" data-v="normal">Normal</button><button class="chip" data-k="tr" data-v="strong">Aggressive</button><button class="chip" data-k="tr" data-v="speech">Dialogue only (speech AI)</button></div><p class="note">“Dialogue only” sends each short’s audio to Cloudflare Workers AI for transcription, then cuts detected gaps between spoken lines. Results depend on transcription accuracy and may need review.</p>
   <div id="posbox" class="hide"><div class="lbl">Crop position <small>(left ↔ right)</small></div><input type="range" id="pos" min="0" max="100" value="50"></div>
   <div hidden><div class="lbl">Caption model <small>(bigger = more accurate, slower)</small></div><div class="row"><button class="chip" data-k="model" data-v="tiny">Fast ~40MB</button><button class="chip on" data-k="model" data-v="base">Better ~75MB</button><button class="chip" data-k="model" data-v="small">Best ~250MB</button></div></div>
-  </div>
+  <div id="stylebox" class="hide"><div class="lbl">Caption style</div><div class="row"><button class="chip on" data-k="cs" data-v="classic">Classic</button><button class="chip" data-k="cs" data-v="pop">Pop (yellow)</button><button class="chip" data-k="cs" data-v="box">Box</button><button class="chip" data-k="cs" data-v="karaoke">Karaoke</button><button class="chip" data-k="cs" data-v="hl">Highlight</button><button class="chip" data-k="cs" data-v="neon">Neon</button><button class="chip" data-k="cs" data-v="min">Minimal</button><button class="chip" data-k="cs" data-v="pill">Pill</button><button class="chip" data-k="cs" data-v="news">News bar</button><button class="chip" data-k="cs" data-v="outline">Bold outline</button><button class="chip" data-k="cs" data-v="urdu">Urdu Nastaliq</button></div>
+  <p class="note">Karaoke and Highlight styles animate caption emphasis. Caption timing is currently estimated from phrase timestamps; exact word-level highlighting is not guaranteed. Urdu Nastaliq uses a dedicated Urdu font, while transcription accuracy depends on the audio and selected language.</p></div>
   <div hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div></div>
 </div></details>
 
@@ -235,7 +232,7 @@
 <div class="card"><div class="num">3</div><h3>Export</h3><p>The top moments become 9:16 clips. Save each one to your device.</p></div></div></section>
 
 <!-- ===== FEATURES ===== -->
-<section class="capability-strip"><div><b>07</b><span>Creative tools</span></div><div><b>Multi-track</b><span>Studio timeline</span></div><div><b>On-device</b><span>Private workflow</span></div><div><b>HD</b><span>Export options</span></div></section>
+<section class="capability-strip"><div><b>06</b><span>Creative tools</span></div><div><b>Multi-track</b><span>Studio timeline</span></div><div><b>On-device</b><span>Private workflow</span></div><div><b>HD</b><span>Export options</span></div></section>
 <section id="features"><h2>Features</h2>
 <div class="grid">
 <div class="card"><h3>Engagement scoring</h3><p>Every short gets a score and tags like “Strong hook” or “Dialogue”.</p></div>
@@ -271,11 +268,10 @@
 <!-- ===== JAVASCRIPT: Video Reverser ===== -->
 
 <script src="/app.js"></script>
-<script src="/captions-studio.js"></script>
 <script>
 (function(){
  'use strict';
- var tools=['shorts','trailer','animator','reverse','montage','editor','captions'];
+ var tools=['shorts','trailer','animator','reverse','montage','editor'];
  function route(){
   var hash=(location.hash||'#top').slice(1);
   var page=tools.indexOf(hash)>=0?'workspace':hash==='tools'?'tools':hash==='features'?'features':hash==='faq'?'faq':'home';
@@ -296,7 +292,7 @@
    a.classList.toggle('active',active);
    if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
   });
-  document.title=page==='tools'?'All Creative Tools – ClipForge Studio':page==='workspace'?'ClipForge Studio – '+(hash==='animator'?'Picture to Video':hash==='reverse'?'Reverse Video':hash==='montage'?'Video Montage Maker':hash==='editor'?'Studio Editor':hash==='captions'?'Captions Studio':hash==='trailer'?'Trailer Maker':'Video to Shorts'):page==='home'?'ClipForge Studio – Creative Workspace':'ClipForge Studio';
+  document.title=page==='tools'?'All Creative Tools – ClipForge Studio':page==='workspace'?'ClipForge Studio – '+(hash==='animator'?'Picture to Video':hash==='reverse'?'Reverse Video':hash==='montage'?'Video Montage Maker':hash==='editor'?'Studio Editor':hash==='trailer'?'Trailer Maker':'Video to Shorts'):page==='home'?'ClipForge Studio – Creative Workspace':'ClipForge Studio';
   if(page==='workspace')window.scrollTo(0,0);
  }
  window.addEventListener('hashchange',route);
