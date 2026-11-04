@@ -283,7 +283,7 @@ async function decodeFullAudioForAI(tok){
  const workers=Array.from({length:3},async()=>{
   while(true){const job=await take();if(!job)return;alive(tok);
    const slot=job.index,span=26/totalBlocks,start=24+slot*span;
-   const rows=await transcribe(job.pcm,tok,{start,span,report:reportProgress});
+   const rows=await transcribe(job.pcm,tok,{start:0,span:0,report:()=>{}});
    rows.forEach(q=>transcript.push({...q,timestamp:[q.timestamp[0]+job.offset,q.timestamp[1]+job.offset]}));
    doneBlocks++;reportProgress('Transcribing audio · '+doneBlocks+'/'+totalBlocks+' parts',24+26*doneBlocks/totalBlocks);
   }
@@ -1156,7 +1156,7 @@ async function makeWC(aTrack,br){
  R.pause=()=>{if(R.state==='recording'){ps=performance.now();R.state='paused'}};
  R.resume=()=>{if(R.state==='paused'){kfNext=true;pt+=performance.now()-ps;R.state='recording'}};
  R.stop=async()=>{if(stopping)return;stopping=true;R.state='inactive';clearTimeout(timer);try{rd&&rd.cancel()}catch(e){}
-  try{await ve.flush();if(nV===0)throw R.err||new Error('The video encoder produced no picture on this device. Choose 720p and try again.');if(aFirst!==null)await ae.flush();mux.finalize();R.out=new Blob([tg.buffer],{type:'video/mp4'})}catch(e){R.err=R.err||e}
+  try{await ve.flush();if(R.err)throw R.err;if(nV===0)throw new Error('The video encoder produced no picture on this device. Choose 720p and try again.');if(aFirst!==null)await ae.flush();if(R.err)throw R.err;mux.finalize();R.out=new Blob([tg.buffer],{type:'video/mp4'})}catch(e){R.err=R.err||e}
   R.onstop&&R.onstop()};
  return R}
 
