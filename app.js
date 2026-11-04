@@ -765,14 +765,14 @@ function draw(){const w=cv.width,h=cv.height,vw=v.videoWidth,vh=v.videoHeight;if
  else{const sc=Math.max(w/vw,h/vh),dw=vw*sc,dh=vh*sc,t=draw.t||(draw.t=document.createElement('canvas'));t.width=24;t.height=42;
   t.getContext('2d').drawImage(v,-(dw/30-24)/2,-(dh/30-42)/2,dw/30,dh/30);ctx.drawImage(t,0,0,w,h);ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(0,0,w,h);
   const fh=vh*w/vw;ctx.drawImage(v,0,(h-fh)/2,w,fh)}
- drawCap()}
+ drawCap();drawBrand()}
 
 // Add the Vexolune brand mark to every rendered Shorts frame (preview and export).
 function drawBrand(){
  if(S.brand==='off')return;
  const k=cv.width/720,w=cv.width,h=cv.height;
  const active=cues.find(q=>v.currentTime>=q.s&&v.currentTime<=q.e);
- const rtl=S.lang==='urdu'||(S.lang==='auto'&&active&&/[\\u0590-\\u08FF\\uFB1D-\\uFDFF\\uFE70-\\uFEFF]/.test(active.text));
+ const rtl=S.lang==='urdu'||(S.lang==='auto'&&active&&/[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(active.text));
  const hindi=S.lang==='hindi';
  const label=rtl?'ویکسولون ٹیکنالوجیز':hindi?'वेक्सोलून टेक्नोलॉजीज़':'VEXOLUNE TECHNOLOGIES';
  ctx.save();ctx.globalAlpha=.88;ctx.textAlign='center';ctx.textBaseline='middle';
