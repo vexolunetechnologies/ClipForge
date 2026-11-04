@@ -2263,3 +2263,24 @@ body.solo[data-tool="editor"] #editorTool #stRatio,body.solo[data-tool="editor"]
 /* AI-selected Shorts: keep the explanation readable without adding another settings panel. */
 .ai-privacy-note{margin:8px 2px 12px;padding:9px 11px;border:1px solid var(--bd);border-radius:10px;background:color-mix(in srgb,var(--ac) 6%,var(--card));}
 .ai-reason{display:block;margin-top:5px;color:var(--mu);font-size:12px;line-height:1.45}
+
+
+/* Captions Studio: isolated layout and shared 11-style preview cards. */
+body[data-tool="captions"] #tool{display:none!important}
+body.solo[data-tool="captions"] #cfCaptionsWorkspace{display:block!important}
+#cfCaptionsWorkspace{max-width:100%;margin-top:14px}
+.cf-cap-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:15px}
+.cf-cap-controls{margin:12px 0}
+.cf-cap-progress{height:7px;overflow:hidden;border-radius:8px;background:var(--line);margin:10px 0}
+.cf-cap-progress i{display:block;width:0;height:100%;background:var(--accent);transition:width .2s}
+.cf-cap-template-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(94px,1fr));gap:8px;margin:10px 0 16px}
+.cf-cap-template{display:flex;min-width:0;flex-direction:column;gap:6px;align-items:stretch;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);color:var(--text);font:inherit;font-size:11px;cursor:pointer;text-align:center}
+.cf-cap-template canvas{display:block;width:100%;height:auto;aspect-ratio:9/16;object-fit:cover;border-radius:6px;background:#171b25}
+.cf-cap-template span{font-weight:700}
+.cf-cap-template.is-selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
+.cf-short-template-grid{grid-template-columns:repeat(auto-fit,minmax(82px,1fr));margin:10px 0 14px}
+.cf-short-template-grid .cf-cap-template{padding:5px;font-size:10px}
+.cf-short-template-grid .cf-cap-template canvas{max-height:142px}
+#cfCaptionsWorkspace textarea{width:100%;min-height:180px;resize:vertical;line-height:1.55}
+#cfCaptionsWorkspace .cf-page-head{margin-bottom:12px}
+@media(max-width:760px){.cf-cap-layout{grid-template-columns:minmax(0,1fr)}.cf-cap-template-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.cf-short-template-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
