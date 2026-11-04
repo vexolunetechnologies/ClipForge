@@ -110,13 +110,13 @@ async function exportMontage(){
  const mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
  if(!mime)throw new Error('This browser does not provide a supported MP4/WebM recorder.');
  const audioCtx=new(window.AudioContext||window.webkitAudioContext)(),audioDest=audioCtx.createMediaStreamDestination();audioDest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
- let musicEl=null,musicSource=null,musicGain=null,stopSynth=()=>{},recorder=null,raf=0,sourceVideo=document.createElement('video'),chunks=[];
- sourceVideo.muted=true;sourceVideo.playsInline=true;sourceVideo.preload='auto';sourceVideo.src=state.url;
+ let musicEl=null,musicUrl=null,musicSource=null,musicGain=null,stopSynth=()=>{},recorder=null,raf=0,sourceVideo=document.createElement('video'),chunks=[];
+ sourceVideo.muted=true;sourceVideo.playsInline=true;sourceVideo.preload='auto';sourceVideo.src=state.url;sourceVideo.load();await waitFor(sourceVideo,'loadedmetadata');
  let sfx=createSfx(audioCtx,audioDest,el.sfx.value);
  try{
   await audioCtx.resume();
   if(state.music){
-   const musicUrl=URL.createObjectURL(state.music);musicEl=new Audio(musicUrl);musicEl.loop=true;musicEl.preload='auto';musicSource=audioCtx.createMediaElementSource(musicEl);musicGain=audioCtx.createGain();musicGain.gain.value=.82;musicSource.connect(musicGain);musicGain.connect(audioDest);await musicEl.play();
+   musicUrl=URL.createObjectURL(state.music);musicEl=new Audio(musicUrl);musicEl.loop=true;musicEl.preload='auto';musicSource=audioCtx.createMediaElementSource(musicEl);musicGain=audioCtx.createGain();musicGain.gain.value=.82;musicSource.connect(musicGain);musicGain.connect(audioDest);await musicEl.play();
   }else stopSynth=addGeneratedMusic(audioCtx,audioDest,el.mood.value);
   const recorderOptions={mimeType:mime,videoBitsPerSecond:Math.min(12000000,w*h*8),audioBitsPerSecond:192000};recorder=new MediaRecorder(stream,recorderOptions);
   const finished=new Promise((resolve,reject)=>{recorder.onstop=resolve;recorder.onerror=e=>reject(e.error||new Error('Video recording failed.'))});
@@ -124,7 +124,7 @@ async function exportMontage(){
   let elapsed=0,total=state.clips.reduce((n,c)=>n+c.end-c.start,0);
   for(let i=0;i<state.clips.length;i++){
    if(state.cancel)throw new Error('Stopped.');
-   const c=state.clips[i];await waitFor(sourceVideo,'loadedmetadata');const start=Math.max(0,Math.min(sourceVideo.duration-.05,c.start));
+   const c=state.clips[i];const start=Math.max(0,Math.min(sourceVideo.duration-.05,c.start));
    if(Math.abs(sourceVideo.currentTime-start)>.04){const seek=waitFor(sourceVideo,'seeked');sourceVideo.currentTime=start;await seek}
    if(i>0&&el.sfx.value!=='off')sfx(audioCtx.currentTime);
    await sourceVideo.play();
@@ -148,7 +148,7 @@ async function exportMontage(){
  }finally{
   cancelAnimationFrame(raf);sourceVideo.pause();sourceVideo.removeAttribute('src');sourceVideo.load();
   if(recorder&&recorder.state!=='inactive'){try{recorder.stop()}catch(e){}}
-  if(musicEl){musicEl.pause();musicEl.removeAttribute('src');if(musicEl.src.startsWith('blob:'))URL.revokeObjectURL(musicEl.src)}
+  if(musicEl){musicEl.pause();musicEl.removeAttribute('src')}if(musicUrl)URL.revokeObjectURL(musicUrl);
   stopSynth();stream.getTracks().forEach(t=>t.stop());audioCtx.close().catch(()=>{});
  }
 }
