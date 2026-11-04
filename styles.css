@@ -2570,7 +2570,19 @@ body.solo[data-tool=highlights] #how,body.solo[data-tool=highlights] #features,b
 .cf-info-page ul{padding-left:22px}
 .cf-info-page a{color:var(--ac);text-underline-offset:3px}
 .cf-info-page p:first-of-type{margin-top:0}
-footer .fg{grid-template-columns:1.7fr 1fr 1.2fr 1.2fr}
+
+/* Desktop footer: the outer footer owns the sidebar offset.
+   Reset the nested .wrap so it does not inherit the main-page offset a second time. */
+@media(min-width:901px){
+  body:not(.solo) footer{margin-left:252px!important}
+  body:not(.solo) footer>.wrap{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:36px clamp(28px,3vw,64px) calc(24px + env(safe-area-inset-bottom,0px))!important;
+  }
+  footer .fg{grid-template-columns:minmax(240px,1.7fr) repeat(3,minmax(130px,1fr));gap:28px}
+}
 footer .copy a{display:inline;color:inherit;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:760px){footer .fg{grid-template-columns:repeat(2,minmax(0,1fr))}footer .fg>:first-child{grid-column:1/-1}}
 @media(max-width:420px){footer .fg{grid-template-columns:1fr}footer .fg>:first-child{grid-column:auto}}
