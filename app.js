@@ -265,7 +265,7 @@ async function decodeFullAudioForAI(tok){
  const AC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
  const oc=new AC(1,1,16000);
  const buf=await guard(oc.decodeAudioData(await file.arrayBuffer()),300000,'Audio decode');
- alive(tok);AUD=buf.getChannelData(0);return AUD
+ alive(tok);AUD=to16k(buf.getChannelData(0),buf.sampleRate);return AUD
 }
 async function audioFeats(D,tok){
  const AC=window.OfflineAudioContext||window.webkitOfflineAudioContext,oc=new AC(1,1,16000);
