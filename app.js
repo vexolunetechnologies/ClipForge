@@ -273,7 +273,7 @@ async function decodeFullAudioForAI(tok){
  const track=await input.getPrimaryAudioTrack();
  if(!track)throw new Error('No audio track was found in this video.');
  if(!await track.canDecode())throw new Error('This video uses an audio codec that this browser cannot decode.');
- const duration=Math.max(1,Number(v.duration)||DURATION_FALLBACK||1);
+ const duration=Math.max(1,Number(v.duration)||1);
  const sink=new mb.AudioSampleSink(track),blockSize=30*16000;
  let parts=[],length=0,blockStart=0,started=false,lastProgress=0;
  const transcript=[];
