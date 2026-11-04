@@ -57,7 +57,7 @@ async function semanticPlan(request,env){
     const user="Create up to "+Math.min(20,count*3)+" distinct candidate Shorts from a "+duration.toFixed(1)+"-second source. Target duration "+targetLength+" seconds; acceptable range "+Math.max(10,Math.round(targetLength*.65))+"-"+Math.min(90,Math.round(targetLength*1.4))+" seconds. Return candidates ranked by editorial strength, spread across the source where quality is comparable, and avoid overlapping candidates. Clip boundaries must use the supplied segment timestamps (you may extend at most 1.5 seconds around the first/last segment for context). Score 0-100. Language preference: "+String(input.language||"auto")+". Transcript segments:\n"+JSON.stringify(transcript);
     // Reserve a request before calling the model to avoid bursts exceeding the per-network daily cap.
     await env.AI_LIMITS.put(key,String(used+1),{expirationTtl:86400});
-    const result=await env.AI.run(MODEL,{messages:[{role:"system",content:system},{role:"user",content:user}],max_tokens:3600,temperature:0.25});
+    const result=await env.AI.run(MODEL,{messages:[{role:"system",content:system+" Do not reveal or generate reasoning. Make the editorial decisions internally and return the requested JSON immediately."},{role:"user",content:user}],max_tokens:1800,temperature:0.2,chat_template_kwargs:{enable_thinking:false}});
     let content=typeof result==="string"?result:(result&&typeof result.response==="string"?result.response:(result&&result.choices&&result.choices[0]&&result.choices[0].message&&result.choices[0].message.content)||"");
     const a=content.indexOf("{"),b=content.lastIndexOf("}");
     if(a<0||b<=a)throw new Error("The AI model returned an unreadable response.");
