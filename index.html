@@ -42,6 +42,7 @@
   <a class="cf-nav-link" data-tool-route="animator" href="#animator"><span class="cf-nav-icon">✧</span><span>Picture to Video</span></a>
   <a class="cf-nav-link" data-tool-route="reverse" href="#reverse"><span class="cf-nav-icon">↶</span><span>Reverse Video</span></a>
   <a class="cf-nav-link" data-tool-route="montage" href="#montage"><span class="cf-nav-icon">▤</span><span>Video Montage</span></a>
+  <a class="cf-nav-link" data-tool-route="highlights" href="#highlights"><span class="cf-nav-icon">✦</span><span>Highlights Studio</span></a>
   <a class="cf-nav-link" data-tool-route="editor" href="#editor"><span class="cf-nav-icon">▥</span><span>Studio Editor</span></a>
   <a class="cf-nav-link" data-tool-route="captions" href="#captions"><span class="cf-nav-icon">T</span><span>Captions Studio</span></a>
   <div class="cf-nav-label cf-nav-explore">MORE</div>
@@ -102,12 +103,12 @@
  <div class="cf-page-head"><div><div class="cf-kicker">CLIPFORGE / AI HIGHLIGHTS</div><h2>Highlights Studio</h2><p>Upload one long video, choose the final duration and let AI select short moments. Original dialogue stays muted in the finished video.</p></div><span class="cf-badge">AI-assisted workflow</span></div>
  <div class="cf-grid">
   <div class="cf-panel">
-   <div class="cf-field"><label for="hsVideo">SOURCE VIDEO</label><input id="hsVideo" type="file" accept="video/*"><small id="hsVideoInfo" class="cf-muted">Current AI service: up to 6 hours per source, 2,500 transcript segments and 20 AI analyses per day per network. Device/browser limits may also apply.</small></div>
+   <div class="cf-field"><label for="hsVideo">SOURCE VIDEO</label><label class="cf-upload-btn" for="hsVideo">＋ Choose source video</label><input id="hsVideo" type="file" accept="video/*"><small id="hsVideoInfo" class="cf-muted">Current AI service: up to 6 hours per source, 2,500 transcript segments and 20 AI analyses per day per network. Device/browser limits may also apply.</small></div>
    <video id="hsSourcePreview" class="cf-preview" controls playsinline muted style="display:none"></video>
    <div class="cf-field"><label for="hsDuration">FINAL HIGHLIGHTS DURATION (SECONDS)</label><input id="hsDuration" type="number" min="5" max="300" step="1" value="30"><small class="cf-muted">Choose 5–300 seconds. AI will target this total duration using short scenes.</small></div>
    <div class="cf-field"><label for="hsRatio">OUTPUT FORMAT</label><select id="hsRatio"><option value="9:16">9:16 · Reels / Shorts</option><option value="16:9">16:9 · YouTube</option><option value="1:1">1:1 · Square</option></select></div>
    <div class="cf-field"><label for="hsMood">BACKGROUND MUSIC MOOD</label><select id="hsMood"><option value="cinematic">Cinematic</option><option value="emotional">Emotional</option><option value="dramatic">Dramatic</option><option value="funny">Funny</option><option value="action">Action / Energetic</option><option value="suspense">Suspense</option><option value="none">No background music</option></select></div>
-   <div class="cf-field"><label for="hsMusic">OR UPLOAD YOUR OWN MUSIC (OPTIONAL)</label><input id="hsMusic" type="file" accept="audio/*"><small class="cf-muted" id="hsMusicInfo">Uploaded music replaces the simple synthesized mood backing.</small></div>
+   <div class="cf-field"><label for="hsMusic">OR UPLOAD YOUR OWN MUSIC (OPTIONAL)</label><label class="cf-upload-btn cf-upload-btn-secondary" for="hsMusic">＋ Choose music file</label><input id="hsMusic" type="file" accept="audio/*"><small class="cf-muted" id="hsMusicInfo">Uploaded music replaces the simple synthesized mood backing.</small></div>
    <div class="cf-field"><label for="hsSfx">AUTOMATIC SOUND EFFECTS</label><select id="hsSfx"><option value="whoosh-impact">Whoosh + Impact between scenes</option><option value="whoosh">Whoosh only</option><option value="off">Off</option></select></div>
    <button class="main" id="hsGenerate">Generate highlights</button><button class="sm" id="hsStop" style="display:none;margin-top:8px">Stop</button>
    <div class="cf-progress"><i id="hsProgress"></i></div><div id="hsStatus" class="cf-status" role="status"></div>
