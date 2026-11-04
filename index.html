@@ -97,8 +97,17 @@
 <!-- ===== CAPTIONS STUDIO ===== -->
 <section id="captionsTool" class="cf-captions-studio">
  <a href="#tools" class="cf-back">← All tools</a>
- <div class="cf-caption-heading"><span class="hero-eyebrow"><i></i> VEXOLUNE CREATIVE TOOLS</span><h1>Captions Studio</h1><p>Preview every style in your selected language before applying it to a Shorts project.</p></div>
- <div class="cf-caption-controls"><div><label for="cfCaptionLanguage">Preview language</label><select id="cfCaptionLanguage"><option value="english">English</option><option value="urdu">اردو</option><option value="hindi">हिन्दी</option></select></div></div>
+ <div class="cf-caption-heading"><span class="hero-eyebrow"><i></i> VEXOLUNE CREATIVE TOOLS</span><h1>Captions Studio</h1><p>Upload a complete video, generate captions for the full duration, style them and export your captioned video.</p></div>
+ <div class="cf-fullcap-workspace">
+  <div class="cf-fullcap-upload"><label for="cfFullCapFile">Upload your full video</label><input id="cfFullCapFile" type="file" accept="video/*"><small id="cfFullCapFileName">No video selected</small></div>
+  <div class="cf-caption-controls"><div><label for="cfCaptionLanguage">Spoken language</label><select id="cfCaptionLanguage"><option value="english">English</option><option value="urdu">اردو</option><option value="hindi">हिन्दी</option></select></div></div>
+  <div class="cf-fullcap-actions"><button type="button" class="main" id="cfFullCapGenerate">Generate captions for full video</button><button type="button" class="sm" id="cfFullCapExport" disabled>Export full video with captions</button><button type="button" class="sm" id="cfFullCapSrt" disabled>Download SRT</button></div>
+  <p class="note" id="cfFullCapStatus" role="status">Upload a video to get started. Audio is processed in your browser and sent in short chunks to ClipForge's transcription service.</p>
+  <video id="cfFullCapVideo" controls playsinline></video>
+  <div class="cf-fullcap-template"><label for="cfFullCapStyle">Caption style</label><select id="cfFullCapStyle"><option value="classic">Classic</option><option value="pop">Pop</option><option value="box">Box</option><option value="karaoke">Karaoke</option><option value="hl">Highlight</option><option value="neon">Neon</option><option value="min">Minimal</option><option value="pill">Pill</option><option value="news">News bar</option><option value="outline">Bold outline</option><option value="urdu">Urdu Nastaliq</option></select></div>
+  <label for="cfFullCapTranscript">Transcript editor — one caption line per row</label><textarea id="cfFullCapTranscript" rows="8" placeholder="Generated caption lines will appear here. You can edit the text before export." disabled></textarea>
+  <div class="cf-fullcap-preview"><span>LIVE STYLE PREVIEW</span><div id="cfFullCapSample" class="cf-caption-frame cf-style-classic"><b>VEXOLUNE TECHNOLOGIES</b></div></div>
+ </div>
  <div class="cf-caption-preview-feature"><div class="cf-caption-feature-copy"><span>LIVE PREVIEW</span><h2 id="cfCaptionSelectedName">Classic</h2><p>Change the language or choose another template below. The preview updates instantly.</p></div><div id="cfCaptionHeroPreview" class="cf-caption-frame cf-style-classic"><b id="cfCaptionHeroText">VEXOLUNE TECHNOLOGIES</b></div></div>
  <div class="cf-caption-template-heading"><h2>All caption templates</h2><span>11 styles</span></div><div id="cfCaptionTemplateGrid" class="cf-caption-template-grid"></div>
  <div class="cf-caption-footer"><p>Selected template: <b id="cfCaptionSelectedLabel">Classic</b></p><button type="button" class="main" id="cfUseCaptionInShorts">Use this template in Shorts →</button></div>
