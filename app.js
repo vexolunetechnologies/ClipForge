@@ -1037,19 +1037,6 @@ $('#lgo').onclick=async()=>{
  let pu;try{pu=new URL(u)}catch(e){return m('Enter a valid https:// video URL.')}
  if(!/^https?:$/.test(pu.protocol))return m('Only http or https links can be loaded.');
  const socialHelp=socialLinkHelp(pu.hostname);
- if(socialHelp && /YouTube|Facebook|Instagram|TikTok/i.test(socialHelp)){
-  try{
-   m('Connecting securely to the video import provider…');
-   const ir=await fetch('/api/v1/media/import',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:u})});
-   if(!ir.ok){let detail='Social video import is not available for this link.';try{const d=await ir.json();if(d&&d.error)detail=d.error}catch{}throw new Error(detail)}
-   const ct=(ir.headers.get('content-type')||'').toLowerCase();
-   if(!ct.startsWith('video/'))throw new Error('The import service did not return a video file.');
-   const blob=await ir.blob();if(!blob.size)throw new Error('The imported video file is empty.');
-   const cd=ir.headers.get('content-disposition')||'',match=cd.match(/filename="([^"]+)"/i);
-   load(new File([blob],match?match[1]:'imported-video.mp4',{type:blob.type}));
-   return m('Video imported. You can now create Shorts.');
-  }catch(e){return m(String(e&&e.message||'Could not import this video.'))}
- }
  if(socialHelp)return m(socialHelp);
  try{
   m('Loading direct video file…');
