@@ -92,7 +92,7 @@ function addGeneratedMusic(ctx,dest,mood){
  const settings={cinematic:[110,164.81,220],emotional:[130.81,164.81,196],dramatic:[73.42,110,146.83],funny:[261.63,329.63,392],action:[55,82.41,110],suspense:[65.41,77.78,98]};
  const notes=settings[mood]||settings.cinematic,oscs=[];
  notes.forEach((hz,i)=>{const o=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();o.type=i===0?'triangle':'sine';o.frequency.value=hz;f.type='lowpass';f.frequency.value=mood==='action'?900:480;g.gain.value=i===0?.45:.18;o.connect(f);f.connect(g);g.connect(master);o.start();oscs.push(o)});
- const lfo=ctx.createOscillator(),lg=ctx.createGain();lfo.frequency.value=.12;lg.gain.value=70;lfo.connect(lg);lg.connect(master.gain);lfo.start();return()=>{oscs.forEach(o=>{try{o.stop()}catch(e){}});try{lfo.stop()}catch(e){};master.disconnect()};
+ const lfo=ctx.createOscillator(),lg=ctx.createGain();lfo.frequency.value=.12;lg.gain.value=.025;lfo.connect(lg);lg.connect(master.gain);lfo.start();return()=>{oscs.forEach(o=>{try{o.stop()}catch(e){}});try{lfo.stop()}catch(e){};master.disconnect()};
 }
 function createSfx(ctx,dest,kind){
  if(kind==='off')return()=>{};
@@ -111,7 +111,7 @@ async function exportMontage(){
  if(!mime)throw new Error('This browser does not provide a supported MP4/WebM recorder.');
  const audioCtx=new(window.AudioContext||window.webkitAudioContext)(),audioDest=audioCtx.createMediaStreamDestination();audioDest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
  let musicEl=null,musicUrl=null,musicSource=null,musicGain=null,stopSynth=()=>{},recorder=null,raf=0,sourceVideo=document.createElement('video'),chunks=[];
- sourceVideo.muted=true;sourceVideo.playsInline=true;sourceVideo.preload='auto';sourceVideo.src=state.url;sourceVideo.load();await waitFor(sourceVideo,'loadedmetadata');
+ sourceVideo.muted=true;sourceVideo.playsInline=true;sourceVideo.preload='auto';sourceVideo.src=state.url;sourceVideo.load();if(sourceVideo.readyState<1)await waitFor(sourceVideo,'loadedmetadata');
  let sfx=createSfx(audioCtx,audioDest,el.sfx.value);
  try{
   await audioCtx.resume();
