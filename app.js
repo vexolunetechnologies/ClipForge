@@ -1332,7 +1332,9 @@ new MutationObserver(sendTheme).observe(document.documentElement,{attributes:tru
 addEventListener('message',e=>{if(!fr||e.source!==fr.contentWindow)return;const d=e.data||{};if(d.ia==='busy')iaBusy=!!d.v;else if(d.ia==='h')fr.style.height=Math.max(700,+d.v+8)+'px'});
 // Show the animator when the address is #animator; refuse to leave while it is busy.
 function route(){const h=location.hash.replace('#','');
- if(h==='animator'){onIa=true;document.body.classList.add('solo');document.body.dataset.tool='animator';document.title='Image Animator – ClipForge Studio';note.textContent='';mount();window.scrollTo(0,0)}
+ // The page-level router in index.html is the single authority for body state and visibility.
+ // This handler only mounts the isolated animator and protects an active render from navigation.
+ if(h==='animator'){onIa=true;if(note)note.textContent='';mount()}
  else if(onIa){if(iaBusy){location.hash='#animator';return}onIa=false}}
 // Block other links while the animator is busy and show a message.
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#"]');if(a&&onIa&&iaBusy&&a.getAttribute('href')!=='#animator'){e.preventDefault();note.textContent='Image Animator is working. Wait for it to finish (or press Cancel inside it) before leaving this page.'}},true);
