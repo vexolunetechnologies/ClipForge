@@ -2325,3 +2325,10 @@ body.solo[data-tool="captions"] #cfCaptionsWorkspace{display:block!important}
 .cf-cap-export-progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#5a9cff)}
 .cf-cap-output-video{display:block;width:100%;max-height:360px;background:#000;border-radius:10px;margin-top:10px}
 @media(max-width:760px){.cf-cap-template-grid,.cf-short-template-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.cf-cap-template canvas,.cf-short-template-grid .cf-cap-template canvas{max-height:54px}}
+
+
+/* Shorts: reveal caption controls immediately when a caption source is selected. */
+#stylebox:not(.hide){display:block;margin-top:12px;padding:12px;border:1px solid var(--bd);border-radius:12px;background:var(--card)}
+#stylebox .cf-short-template-grid{margin-top:8px}
+#stylebox .cf-short-template-grid .cf-cap-template{min-width:0}
+#stylebox .cf-short-template-grid .cf-cap-template canvas{aspect-ratio:5/3;max-height:54px}
