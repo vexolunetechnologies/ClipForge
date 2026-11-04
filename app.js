@@ -2224,3 +2224,86 @@ sync();
  });
  render();
 })();
+
+
+/* ===== FULL VIDEO CAPTIONS STUDIO ===== */
+(function(){
+ const $=id=>document.getElementById(id);
+ const input=$('cfFullCapFile'),video=$('cfFullCapVideo'),status=$('cfFullCapStatus');
+ if(!input||!video||!status)return;
+ let sourceUrl='',cues=[],busy=false;
+ const say=t=>{status.textContent=t};
+ const language=()=>{const v=$('cfCaptionLanguage').value;return v==='english'?'english':v};
+ const styles=['classic','pop','box','karaoke','hl','neon','min','pill','news','outline','urdu'];
+ function paint(ctx,w,h,text,style){
+  if(!text)return;const rtl=/[\\u0590-\\u08FF\\uFB1D-\\uFDFF\\uFE70-\\uFEFF]/.test(text),dev=/[\\u0900-\\u097F]/.test(text);
+  const scale=w/1280,fs=Math.max(22,Math.min(58,Math.round(w*.043)));
+  ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction=rtl?'rtl':'ltr';
+  ctx.font=(rtl||dev?'700 ':'800 ')+fs+'px '+(rtl?'"Noto Nastaliq Urdu",serif':dev?'"Noto Sans Devanagari",sans-serif:'Inter,Arial,sans-serif');
+  const words=text.split(/\\s+/),lines=[];let line='';
+  words.forEach(word=>{const test=line?line+' '+word:word;if(ctx.measureText(test).width>w*.86&&line){lines.push(line);line=word}else line=test});if(line)lines.push(line);
+  const lh=fs*(rtl?1.65:1.25),y=h*.78-(lines.length-1)*lh/2;
+  if(['box','pill','news'].includes(style)){const max=Math.max(...lines.map(x=>ctx.measureText(x).width)),bw=Math.min(w*.92,max+44*scale),bh=lines.length*lh+22*scale;ctx.fillStyle=style==='news'?'rgba(8,20,42,.94)':'rgba(0,0,0,.76)';ctx.fillRect((w-bw)/2,y-lh/2-10*scale,bw,bh);if(style==='news'){ctx.fillStyle='#ffd84d';ctx.fillRect((w-bw)/2,y-lh/2-10*scale,7*scale,bh)}}
+  ctx.lineJoin='round';ctx.lineWidth=style==='outline'?12*scale:7*scale;ctx.strokeStyle='#000';ctx.fillStyle=style==='pop'?'#ffe14d':style==='neon'?'#7df9ff':'#fff';
+  if(style==='neon'){ctx.shadowColor='#00e5ff';ctx.shadowBlur=24*scale}
+  lines.forEach((ln,i)=>{const yy=y+i*lh;if(!['min','box','pill','news'].includes(style))ctx.strokeText(ln,w/2,yy);ctx.fillText(ln,w/2,yy)});
+  ctx.restore();
+ }
+ function activeCaption(t){return cues.find(q=>t>=q.s&&t<q.e)}
+ function updateSample(){const sample=$('cfFullCapSample'),style=$('cfFullCapStyle').value,lang=$('cfCaptionLanguage').value;sample.className='cf-caption-frame cf-style-'+style;sample.dir=lang==='urdu'?'rtl':'ltr';sample.innerHTML='<b></b>';sample.querySelector('b').textContent=lang==='urdu'?'ویکسولون ٹیکنالوجیز':lang==='hindi'?'वेक्सोलून टेक्नोलॉजीज़':'VEXOLUNE TECHNOLOGIES'}
+ $('cfFullCapStyle').addEventListener('change',updateSample);$('cfCaptionLanguage').addEventListener('change',updateSample);updateSample();
+ input.addEventListener('change',()=>{
+  const f=input.files&&input.files[0];if(!f)return;
+  if(sourceUrl)URL.revokeObjectURL(sourceUrl);sourceUrl=URL.createObjectURL(f);video.src=sourceUrl;video.load();cues=[];
+  $('cfFullCapFileName').textContent=f.name;$('cfFullCapTranscript').value='';$('cfFullCapTranscript').disabled=true;
+  $('cfFullCapExport').disabled=true;$('cfFullCapSrt').disabled=true;say('Video loaded. Generate captions for the entire video.');
+ });
+ $('cfFullCapGenerate').addEventListener('click',async()=>{
+  if(busy)return;if(!input.files||!input.files[0]){say('Please upload a video first.');return}
+  busy=true;const btn=$('cfFullCapGenerate');btn.disabled=true;const tok=RUN;
+  try{
+   const f=input.files[0];say('Reading audio track…');
+   const mb=await guard(import('https://cdn.jsdelivr.net/npm/mediabunny@1.62.1/+esm'),45000,'Audio extractor download');alive(tok);
+   const inp=new mb.Input({formats:mb.ALL_FORMATS,source:new mb.BlobSource(f)}),track=await inp.getPrimaryAudioTrack();
+   if(!track||!await track.canDecode())throw new Error('This video has no supported audio track.');
+   const duration=Math.max(1,Number(video.duration)||Number((await inp.computeDuration()).toFixed(2))||1),sink=new mb.AudioSampleSink(track);
+   const blocks=[],parts=[];let partLen=0,offset=0,started=false,processed=0;const blockSize=30*16000;
+   for await(const sample of sink.samples()){
+    alive(tok);const b=sample.toAudioBuffer(),n=b.length,mono=new Float32Array(n);
+    for(let ch=0;ch<b.numberOfChannels;ch++){const d=b.getChannelData(ch);for(let j=0;j<n;j++)mono[j]+=d[j]/b.numberOfChannels}
+    const pcm=to16k(mono,b.sampleRate);if(!started){offset=Number(sample.timestamp)||0;started=true}
+    let p=0;while(p<pcm.length){const take=Math.min(blockSize-partLen,pcm.length-p);parts.push(pcm.subarray(p,p+take));partLen+=take;p+=take;if(partLen>=blockSize){blocks.push({pcm:cat(parts),offset});offset+=partLen/16000;parts.length=0;partLen=0}}
+    sample.close();processed+=n;if(processed%Math.max(1,Math.floor(b.sampleRate*10))<n)say('Extracting audio · '+Math.min(99,Math.round(offset/duration*100))+'%');
+   }
+   if(partLen)blocks.push({pcm:cat(parts),offset});
+   if(!blocks.length)throw new Error('No audio could be extracted from this video.');
+   const all=[];for(let i=0;i<blocks.length;i++){alive(tok);say('Transcribing full video · '+(i+1)+'/'+blocks.length+' audio parts');const block=blocks[i],rows=await transcribe(block.pcm,tok,{start:0,span:0,report:()=>{}});all.push(...buildCues(rows,block.offset,block.pcm))}
+   cues=all.sort((a,b)=>a.s-b.s);if(!cues.length)throw new Error('No speech was detected. Try a video with clear dialogue.');
+   $('cfFullCapTranscript').value=cues.map(q=>q.text).join('\\n');$('cfFullCapTranscript').disabled=false;
+   $('cfFullCapExport').disabled=false;$('cfFullCapSrt').disabled=false;say('Done — '+cues.length+' caption lines generated for the full video. Edit the lines below before exporting.');
+  }catch(e){if(e.message==='Stopped')say('Processing stopped.');else say('Caption generation failed: '+(e.message||e))}
+  finally{busy=false;btn.disabled=false}
+ });
+ $('cfFullCapTranscript').addEventListener('input',()=>{const lines=$('cfFullCapTranscript').value.split(/\\r?\\n/);cues.forEach((q,i)=>{if(lines[i]!==undefined)q.text=lines[i]})});
+ function srtTime(t){const ms=Math.max(0,Math.round(t*1000)),h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000),s=Math.floor(ms%60000/1000),z=ms%1000;return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':')+','+String(z).padStart(3,'0')}
+ $('cfFullCapSrt').addEventListener('click',()=>{const body=cues.filter(q=>q.text.trim()).map((q,i)=>(i+1)+'\\n'+srtTime(q.s)+' --> '+srtTime(q.e)+'\\n'+q.text.trim()).join('\\n\\n');const blob=new Blob([body],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='clipforge-captions.srt';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
+ $('cfFullCapExport').addEventListener('click',async()=>{
+  if(busy)return;if(!cues.length||!sourceUrl)return;
+  busy=true;const btn=$('cfFullCapExport');btn.disabled=true;
+  try{
+   const v=document.createElement('video');v.src=sourceUrl;v.muted=false;v.playsInline=true;v.preload='auto';await new Promise((res,rej)=>{v.onloadedmetadata=res;v.onerror=()=>rej(new Error('Could not load the source video'))});
+   const w=Math.min(1920,v.videoWidth||1280),h=Math.round(w*(v.videoHeight||720)/(v.videoWidth||1280)),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');
+   if(!canvas.captureStream||!window.MediaRecorder)throw new Error('Full-video recording is not supported in this browser. Use the latest Chrome.');
+   const stream=canvas.captureStream(30),sourceStream=v.captureStream?v.captureStream():v.mozCaptureStream&&v.mozCaptureStream();if(!sourceStream)throw new Error('This browser cannot capture source audio. Use the latest Chrome.');
+   sourceStream.getAudioTracks().forEach(t=>stream.addTrack(t));
+   const mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));if(!mime)throw new Error('No supported video export format was found.');
+   const recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:6000000}),chunks=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+   const done=new Promise((res,rej)=>{recorder.onstop=res;recorder.onerror=()=>rej(new Error('Video export recorder failed'))});
+   const draw=()=>{if(v.ended||v.paused)return;ctx.drawImage(v,0,0,w,h);const q=activeCaption(v.currentTime);if(q)paint(ctx,w,h,q.text,$('cfFullCapStyle').value);requestAnimationFrame(draw)};
+   recorder.start(1000);await v.play();draw();say('Exporting full video with captions… keep this tab open until export finishes.');
+   await new Promise(res=>{v.onended=res});recorder.stop();await done;stream.getTracks().forEach(t=>t.stop());sourceStream.getTracks().forEach(t=>t.stop());
+   const blob=new Blob(chunks,{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='clipforge-captioned-video.webm';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);say('Export complete. Your captioned full-length video has been saved as a WebM file.');
+  }catch(e){say('Export failed: '+(e.message||e))}
+  finally{busy=false;btn.disabled=false}
+ });
+})();
