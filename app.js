@@ -1019,14 +1019,37 @@ function camUpdate(t,dt,lc){const K=cam.keys,was=cam.k;
 v.addEventListener('seeked',()=>{if(!busy)draw()});v.addEventListener('timeupdate',()=>{if(!busy)draw()});v.addEventListener('loadeddata',()=>draw());
 
 /* ===== 11. LOAD FROM LINK, RECORDER, EXPORT ===== */
-// "Load" button for a pasted direct video link: fetch it into the player.
-$('#lgo').onclick=async()=>{const u=$('#lnk').value.trim(),m=t=>$('#lmsg').textContent=t;if(!u)return;
- let pu;try{pu=new URL(u)}catch(e){return m('That does not look like a web address. It must start with https://')}
+// Direct media URLs can be loaded when the host permits browser access (CORS).
+// Social share URLs are identified explicitly; they are not treated as downloadable files.
+function socialLinkHelp(host){
+ const h=String(host||'').toLowerCase().replace(/^www\./,'');
+ if(h==='youtube.com'||h==='m.youtube.com'||h==='youtu.be'||h.endsWith('.youtube.com'))return 'YouTube share links are not directly importable. For your own video, export/download it from YouTube Studio, then upload the MP4 here.';
+ if(h==='facebook.com'||h==='m.facebook.com'||h==='fb.watch'||h.endsWith('.facebook.com'))return 'Facebook share links are not direct video files. For a video you own or have permission to edit, download/export the original from Facebook, then upload the MP4 here.';
+ if(h==='instagram.com'||h==='m.instagram.com'||h.endsWith('.instagram.com'))return 'Instagram links open posts/Reels, not downloadable video files. For your own content, save/export the original video and upload its MP4 here.';
+ if(h==='tiktok.com'||h==='vm.tiktok.com'||h==='vt.tiktok.com'||h.endsWith('.tiktok.com'))return 'TikTok share links are not direct video files. For your own video, use TikTok’s Save video option (if enabled), then upload the saved file here.';
+ if(h==='x.com'||h==='twitter.com'||h.endsWith('.twitter.com'))return 'X post links are not direct video files. Upload a video file you own or have permission to edit.';
+ if(h==='vimeo.com'||h.endsWith('.vimeo.com'))return 'Vimeo page links are not direct video files. Use the original downloadable file if the owner has enabled downloads.';
+ return '';
+}
+$('#lgo').onclick=async()=>{
+ const u=$('#lnk').value.trim(),m=t=>$('#lmsg').textContent=t;
+ if(!u)return;
+ let pu;try{pu=new URL(u)}catch(e){return m('Enter a valid https:// video URL.')}
  if(!/^https?:$/.test(pu.protocol))return m('Only http or https links can be loaded.');
- if(/youtu\.?be|youtube\.com/i.test(u))return m('YouTube links cannot be downloaded in a browser app: YouTube blocks it and its terms do not allow it. Download your own video from YouTube Studio and choose the file.');
- try{m('Loading…');const r=await fetch(u);if(!r.ok)throw 0;const b=await r.blob();if(!b.type.startsWith('video'))throw 0;
-  load(new File([b],(u.split('?')[0].split('/').pop()||'video'),{type:b.type}));m('')}catch(e){m('Could not load that link. The site must allow direct downloads (CORS), and large videos should be chosen as a file instead.')}};
-
+ const socialHelp=socialLinkHelp(pu.hostname);
+ if(socialHelp)return m(socialHelp);
+ try{
+  m('Loading direct video file…');
+  const r=await fetch(u);
+  if(!r.ok)throw new Error('The link returned HTTP '+r.status+'.');
+  const b=await r.blob();
+  if(!b.type.startsWith('video/'))throw new Error('This URL did not return a video file. Use a direct MP4/WebM video URL.');
+  load(new File([b],(pu.pathname.split('/').pop()||'video').split('?')[0],{type:b.type}));
+  m('');
+ }catch(e){
+  m('Could not load this URL. It must point directly to a video file and allow browser CORS access. For social share links, upload the original video file instead.');
+ }
+};
 /* ---------- MP4 fallback recorder (WebCodecs + mp4-muxer) for browsers without native MP4 MediaRecorder ---------- */
 async function makeWC(aTrack,br){
 // Load the MP4 muxer library (needed to build the file).
