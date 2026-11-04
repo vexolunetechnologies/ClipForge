@@ -109,12 +109,15 @@
 <!-- Shorts options: how many, length, quality, captions -->
 <div id="soBox">
   <p class="note">Upload once. ClipForge reads the dialogue, finds the strongest moments and prepares editable Shorts automatically. Fine-tuning is optional.</p>
-  <details class="optional-settings"><summary>Clip count and duration (optional)</summary>
-  <div class="lbl">How many shorts do you want?</div>
-  <div class="row" id="counts"></div>
-  <div class="lbl">Length of each short</div><div class="row" id="lens"></div><input type="number" id="cl" class="hide" min="10" max="90" placeholder="Seconds (10–90)" style="width:150px;margin-top:8px">
-  <p class="note hide" id="fullnote"><b>Full video:</b> turns the whole video into one 9:16 file. Export runs in real time, so a 30-minute video takes about 30 minutes and this screen must stay on. Choose <b>Fit + blur</b> to keep the whole picture (center crop cuts the sides). Smart reframe, captions and dialogue-only trim scan the entire video, so turn them off for long videos. Very long videos can run out of browser memory; 720p and under 30 minutes is safest.</p>
-  
+  <div class="duration-panel" style="margin:12px 0;padding:14px;border:1px solid var(--bd);border-radius:12px;background:var(--card)">
+   <div class="lbl" style="font-size:15px;font-weight:700">Choose the duration of every Short</div>
+   <div class="row" id="lens"></div><input type="number" id="cl" class="hide" min="10" max="90" placeholder="Enter seconds (10–90)" style="width:170px;margin-top:8px">
+   <p class="note" style="margin:8px 0 0">Each result is one continuous moment, not a montage of separate clips. AI aims for your selected duration while keeping the dialogue complete.</p>
+  </div>
+  <details class="optional-settings"><summary>Short count and extra options</summary>
+   <div class="lbl">How many shorts do you want?</div>
+   <div class="row" id="counts"></div>
+   <p class="note hide" id="fullnote"><b>Full video:</b> turns the whole video into one 9:16 file. Export runs in real time, so a 30-minute video takes about 30 minutes and this screen must stay on. Choose <b>Fit + blur</b> to keep the whole picture (center crop cuts the sides). Smart reframe, captions and dialogue-only trim scan the entire video, so turn them off for long videos. Very long videos can run out of browser memory; 720p and under 30 minutes is safest.</p>
   </details>
   <div class="lbl">Export quality</div><div class="row"><button class="chip on" data-k="res" data-v="720">720p · faster</button><button class="chip" data-k="res" data-v="1080">1080p</button></div>
   <div class="lbl">Add captions?</div>
