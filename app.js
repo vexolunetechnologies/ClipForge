@@ -1223,15 +1223,27 @@ async function exportClip(i,forceWC){
  S.fit=_fit;WIDEREC=false;ZOOM=1;SHX=SHY=0;v.playbackRate=1;if(tok===RUN){if(cv.width!==720||cv.height!==1280){cv.width=720;cv.height=1280}RECING=false;if(outG)outG.gain.value=1;if(recG)recG.gain.value=0;busy=false;lock(false);render();renderTrailer()}
  if(retry&&tok===RUN)return exportClip(i,true)}
 // Open the finished file in a hidden video to prove that it is playable.
-function verifyVideo(b){return new Promise(res=>{const u=URL.createObjectURL(b),x=document.createElement('video');x.muted=true;x.preload='auto';x.playsInline=true;let done=false,tm=null,dt=null;
- const fin=o=>{if(done)return;done=true;clearTimeout(tm);clearTimeout(dt);x.onerror=x.onloadeddata=x.ondurationchange=x.onseeked=null;x.removeAttribute('src');try{x.load()}catch(e){}URL.revokeObjectURL(u);res(o)};
- const seekEnd=()=>{const d=x.duration;if(!Number.isFinite(d)||d<=.5)return fin({ok:false,why:'the MP4 duration was not finalized',dur:null,w:x.videoWidth,h:x.videoHeight,seek:false});
-  x.onseeked=()=>fin({ok:x.videoWidth>0&&x.videoHeight>0&&x.readyState>=2,why:'the end of the file cannot be decoded',dur:d,w:x.videoWidth,h:x.videoHeight,seek:true});
-  try{x.currentTime=Math.max(0,d-.3)}catch(e){fin({ok:false,why:'the end of the file cannot be reached',dur:d,w:x.videoWidth,h:x.videoHeight,seek:false})}};
- tm=setTimeout(()=>fin({ok:false,why:'the check timed out'}),20000);x.onerror=()=>fin({ok:false,why:'the file cannot be read'});
- x.onloadeddata=()=>{if(!(x.videoWidth>0&&x.videoHeight>0))return fin({ok:false,why:'the file has no picture'});
-  if(Number.isFinite(x.duration))seekEnd();else{x.ondurationchange=()=>{if(Number.isFinite(x.duration)){x.ondurationchange=null;seekEnd()}};dt=setTimeout(()=>fin({ok:false,why:'the MP4 duration was not finalized',dur:null,w:x.videoWidth,h:x.videoHeight,seek:false}),6000)}};
- x.src=u})}
+function verifyVideo(b){return new Promise(res=>{
+  const u=URL.createObjectURL(b),x=document.createElement('video');x.muted=true;x.preload='auto';x.playsInline=true;let done=false,tm=null;
+  const fin=o=>{if(done)return;done=true;clearTimeout(tm);x.onerror=x.onloadedmetadata=x.onseeked=null;try{x.pause();x.removeAttribute('src');x.load()}catch(e){}URL.revokeObjectURL(u);res(o)};
+  tm=setTimeout(()=>fin({ok:false,why:'video frames could not be decoded during file verification'}),7000);
+  x.onerror=()=>fin({ok:false,why:'the file cannot be read'});
+  x.onloadedmetadata=()=>{
+   const d=x.duration;if(!Number.isFinite(d)||d<=.1)return fin({ok:false,why:'the MP4 duration was not finalized',dur:d,w:x.videoWidth,h:x.videoHeight,seek:false});
+   if(!(x.videoWidth>0&&x.videoHeight>0))return fin({ok:false,why:'the file has no video track',dur:d,w:x.videoWidth,h:x.videoHeight,seek:false});
+   x.onseeked=async()=>{
+    if(x.readyState<2)return fin({ok:false,why:'the video track contains no decodable frames',dur:d,w:x.videoWidth,h:x.videoHeight,seek:true});
+    if(!x.requestVideoFrameCallback)return fin({ok:true,dur:d,w:x.videoWidth,h:x.videoHeight,seek:true});
+    try{
+     const frame=new Promise(resolve=>x.requestVideoFrameCallback(()=>resolve(true)));
+     await x.play();await Promise.race([frame,new Promise((_,reject)=>setTimeout(()=>reject(new Error('no decoded frame')),2500))]);
+     fin({ok:true,dur:d,w:x.videoWidth,h:x.videoHeight,seek:true})
+    }catch(e){fin({ok:false,why:'the final video frames could not be decoded',dur:d,w:x.videoWidth,h:x.videoHeight,seek:true})}
+   };
+   try{x.currentTime=Math.max(0,d-Math.min(1,d*.2))}catch(e){fin({ok:false,why:'the end of the file cannot be reached',dur:d,w:x.videoWidth,h:x.videoHeight,seek:false})}
+  };
+  x.src=u
+ })}
 // Download a finished clip.
 function save(c,i){const a=document.createElement('a');a.href=URL.createObjectURL(c.blob);a.download=fname+(c.trailer?'-trailer':c.full?'-full-9x16':'-short-'+(i+1))+'.'+ext;document.body.append(a);a.click();a.remove()}
 // Share a finished file. "Share…" opens the phone's own share menu (YouTube, Instagram, Facebook, WhatsApp...) with the video attached.
