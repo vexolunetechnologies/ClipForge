@@ -816,13 +816,13 @@ const ASRP={};
 // Load the Whisper speech model in the browser (downloaded once).
 function loadASR(){const m=S.model;if(ASRP[m])return ASRP[m];
  ASRP[m]=(async()=>{const mb={tiny:'~40',base:'~75',small:'~250'}[m];stat('cap','loading speech library…');
-  const T=await guard(import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2'),120000,'Speech library download');
+  const T=await guard(import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1'),120000,'Speech library download');
   try{T.env.backends.onnx.wasm.proxy=true}catch(e){}
   stat('cap','loading speech model (first time '+mb+'MB)…');
   let lastEv=Date.now(),wd=null,wdRej;const stuck=new Promise((_,r)=>{wdRej=r});
   wd=setInterval(()=>{if(Date.now()-lastEv>90000){clearInterval(wd);wdRej(new Error('The speech model did not start on this browser (it stopped after downloading). Reload the page, try Chrome, or choose the Fast model.'))}},3000);
   const cb=x=>{lastEv=Date.now();if(x.status==='progress'&&/onnx/.test(x.file||'')){const pc=Math.round(x.progress);stat('cap',pc>=100?'starting speech model (can take up to a minute)…':'downloading speech model '+pc+'%')}else if(x.status==='ready'){stat('cap','')}};
-  try{return await Promise.race([guard(T.pipeline('automatic-speech-recognition','Xenova/whisper-'+m,{revision:m==='base'?'9226b958253551c6db13a6f43837e1b46918e620':'main',progress_callback:cb}),900000,'Speech model download'),stuck])}finally{clearInterval(wd)}})();
+  try{return await Promise.race([guard(T.pipeline('automatic-speech-recognition','Xenova/whisper-'+m,{revision:'main',progress_callback:cb}),900000,'Speech model download'),stuck])}finally{clearInterval(wd)}})();
  ASRP[m].catch(()=>{delete ASRP[m]});return ASRP[m]}
 // Transcribe audio with Whisper and return the text chunks.
 async function transcribe(pcm){const p=await loadASR(),o={task:'transcribe',chunk_length_s:30,stride_length_s:5,return_timestamps:true};if(S.lang!=='auto')o.language=S.lang;
