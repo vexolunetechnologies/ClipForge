@@ -2332,3 +2332,23 @@ body.solo[data-tool="captions"] #cfCaptionsWorkspace{display:block!important}
 #stylebox .cf-short-template-grid{margin-top:8px}
 #stylebox .cf-short-template-grid .cf-cap-template{min-width:0}
 #stylebox .cf-short-template-grid .cf-cap-template canvas{aspect-ratio:5/3;max-height:54px}
+
+
+/* Image Animator + Reverse Video: lift only the inner card content.
+   Keep card dimensions, grid placement and action links unchanged. */
+#tools .toolcard[href="#animator"],
+#tools .toolcard[href="#reverse"]{
+  padding-top:12px!important;
+}
+#tools .toolcard[href="#animator"] > .ttag,
+#tools .toolcard[href="#reverse"] > .ttag{
+  margin-top:0!important;
+}
+#tools .toolcard[href="#animator"] > h3,
+#tools .toolcard[href="#reverse"] > h3{
+  margin-top:2px!important;
+}
+#tools .toolcard[href="#animator"] > ul,
+#tools .toolcard[href="#reverse"] > ul{
+  margin-top:4px!important;
+}
