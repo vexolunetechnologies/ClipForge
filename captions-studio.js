@@ -57,7 +57,7 @@ async function exportVideo(){
 }
 function init(){
  workspace();video=$('cfCapVideo');
- if(document.fonts){Promise.all([document.fonts.load('700 48px "Noto Nastaliq Urdu"','اردو کیپشن'),document.fonts.load('700 48px "Noto Sans Devanagari"','हिन्दी')]).then(()=>{shortGrid();const lang=$('cfCapLang');if(lang){const host=$('cfCapTemplateGrid');if(host)grid(host,lang.value,style,k=>{style=k;grid(host,lang.value,style,k2=>{style=k2;});});}}).catch(()=>{})}
+ if(document.fonts){Promise.all([document.fonts.load('700 48px "Noto Nastaliq Urdu"','اردو کیپشن'),document.fonts.load('700 48px "Noto Sans Devanagari"','हिन्दी')]).then(()=>{refresh();shortGrid()}).catch(()=>{})}
  $('cfCapFile').onchange=e=>{file=e.target.files[0]||null;cues=[];$('cfCapText').value='';$('cfCapOutput').innerHTML='';if(video.src)URL.revokeObjectURL(video.src);if(file){video.src=URL.createObjectURL(file);video.load();status(file.name+' selected.')}else{video.removeAttribute('src');status('Choose a video to begin.')}enabled()};
  $('cfCapTranscribe').onclick=transcribe;$('cfCapLang').onchange=()=>grid($('cfCapTemplateGrid'),$('cfCapLang').value,style,k=>{style=k;refresh()});
  $('cfCapText').oninput=sync;$('cfCapSrt').onclick=()=>subs(false);$('cfCapVtt').onclick=()=>subs(true);$('cfCapExport').onclick=exportVideo;$('cfCapStop').onclick=()=>{stop=true;try{if(rec&&rec.state!=='inactive')rec.stop()}catch(e){}};
