@@ -2227,6 +2227,10 @@ sync();
  const lang=$id('cfCaptionLanguage');if(lang)lang.addEventListener('change',()=>{language=lang.value;render()});
  const brand=$id('cfCaptionBrand');if(brand)brand.addEventListener('click',()=>{S.brand=S.brand==='off'?'on':'off';brand.classList.toggle('on',S.brand==='on');brand.setAttribute('aria-pressed',String(S.brand==='on'));brand.textContent=S.brand==='on'?'✓ Vexolune branding on':'Branding off';render()});
  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.cf-mini-template');if(b){selected=b.dataset.v;render()}});
+ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-k="lang"]');if(!b)return;
+  const lang=b.dataset.v==='auto'?'english':b.dataset.v,sample=samples[lang]||samples.english;
+  document.querySelectorAll('.cf-mini-template').forEach(btn=>{const frame=btn.querySelector('.cf-mini-frame'),txt=frame&&frame.querySelector('b'),brand=frame&&frame.querySelector('small');if(frame){frame.dir=sample.dir}if(txt)txt.textContent=sample.text;if(brand)brand.textContent=S.brand==='off'?'':sample.brand});
+ });
  const use=$id('cfUseCaptionInShorts');if(use)use.addEventListener('click',()=>{
   S.cs=selected;S.cap='auto';S.lang=language;
   const style=document.querySelector('[data-k="cs"][data-v="'+selected+'"]');if(style)style.click();
