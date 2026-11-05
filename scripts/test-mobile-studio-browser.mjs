@@ -85,12 +85,20 @@ try{
 
  // Narrow small-phone view must remain usable without horizontal document overflow.
  await page.setViewportSize({width:320,height:700});
- const narrow=await page.evaluate(()=>({
-  w:document.querySelector(".st-timeline-panel").getBoundingClientRect().width,
-  previewH:document.querySelector(".st-preview-panel").getBoundingClientRect().height,
-  dockW:document.querySelector(".st-mobile-dock").getBoundingClientRect().width,
-  overflow:document.documentElement.scrollWidth>innerWidth+2
- }));
+ await page.waitForTimeout(150); // wait for mobile viewport media-query recomposition
+ const narrow=await page.evaluate(()=>{
+  const panel=document.querySelector("#editorTool .st-timeline-panel");
+  const main=document.querySelector("#editorTool .st-pro-main");
+  return {
+   w:panel.getBoundingClientRect().width,
+   display:getComputedStyle(panel).display,
+   mainW:main.getBoundingClientRect().width,
+   mainDisplay:getComputedStyle(main).display,
+   previewH:document.querySelector("#editorTool .st-preview-panel").getBoundingClientRect().height,
+   dockW:document.querySelector("#editorTool .st-mobile-dock").getBoundingClientRect().width,
+   overflow:document.documentElement.scrollWidth>innerWidth+2
+  };
+ });
  assert.equal(narrow.overflow,false);
  assert.ok(narrow.w>=300&&narrow.dockW>=300&&narrow.previewH>100,JSON.stringify(narrow));
 
