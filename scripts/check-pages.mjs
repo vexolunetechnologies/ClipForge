@@ -11,6 +11,7 @@ const files = [
   ["_worker.js", "public/_worker.js"],
   ["styles.css", "public/assets/css/styles.css"],
   ["app.js", "public/assets/js/core/app.js"],
+  ["mp4-finalize.js", "public/assets/js/shared/mp4-finalize.js"],
   ["navigation.js", "public/navigation.js"],
   ["navigation.js", "public/assets/js/core/navigation.js"],
   ["editor-loader.js", "public/editor-loader.js"],
@@ -58,6 +59,8 @@ assert.match(from("public/dist/editor/layout.js"), /toolcard\[href="\/tools\/edi
 const rootHome = from("index.html");
 assert.match(rootHome, /src="\/navigation\.js"/);
 assert.match(rootHome, /src="\/transcription-queue\.js"/);
+assert.match(rootHome, /src="\/mp4-finalize\.js"/);
+assert.ok(rootHome.indexOf('src="/mp4-finalize.js"')<rootHome.indexOf('src="/app.js"'));
 assert.ok(rootHome.indexOf('src="/transcription-queue.js"') < rootHome.indexOf('src="/highlights-studio.js"'),"Queue must load before Highlights Studio");
 for (const tool of tools) {
   const standalone = "tools/" + tool + "/index.html";
@@ -65,6 +68,8 @@ for (const tool of tools) {
   const html = from(standalone);
   assert.doesNotMatch(html, /data-cf-tool-bootstrap|data-cf-link-bridge/);
   assert.ok(html.includes("https://clipforgestudio.pages.dev/tools/" + tool + "/"), "Missing canonical route");
+  assert.match(html, /src="\/mp4-finalize\.js"/);
+  assert.ok(html.indexOf('src="/mp4-finalize.js"')<html.indexOf('src="/app.js"'));
   assert.match(html, /src="\/app\.js"/);
   assert.match(html, /src="\/navigation\.js"/);
   assert.match(html, /href="#editor"/);

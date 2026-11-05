@@ -36,6 +36,17 @@ try{
  });
  assert.ok(geometry.header.h>=45&&geometry.header.h<=75,JSON.stringify(geometry));
  assert.ok(geometry.monitor.h>=165&&geometry.monitor.h<=geometry.viewport*.56,JSON.stringify(geometry));
+ assert.ok(Math.abs(geometry.monitor.w-390)<3,"Preview must occupy entire phone width: "+JSON.stringify(geometry));
+ assert.ok(Math.abs(geometry.canvas.w-geometry.monitor.w)<20,"Canvas must not be squeezed into left column: "+JSON.stringify(geometry));
+ const headerItems=await page.evaluate(()=>{
+  const rect=sel=>{const e=document.querySelector(sel),r=e.getBoundingClientRect();return {x:r.x,right:r.right,w:r.width,visible:getComputedStyle(e).display!=="none"}};
+  return {brand:rect("#editorTool .st-appbrand"),project:rect("#stProjectName"),export:rect("#stAppExport")};
+ });
+ assert.ok(headerItems.brand.right<=headerItems.project.x+3,"Brand must not overlap project title: "+JSON.stringify(headerItems));
+ assert.ok(headerItems.project.right<=headerItems.export.x+3,"Project title must not overlap Export: "+JSON.stringify(headerItems));
+ assert.ok(headerItems.project.w>=55,"Project title must have readable width: "+JSON.stringify(headerItems));
+ const labelWidth=await page.locator("#editorTool .st-lane .st-track-label").first().evaluate(el=>el.getBoundingClientRect().width);
+ assert.ok(labelWidth<=90,"Track labels must not consume one third of phone screen: "+labelWidth);
  assert.ok(geometry.canvas.h>=100,JSON.stringify(geometry));
  assert.ok(geometry.timeline.y>=geometry.monitor.bottom-4,
   "Actual timeline should appear directly below preview, not as desktop four-panel layout: "+JSON.stringify(geometry));

@@ -13,7 +13,9 @@
     "bench:phase2": "node scripts/benchmark-transcription-queue.mjs",
     "test:media": "node scripts/test-highlights-real-media.mjs",
     "test:caption-gallery": "node scripts/test-caption-gallery.mjs",
-    "test:mobile-editor": "node scripts/test-mobile-studio-browser.mjs"
+    "test:mobile-editor": "node scripts/test-mobile-studio-browser.mjs",
+    "test:fix-three-issues": "node scripts/test-three-issues-browser.mjs",
+    "test:mp4-duration": "node scripts/test-mp4-duration-real-media.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
