@@ -64,6 +64,15 @@ jobs:
       - name: Benchmark two-request Highlights transcription queue
         run: npm run bench:phase2
 
+      - name: Test mobile CapCut-like Studio editor
+        run: npm run test:mobile-editor
+      - name: Upload mobile Studio design screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipforge-mobile-editor-preview
+          path: reports/mobile-studio-*.png
+          if-no-files-found: ignore
       - name: Install FFmpeg for real-media regression
         run: |
           sudo apt-get install -y --no-install-recommends ffmpeg
