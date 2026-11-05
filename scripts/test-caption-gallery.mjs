@@ -16,9 +16,25 @@ try{
  const lib=await page.evaluate(()=>({
   count:window.ClipForgeCaptionStyles.list.length,
   modern:window.ClipForgeCaptionStyles.modernPresets.length,
-  original:window.ClipForgeCaptionStyles.groups.find(x=>x.id==="classic").ids.length
+  assigned:window.ClipForgeCaptionStyles.groups.filter(x=>x.id!=="all").reduce((n,x)=>n+x.ids.length,0)
  }));
- assert.deepEqual(lib,{count:55,modern:14,original:41});
+ assert.deepEqual(lib,{count:55,modern:14,assigned:55});
+ const ownership=await page.evaluate(()=>{
+  const groups=window.ClipForgeCaptionStyles.groups;
+  const owned=groups.filter(x=>x.id!=="all").flatMap(x=>x.ids);
+  const all=groups.find(x=>x.id==="all").ids;
+  const styles=window.ClipForgeCaptionStyles.list.map(x=>x[0]);
+  return {groupIds:groups.map(x=>x.id),categoryTotal:owned.length,
+   uniqueAssigned:new Set(owned).size,allCount:all.length,allUnique:new Set(all).size,
+   coversEveryStyle:styles.every(x=>owned.includes(x)),
+   originalCategoryExists:groups.some(x=>x.id==="classic")};
+ });
+ assert.equal(ownership.categoryTotal,55);
+ assert.equal(ownership.uniqueAssigned,55,"No style should appear in two categories");
+ assert.equal(ownership.allCount,55);
+ assert.equal(ownership.allUnique,55,"All tab must never duplicate style cards");
+ assert.ok(ownership.coversEveryStyle,"All 41 legacy styles must be categorized");
+ assert.equal(ownership.originalCategoryExists,false,"No separate Original 41 section");
  const gallery=page.locator("#cfCaptionsWorkspace .cf-style-browser");
  assert.equal(await gallery.count(),1);
  const grid=page.locator("#cfCapTemplateGrid");
@@ -27,7 +43,7 @@ try{
   overflowY:getComputedStyle(el).overflowY,
   visible:[...el.querySelectorAll("button:not([hidden])")].length
  }));
- assert.equal(dims.visible,14,"Trending should show only new original looks by default");
+ assert.equal(dims.visible,10,"Trending should contain 10 unique selected looks by default");
  assert.equal(dims.overflowY,"auto","Templates need a dedicated vertical scroll area");
  assert.ok(dims.clientHeight<=400,"Gallery should not scatter down the entire page");
  assert.ok(dims.scrollHeight>dims.clientHeight,"Gallery must be independently scrollable");
@@ -39,6 +55,9 @@ try{
  const neonCount=await grid.locator("button:visible").count();
  assert.ok(neonCount>=2&&neonCount<10,"Search must find new and existing glow styles");
  await gallery.locator(".cf-style-search").fill("");
+ await gallery.locator('[data-cf-category="all"]').click();
+ assert.equal(await grid.locator('button:visible').count(),55,"All must show 55 unique choices");
+ assert.equal(await grid.locator('button[data-cf-preview-style]').count(),55,"Exactly one button per style ID");
  await gallery.locator('[data-cf-category="trending"]').click();
  await grid.locator('button[data-cf-preview-style="marker-sweep"]').click();
  assert.equal(await gallery.locator(".cf-style-selected").innerText(),"Selected: Marker Highlight");
@@ -95,7 +114,7 @@ try{
  }));
  assert.ok(shortHeight.client<=310&&shortHeight.scroll>shortHeight.client);
  assert.equal(shortHeight.overflow,"auto");
- await short.locator('[data-cf-category="bold"]').click();
+ await short.locator('[data-cf-category="trending"]').click();
  await short.locator('button[data-cf-preview-style="podcast-lime"]').click();
  assert.equal(await page.evaluate(()=>S.cs),"podcast-lime");
  assert.match(await short.locator(".cf-style-selected").innerText(),/Podcast Lime/);

@@ -17,7 +17,7 @@ function styleBrowser(host){
  wrapper.setAttribute("aria-label","Caption style gallery");
  const top=document.createElement("div");
  top.className="cf-style-header";
- top.innerHTML='<div><strong>Style Gallery</strong><small>Browse, preview and select captions</small></div><span class="cf-style-selected" aria-live="polite"></span>';
+ top.innerHTML='<div><strong>Style Gallery</strong><small>Each style appears in one category only</small></div><span class="cf-style-selected" aria-live="polite"></span>';
  const categories=document.createElement("div");
  categories.className="cf-style-categories";
  categories.setAttribute("role","group");
