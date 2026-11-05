@@ -4,7 +4,7 @@
 const ST=window.ClipForgeCaptionStyles.list;
 const SAMPLE={english:'VEXOLUNE TECHNOLOGIES',urdu:'ویکسولون ٹیکنالوجیز',hindi:'वेक्सोलून टेक्नोलॉजीज़'};
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let file=null,video=null,cues=[],style='classic',busy=false,stop=false,outUrl=null,activeOutput=null,activeInput=null;
+let file=null,video=null,cues=[],sourceCues=[],style='classic',busy=false,stop=false,outUrl=null,activeOutput=null,activeInput=null;
 function draw(ctx,text,key,w,h,t=0,d=2){window.ClipForgeCaptionStyles.draw(ctx,text,key,w,h,t,d)}
 function grid(host,lang,selected,pick){if(!host)return;host.innerHTML='';ST.forEach(([key,label])=>{const b=document.createElement('button');b.type='button';b.className='cf-cap-template'+(key===selected?' is-selected':'');const c=document.createElement('canvas');c.width=180;c.height=108;c.getContext('2d').fillStyle='#171b25';c.getContext('2d').fillRect(0,0,180,108);draw(c.getContext('2d'),SAMPLE[lang]||SAMPLE.english,key,180,108);const s=document.createElement('span');s.textContent=label;b.append(c,s);b.onclick=()=>pick(key);host.append(b)})}
 function shortLang(){const b=document.querySelector('#autobox [data-k="lang"].on');return b&&b.dataset.v!=='auto'?b.dataset.v:'english'}
@@ -15,17 +15,78 @@ function ensureShortStyleButtons(){
  });
 }
 function shortGrid(){const host=$('cfShortTemplateGrid');if(!host)return;const b=document.querySelector('#stylebox [data-k="cs"].on'),sel=b?b.dataset.v:'classic';grid(host,shortLang(),sel,k=>{const chip=document.querySelector('#stylebox [data-k="cs"][data-v="'+k+'"]');if(chip)chip.click();shortGrid()})}
-function workspace(){if($('cfCaptionsWorkspace'))return;const s=document.createElement('section');s.id='cfCaptionsWorkspace';s.className='cf-workspace';s.style.display='none';s.innerHTML='<a class="cf-back" href="#tools">← All creative tools</a><div class="cf-page-head"><div><div class="cf-kicker">CLIPFORGE / CAPTIONS</div><h2>Captions Studio</h2><p>Upload a full video, transcribe dialogue, choose a caption style and export.</p></div></div><div class="cf-cap-layout"><div class="cf-panel"><div class="cf-field"><label>UPLOAD FULL VIDEO</label><input id="cfCapFile" type="file" accept="video/*"></div><div class="cf-cap-video-wrap"><video id="cfCapVideo" class="cf-preview" controls playsinline></video><canvas id="cfCapLive" aria-hidden="true"></canvas></div><div class="cf-row cf-cap-controls"><label>Speech language</label><select id="cfCapLang"><option value="english">English</option><option value="urdu">Urdu</option><option value="hindi">Hindi</option></select></div><button class="main" id="cfCapTranscribe" disabled>Transcribe full video</button><p class="cf-muted" id="cfCapStatus">Choose a video to begin. Audio is sent in short chunks to Cloudflare Workers AI.</p><div class="cf-cap-progress"><i id="cfCapProgress"></i></div><div class="cf-field"><label>REVIEW / EDIT CAPTIONS · ONE CAPTION PER LINE</label><textarea id="cfCapText" rows="9" disabled placeholder="Transcribed captions appear here."></textarea></div><div class="cf-row"><button class="sm" id="cfCapSrt" disabled>Download SRT</button><button class="sm" id="cfCapVtt" disabled>Download VTT</button></div></div><div class="cf-panel"><div class="cf-kicker">41 CAPTION STYLES</div><p class="cf-muted">Choose a style. Preview and export use the same renderer.</p><div id="cfCapTemplateGrid" class="cf-cap-template-grid"></div><div class="cf-field"><label>EXPORT QUALITY</label><select id="cfCapQuality"><option value="720">720p · faster</option><option value="1080">1080p</option></select></div><button class="main" id="cfCapExport" disabled>Export captioned video</button><div id="cfCapOutput" class="cf-output"></div><button class="sm" id="cfCapStop" disabled>Stop export</button></div></div>';(document.querySelector('.wrap')||document.body).insertBefore(s,$('tool')||null)}
+function workspace(){if($('cfCaptionsWorkspace'))return;const s=document.createElement('section');s.id='cfCaptionsWorkspace';s.className='cf-workspace';s.style.display='none';s.innerHTML='<a class="cf-back" href="#tools">← All creative tools</a><div class="cf-page-head"><div><div class="cf-kicker">CLIPFORGE / CAPTIONS</div><h2>Captions Studio</h2><p>Upload a full video, transcribe dialogue, choose a caption style and export.</p></div></div><div class="cf-cap-layout"><div class="cf-panel"><div class="cf-field"><label>UPLOAD FULL VIDEO</label><input id="cfCapFile" type="file" accept="video/*"></div><div class="cf-cap-video-wrap"><video id="cfCapVideo" class="cf-preview" controls playsinline></video><canvas id="cfCapLive" aria-hidden="true"></canvas></div><div class="cf-row cf-cap-controls"><label>Speech language</label><select id="cfCapLang"><option value="english">English</option><option value="urdu">Urdu</option><option value="hindi">Hindi</option></select></div><div class="cf-row cf-cap-controls"><label>Caption length</label><select id="cfCapDensity"><option value="3">Short · 3 words</option><option value="5" selected>Balanced · 4–5 words</option><option value="7">Long · 6–7 words</option></select></div><button class="main" id="cfCapTranscribe" disabled>Transcribe full video</button><p class="cf-muted" id="cfCapStatus">Choose a video to begin. Audio is sent in short chunks to Cloudflare Workers AI.</p><div class="cf-cap-progress"><i id="cfCapProgress"></i></div><div class="cf-field"><label>REVIEW / EDIT CAPTIONS · ONE CAPTION PER LINE</label><textarea id="cfCapText" rows="9" disabled placeholder="Transcribed captions appear here."></textarea></div><div class="cf-row"><button class="sm" id="cfCapSrt" disabled>Download SRT</button><button class="sm" id="cfCapVtt" disabled>Download VTT</button></div></div><div class="cf-panel"><div class="cf-kicker">41 CAPTION STYLES</div><p class="cf-muted">Choose a style. Preview and export use the same renderer.</p><div id="cfCapTemplateGrid" class="cf-cap-template-grid"></div><div class="cf-field"><label>EXPORT QUALITY</label><select id="cfCapQuality"><option value="720">720p · faster</option><option value="1080">1080p</option></select></div><button class="main" id="cfCapExport" disabled>Export captioned video</button><div id="cfCapOutput" class="cf-output"></div><button class="sm" id="cfCapStop" disabled>Stop export</button></div></div>';(document.querySelector('.wrap')||document.body).insertBefore(s,$('tool')||null)}
 function status(t){$('cfCapStatus').textContent=t}
-function enabled(){const ready=!!cues.length;$('cfCapFile').disabled=busy;$('cfCapQuality').disabled=busy;$('cfCapLang').disabled=busy;$('cfCapTranscribe').disabled=!file||busy;$('cfCapExport').disabled=!file||!ready||busy;$('cfCapText').disabled=!ready||busy;$('cfCapSrt').disabled=!ready||busy;$('cfCapVtt').disabled=!ready||busy;$('cfCapStop').disabled=!busy;const gridHost=$('cfCapTemplateGrid');if(gridHost)gridHost.querySelectorAll('button').forEach(b=>b.disabled=busy)}
+function enabled(){const ready=!!cues.length;$('cfCapFile').disabled=busy;$('cfCapQuality').disabled=busy;$('cfCapLang').disabled=busy;$('cfCapDensity').disabled=busy;$('cfCapTranscribe').disabled=!file||busy;$('cfCapExport').disabled=!file||!ready||busy;$('cfCapText').disabled=!ready||busy;$('cfCapSrt').disabled=!ready||busy;$('cfCapVtt').disabled=!ready||busy;$('cfCapStop').disabled=!busy;const gridHost=$('cfCapTemplateGrid');if(gridHost)gridHost.querySelectorAll('button').forEach(b=>b.disabled=busy)}
 function wav(pcm){const b=new Uint8Array(44+pcm.length*2),v=new DataView(b.buffer),put=(o,s)=>{for(let i=0;i<s.length;i++)b[o+i]=s.charCodeAt(i)};put(0,'RIFF');v.setUint32(4,36+pcm.length*2,true);put(8,'WAVE');put(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);put(36,'data');v.setUint32(40,pcm.length*2,true);for(let i=0;i<pcm.length;i++){let x=Math.max(-1,Math.min(1,pcm[i]));v.setInt16(44+i*2,x<0?x*32768:x*32767,true)}let z='';for(let i=0;i<b.length;i+=32768)z+=String.fromCharCode.apply(null,b.subarray(i,Math.min(b.length,i+32768)));return btoa(z)}
 function mono(buf,start,end){const sr=buf.sampleRate,a=Array.from({length:buf.numberOfChannels},(_,i)=>buf.getChannelData(i)),from=Math.floor(start*sr),to=Math.min(buf.length,Math.ceil(end*sr)),step=sr/16000,n=Math.floor((to-from)/step),o=new Float32Array(n);for(let i=0;i<n;i++){let p=from+i*step,j=Math.floor(p),f=p-j,v=0;for(const ch of a)v+=(ch[j]||0)+((ch[Math.min(to-1,j+1)]||0)-(ch[j]||0))*f; o[i]=v/a.length}return o}
+function normalizeWords(words,segment){
+ const out=[];
+ (Array.isArray(words)?words:[]).forEach(w=>{
+  const text=String(w.word||w.text||'').trim(),s=Number(w.start)+segment.s,e=Number(w.end)+segment.s;
+  if(!text||!Number.isFinite(s)||!Number.isFinite(e)||e<=s)return;
+  if(/^[,.;:!?؟۔،؛]+$/.test(text)&&out.length){
+   out[out.length-1].text+=text;out[out.length-1].e=Math.max(out[out.length-1].e,e);
+  }else out.push({s:Math.max(segment.s,s),e:Math.min(segment.e,e),text});
+ });
+ return out.filter(w=>w.e>w.s);
+}
+function splitIntoGroups(tokens,maxWords){
+ const groups=[],current=[];
+ const flush=()=>{if(current.length){groups.push(current.splice(0))}};
+ tokens.forEach(token=>{
+  current.push(token);
+  const text=token.text||'';
+  const sentenceEnd=/[.!?؟۔]+$/.test(text);
+  const clauseEnd=/[,،;:؛]+$/.test(text);
+  if((sentenceEnd&&current.length>=2)||(clauseEnd&&current.length>=Math.max(3,maxWords-1))||current.length>=maxWords)flush();
+ });
+ flush();
+ if(groups.length>1&&groups[groups.length-1].length===1){
+  const last=groups.pop(),previous=groups[groups.length-1];
+  if(previous.length<=maxWords+1)previous.push(...last);
+  else groups.push(last);
+ }
+ return groups;
+}
+function splitCue(cue,maxWords){
+ const timed=normalizeWords(cue.words,cue);
+ const tokens=timed.length?timed:String(cue.text||'').trim().split(/\s+/).filter(Boolean).map(text=>({text}));
+ if(!tokens.length)return [];
+ const groups=splitIntoGroups(tokens,maxWords);
+ if(timed.length){
+  return groups.map(group=>({
+   s:Math.max(cue.s,group[0].s),
+   e:Math.min(cue.e,group[group.length-1].e),
+   text:group.map(w=>w.text).join(' ').replace(/\s+([,.;:!?؟۔،؛])/g,'$1')
+  })).filter(q=>q.text&&q.e>q.s);
+ }
+ const weights=groups.map(group=>group.reduce((sum,w)=>{
+  const plain=w.text.replace(/[^\p{L}\p{N}]/gu,'');
+  const punctuation=/[.!?؟۔]+$/.test(w.text)?0.55:/[,،;:؛]+$/.test(w.text)?0.25:0;
+  return sum+Math.max(1,[...plain].length)+punctuation;
+ },0));
+ const total=weights.reduce((a,b)=>a+b,0)||groups.length,duration=Math.max(.05,cue.e-cue.s);
+ let elapsed=0;
+ return groups.map((group,index)=>{
+  const s=cue.s+duration*(elapsed/total);elapsed+=weights[index];
+  const e=index===groups.length-1?cue.e:cue.s+duration*(elapsed/total);
+  return {s,e,text:group.map(w=>w.text).join(' ').replace(/\s+([,.;:!?؟۔،؛])/g,'$1'),estimatedTiming:true};
+ }).filter(q=>q.text&&q.e>q.s);
+}
+function segmentTranscript(segments){
+ const maxWords=Math.max(3,Math.min(7,Number($('cfCapDensity').value)||5));
+ return segments.flatMap(segment=>splitCue(segment,maxWords)).sort((a,b)=>a.s-b.s);
+}
+function renderCaptionLines(){ $('cfCapText').value=cues.map(q=>q.text).join('\n');enabled() }
 async function transcribe(){
- if(!file||busy)return;stop=false;busy=true;enabled();cues=[];$('cfCapProgress').style.width='0%';
+ if(!file||busy)return;stop=false;busy=true;enabled();cues=[];sourceCues=[];$('cfCapProgress').style.width='0%';
  try{status('Decoding audio…');const C=window.AudioContext||window.webkitAudioContext;if(!C)throw Error('Audio decoding is not supported by this browser.');const ac=new C();let buf;try{buf=await ac.decodeAudioData(await file.arrayBuffer())}finally{ac.close().catch(()=>{})}
   const duration=buf.duration,total=Math.ceil(duration/25),result=[];
-  for(let i=0;i<total;i++){if(stop)throw Error('Stopped');const start=i*25,end=Math.min(duration,(i+1)*25),pcm=mono(buf,start,end);status('Transcribing audio · '+(i+1)+'/'+total+' parts…');const r=await fetch('/api/v1/shorts/transcribe',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({audio:wav(pcm),language:{english:'en',urdu:'ur',hindi:'hi'}[$('cfCapLang').value]})});const raw=await r.text();let d;try{d=JSON.parse(raw)}catch{throw Error('Speech service returned an invalid response ('+r.status+').')}if(!r.ok)throw Error(d.error||'Transcription failed ('+r.status+').');(d.segments||[]).forEach(q=>{let s=Number(q.start)+start,e=Number(q.end)+start;if(q.text&&e>s)result.push({s,e,text:String(q.text).trim()})});if(!(d.segments||[]).length&&d.text)result.push({s:start,e,text:d.text});$('cfCapProgress').style.width=((i+1)/total*100)+'%'}
-  cues=result.sort((a,b)=>a.s-b.s);if(!cues.length)throw Error('No speech was detected.');$('cfCapText').value=cues.map(q=>q.text).join('\n');status('Transcription complete · '+cues.length+' caption segments. Review the text before export.');
+  for(let i=0;i<total;i++){if(stop)throw Error('Stopped');const start=i*25,end=Math.min(duration,(i+1)*25),pcm=mono(buf,start,end);status('Transcribing audio · '+(i+1)+'/'+total+' parts…');const r=await fetch('/api/v1/shorts/transcribe',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({audio:wav(pcm),language:{english:'en',urdu:'ur',hindi:'hi'}[$('cfCapLang').value]})});const raw=await r.text();let d;try{d=JSON.parse(raw)}catch{throw Error('Speech service returned an invalid response ('+r.status+').')}if(!r.ok)throw Error(d.error||'Transcription failed ('+r.status+').');(d.segments||[]).forEach(q=>{let s=Number(q.start)+start,e=Number(q.end)+start;if(q.text&&e>s){const words=(Array.isArray(q.words)?q.words:[]).map(word=>({s:Number(word.start)+start,e:Number(word.end)+start,text:String(word.word||word.text||'').trim()})).filter(word=>word.text&&Number.isFinite(word.s)&&Number.isFinite(word.e)&&word.e>word.s);result.push({s,e,text:String(q.text).trim(),words})}});if(!(d.segments||[]).length&&d.text)result.push({s:start,e,text:d.text,words:[]});$('cfCapProgress').style.width=((i+1)/total*100)+'%'}
+  sourceCues=result.sort((a,b)=>a.s-b.s);if(!sourceCues.length)throw Error('No speech was detected.');cues=segmentTranscript(sourceCues);if(!cues.length)throw Error('Could not create caption segments from this transcript.');renderCaptionLines();
+  const timed=sourceCues.filter(q=>q.words&&q.words.length).length;
+  status('Transcription complete · '+cues.length+' short captions. '+(timed+' of '+sourceCues.length+' speech segments include word-level timing.')+' Review the text before export.');
  }catch(e){status('Could not transcribe: '+e.message)}finally{busy=false;enabled()}
 }
 function sync(){const lines=$('cfCapText').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),old=cues.slice();cues=lines.map((text,i)=>old[i]?{...old[i],text}:{s:old.length?old[old.length-1].e:0,e:(old.length?old[old.length-1].e:0)+2,text});enabled()}
@@ -200,8 +261,8 @@ function livePreview(){
 function init(){
  workspace();video=$('cfCapVideo');
  if(document.fonts){Promise.all([document.fonts.load('700 48px "Noto Nastaliq Urdu"','اردو کیپشن'),document.fonts.load('700 48px "Noto Sans Devanagari"','हिन्दी')]).then(()=>{refresh();shortGrid()}).catch(()=>{})}
- $('cfCapFile').onchange=e=>{file=e.target.files[0]||null;stop=false;cues=[];$('cfCapText').value='';$('cfCapOutput').innerHTML='';if(video.src)URL.revokeObjectURL(video.src);if(file){video.src=URL.createObjectURL(file);video.load();status(file.name+' selected.');livePreview()}else{video.removeAttribute('src');status('Choose a video to begin.')}enabled()};
- $('cfCapTranscribe').onclick=transcribe;$('cfCapLang').onchange=()=>{refresh();livePreview()};video.addEventListener('timeupdate',livePreview);video.addEventListener('loadedmetadata',livePreview);video.addEventListener('seeked',livePreview);window.addEventListener('resize',livePreview);
+ $('cfCapFile').onchange=e=>{file=e.target.files[0]||null;stop=false;cues=[];sourceCues=[];$('cfCapText').value='';$('cfCapOutput').innerHTML='';if(video.src)URL.revokeObjectURL(video.src);if(file){video.src=URL.createObjectURL(file);video.load();status(file.name+' selected.');livePreview()}else{video.removeAttribute('src');status('Choose a video to begin.')}enabled()};
+ $('cfCapTranscribe').onclick=transcribe;$('cfCapLang').onchange=()=>{refresh();livePreview()};$('cfCapDensity').onchange=()=>{if(!sourceCues.length)return;cues=segmentTranscript(sourceCues);renderCaptionLines();status('Caption length updated · '+cues.length+' captions.');livePreview()};video.addEventListener('timeupdate',livePreview);video.addEventListener('loadedmetadata',livePreview);video.addEventListener('seeked',livePreview);window.addEventListener('resize',livePreview);
  $('cfCapText').oninput=sync;$('cfCapSrt').onclick=()=>subs(false);$('cfCapVtt').onclick=()=>subs(true);$('cfCapExport').onclick=exportVideo;$('cfCapStop').onclick=()=>{stop=true;try{if(activeInput&&!activeInput.disposed)activeInput.dispose()}catch(e){}try{if(activeOutput&&activeOutput.state!=='finalized'&&activeOutput.state!=='canceled')activeOutput.cancel().catch(()=>{})}catch(e){}};
  function refresh(){grid($('cfCapTemplateGrid'),$('cfCapLang').value,style,k=>{style=k;refresh();livePreview()})}refresh();shortGrid();enabled();
  function syncShortsCaptionPanels(){
