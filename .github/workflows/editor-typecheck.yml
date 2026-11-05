@@ -61,3 +61,10 @@ jobs:
 
       - name: Benchmark two-request Highlights transcription queue
         run: npm run bench:phase2
+
+      - name: Check ffmpeg tools for real-media test
+        run: |
+          ffmpeg -version
+          ffprobe -version
+      - name: Test Highlights with real MP4/AAC and mocked AI
+        run: npm run test:media

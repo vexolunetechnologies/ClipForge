@@ -10,7 +10,8 @@
     "test:browser": "node scripts/test-browser.mjs",
     "test:phase1": "node scripts/test-phase1-browser.mjs",
     "bench:phase1": "node scripts/benchmark-performance.mjs",
-    "bench:phase2": "node scripts/benchmark-transcription-queue.mjs"
+    "bench:phase2": "node scripts/benchmark-transcription-queue.mjs",
+    "test:media": "node scripts/test-highlights-real-media.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
