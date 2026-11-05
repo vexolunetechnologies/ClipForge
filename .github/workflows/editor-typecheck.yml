@@ -31,6 +31,8 @@ jobs:
       - name: Check generated JavaScript syntax
         run: |
           node --check public/assets/js/core/app.js
+          node --check public/assets/js/core/navigation.js
+          node --check navigation.js
           node --check public/assets/js/tools/captions-studio.js
           node --check public/assets/js/tools/highlights-studio.js
           node --check public/dist/editor/studio-ui.js
