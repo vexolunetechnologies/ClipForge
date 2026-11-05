@@ -2586,3 +2586,17 @@ body.solo[data-tool=highlights] #how,body.solo[data-tool=highlights] #features,b
 footer .copy a{display:inline;color:inherit;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:760px){footer .fg{grid-template-columns:repeat(2,minmax(0,1fr))}footer .fg>:first-child{grid-column:1/-1}}
 @media(max-width:420px){footer .fg{grid-template-columns:1fr}footer .fg>:first-child{grid-column:auto}}
+
+
+/* Desktop workspace alignment: these two standalone sections sit outside .wrap. */
+@media (min-width:901px) {
+  body[data-page="workspace"] #iaTool,
+  body[data-page="workspace"] #rvTool {
+    box-sizing:border-box!important;
+    width:calc(100% - 252px)!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin-left:252px!important;
+    padding:32px clamp(28px,3vw,64px)!important;
+  }
+}
