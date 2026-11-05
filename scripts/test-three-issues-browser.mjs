@@ -10,7 +10,10 @@ try{
  const page=await browser.newPage({viewport:{width:390,height:844}});
  const errors=[];page.on("pageerror",e=>errors.push(e.message));
  await page.goto(server.origin+"/tools/trailer/",{waitUntil:"domcontentloaded"});
- await page.waitForFunction(()=>!!window.ClipForgeMp4&&document.body.dataset.tool==="trailer");
+ await page.waitForTimeout(550);
+ const initialState=await page.evaluate(()=>({mp4:!!window.ClipForgeMp4,tool:document.body.dataset.tool,route:location.pathname,
+  cv:document.querySelector("#cv")?.width,ready:document.readyState}));
+ assert.ok(initialState.mp4&&initialState.tool==="trailer","Trailer route initialization: "+JSON.stringify(initialState)+" errors: "+errors.join(" | "));
  const initial=await page.locator("#cv").evaluate(cv=>({width:cv.width,height:cv.height}));
  assert.deepEqual(initial,{width:1280,height:720},"Trailer must default to 16:9 preview");
  assert.match(await page.locator("#cv").evaluate(cv=>cv.previousElementSibling.textContent),/16:9/);
