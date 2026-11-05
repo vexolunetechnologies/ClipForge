@@ -33,6 +33,10 @@ jobs:
           node --check public/assets/js/core/app.js
           node --check public/assets/js/core/navigation.js
           node --check navigation.js
+          node --check editor-loader.js
+          node --check animator-idle.js
+          node --check public/assets/js/core/editor-loader.js
+          node --check public/assets/js/core/animator-idle.js
           node --check public/assets/js/tools/captions-studio.js
           node --check public/assets/js/tools/highlights-studio.js
           node --check public/dist/editor/studio-ui.js
@@ -42,3 +46,13 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Test no-reload navigation in a real browser
         run: npm run test:browser
+
+      - name: Test Phase 1 lazy previews and inactive view cleanup
+        run: npm run test:phase1
+      - name: Record local browser performance measurements
+        run: npm run bench:phase1
+      - name: Upload performance benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipforge-phase1-performance
+          path: reports/phase1-performance.json

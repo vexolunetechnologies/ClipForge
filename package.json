@@ -7,7 +7,9 @@
     "typecheck": "tsc -p tsconfig.editor.json --noEmit",
     "test": "node scripts/check-pages.mjs && node scripts/test-navigation.mjs",
     "verify": "npm run typecheck && npm run build && npm run test",
-    "test:browser": "node scripts/test-browser.mjs"
+    "test:browser": "node scripts/test-browser.mjs",
+    "test:phase1": "node scripts/test-phase1-browser.mjs",
+    "bench:phase1": "node scripts/benchmark-performance.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
