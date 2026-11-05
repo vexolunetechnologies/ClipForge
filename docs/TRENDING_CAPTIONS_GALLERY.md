@@ -24,3 +24,7 @@ Relevant industry guides:
 - `node scripts/test-caption-gallery.mjs` uses Chromium to check 55 styles, 14 new originals, categories/search/selection, independent scroll, actual renderer pixel differentiation, Urdu/Hindi, Shorts matching style selection and mobile gallery layout. Uploads a screenshot artifact.
 - Existing `npm run verify`, `npm run test:browser`, `npm run test:phase1`, Shorts semantic/framing tests and Highlights real-media export tests must pass.
 - Before production: manually preview real drama footage under captions, check native Urdu fonts, line timing, English/Hindi/Urdu readability, and export at 720/1080 where supported.
+
+## Update: mutually exclusive categories
+
+The former **Original 41** tab was removed. All 41 legacy styles are distributed across the regular groups: Trending, Drama & Urdu, Bold & Pop, Clean & Minimal, Karaoke & Motion, Neon & Glow, Podcast & News. Each of the 55 style IDs is assigned to **exactly one** of these categories. "All styles" is a single deduplicated view, not a copy of the templates in the DOM. Existing saved style IDs and shared export rendering are unchanged. Both Shorts and Captions Studio reuse the same definitions. A startup invariant and Playwright regressions assert full coverage, no repeat IDs, no hidden Original 41 section and no repeated cards in All.

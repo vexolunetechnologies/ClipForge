@@ -12,15 +12,28 @@ const modernPresets=[
  ["editorial-minimal","Editorial Minimal"],["neon-coral","Coral Glow"],
  ["urdu-cinema","Urdu Cinema"],["bold-stack","Stacked Hook"]
 ];
-const groups=[
- {id:"trending",label:"Trending",ids:modernPresets.map(x=>x[0])},
- {id:"drama",label:"Drama",ids:["cinema-gold","drama-white","urdu-cinema","glass-subtitle","editorial-minimal","classic","urdu","cinematic"]},
- {id:"bold",label:"Bold & Pop",ids:["creator-yellow","word-spotlight","pop-punch","karaoke-wave","marker-sweep","podcast-lime","bubble-blue","bold-stack","hormozi","word","bounce"]},
- {id:"clean",label:"Clean",ids:["glass-subtitle","editorial-minimal","drama-white","cinema-gold","classic","minimal-white","min","box"]},
- {id:"classic",label:"Original 41",ids:classicList.map(x=>x[0])},
- {id:"all",label:"All",ids:[...modernPresets,...classicList].map(x=>x[0])}
+
+/* Each design belongs to exactly ONE category. "All" is a unique union,
+ * not a second copy of the designs in the same gallery. */
+const categoryGroups=[
+ {id:"trending",label:"Trending",ids:["creator-yellow","word-spotlight","pop-punch","karaoke-wave","marker-sweep","glass-subtitle","podcast-lime","bubble-blue","neon-coral","bold-stack"]},
+ {id:"drama",label:"Drama & Urdu",ids:["cinema-gold","drama-white","urdu-cinema","cinematic","urdu","aesthetic","classic","alex"]},
+ {id:"bold",label:"Bold & Pop",ids:["pop","hormozi","mrbeast","impact","outline","punch","tiktok","reels","trending","highlight-word","red"]},
+ {id:"clean",label:"Clean & Minimal",ids:["editorial-minimal","min","minimal-white","box","boxed","pill"]},
+ {id:"motion",label:"Karaoke & Motion",ids:["karaoke","karaoke-pro","hl","word","dynamic","popup","bounce","kinetic","typewriter","animated","sliding","multi"]},
+ {id:"neon",label:"Neon & Glow",ids:["neon","glow","neon-pro"]},
+ {id:"broadcast",label:"Podcast & News",ids:["podcast","news","news-caption","gaming","bubble"]}
 ];
+const groups=[...categoryGroups,{id:"all",label:"All styles",ids:[...new Set(categoryGroups.flatMap(group=>group.ids))]}];
 const list=[...modernPresets,...classicList];
+const libraryIds=list.map(([id])=>id);
+if(new Set(libraryIds).size!==libraryIds.length ||
+   new Set(groups.find(g=>g.id==="all").ids).size!==libraryIds.length ||
+   libraryIds.some(id=>!groups.find(g=>g.id==="all").ids.includes(id)) ||
+   categoryGroups.some(g=>g.ids.some(id=>categoryGroups.filter(x=>x.ids.includes(id)).length!==1))){
+ throw Error("Every caption style must belong to exactly one category.");
+}
+
 function drawModern(ctx,text,key,w,h,t,d){
  const rtl=/[\u0590-\u08ff]/.test(text),dev=/[\u0900-\u097f]/.test(text);
  const scale=w/720,fs=Math.max(11,Math.round((
