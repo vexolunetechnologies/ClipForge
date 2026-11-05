@@ -620,7 +620,8 @@
     dismissMobilePanels();
     if(action==="edit"){
       if(!wasInspector){
-        // Show actual selected clip properties rather than a fake edit panel.
+        // Select the real effect-controls tab before showing clip properties.
+        root.querySelector('.st-source-panel [data-left-tab="effects"]')?.click();
         root.classList.add("st-mobile-inspector-open");
       }
     }else{

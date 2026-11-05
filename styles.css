@@ -2989,3 +2989,31 @@ body[data-page="workspace"][data-tool="reverse"] #top.wrap {
     outline:2px solid #13c4d2!important;outline-offset:2px!important;
   }
 }
+
+@media(max-width:760px){
+  /* Inspector lives inside .st-source-panel after professional UI mounting. */
+  body.solo[data-tool="editor"] #editorTool.st-mobile-inspector-open .st-source-panel{
+    position:fixed!important;left:8px!important;right:8px!important;
+    bottom:calc(70px + env(safe-area-inset-bottom,0px))!important;top:auto!important;
+    z-index:141!important;display:flex!important;flex-direction:column!important;
+    width:auto!important;height:min(56dvh,480px)!important;min-height:0!important;
+    max-height:56dvh!important;overflow:hidden!important;margin:0!important;padding:12px!important;
+    border:1px solid #474a51!important;border-radius:15px 15px 9px 9px!important;
+    background:#27292d!important;box-shadow:0 12px 44px #000b!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-mobile-inspector-open .st-source-panel .st-inspector{
+    position:relative!important;inset:auto!important;z-index:auto!important;
+    display:flex!important;flex:1 1 auto!important;width:100%!important;
+    height:auto!important;max-height:none!important;min-height:0!important;
+    overflow:auto!important;margin:0!important;padding:0!important;
+    border:0!important;background:transparent!important;box-shadow:none!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-mobile-inspector-open .st-source-panel .st-left-tabs{
+    flex:0 0 32px!important;display:flex!important;min-height:32px!important;
+    margin:0 0 7px!important;overflow:hidden!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-mobile-inspector-open .st-source-panel .st-source-view,
+  body.solo[data-tool="editor"] #editorTool.st-mobile-inspector-open .st-source-panel .st-source-footer{
+    display:none!important;
+  }
+}
