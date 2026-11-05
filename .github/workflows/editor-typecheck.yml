@@ -64,7 +64,6 @@ jobs:
 
       - name: Install FFmpeg for real-media regression
         run: |
-          sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version
           ffprobe -version
