@@ -3079,3 +3079,43 @@ body[data-page="workspace"][data-tool="reverse"] #top.wrap {
 /* Trailer already displays the uploaded source video and rendered output. Keep the
    canvas in the DOM for recording, but remove the redundant live preview UI. */
 body[data-tool="trailer"] #cfLivePreviewBlock{display:none!important}
+
+/* CapCut-inspired compact mobile sequence. Desktop multitrack editing is unchanged. */
+@media(max-width:760px){
+ body.solo[data-tool="editor"] #editorTool .st-timeline-inner{
+   display:flex!important;flex-direction:column!important;align-items:stretch!important;
+ }
+ body.solo[data-tool="editor"] #editorTool .st-timeline-inner>.st-ruler{order:0!important}
+ body.solo[data-tool="editor"] #editorTool .st-timeline-inner>.st-lane:has(#stVideoLane){order:1!important}
+ body.solo[data-tool="editor"] #editorTool .st-timeline-inner>.st-lane:has(#stAudioLane){order:2!important}
+ body.solo[data-tool="editor"] #editorTool .st-timeline-inner>.st-lane:has(#stTextLane){order:3!important}
+ body.solo[data-tool="editor"] #editorTool .st-timeline-inner>.st-lane:has(#stVideoLane2){display:none!important}
+ body.solo[data-tool="editor"] #editorTool .st-timeline-inner>.st-lane:has(#stAudioLane) .st-track-label{
+   font-size:0!important;
+ }
+ body.solo[data-tool="editor"] #editorTool .st-timeline-inner>.st-lane:has(#stAudioLane) .st-track-label:after{
+   content:"+ Add audio";font-size:12px!important;color:#aeb6c3!important;
+ }
+ body.solo[data-tool="editor"] #editorTool .st-timeline-inner>.st-lane:has(#stTextLane) .st-track-label{
+   font-size:0!important;
+ }
+ body.solo[data-tool="editor"] #editorTool .st-timeline-inner>.st-lane:has(#stTextLane) .st-track-label:after{
+   content:"+ Add text";font-size:12px!important;color:#aeb6c3!important;
+ }
+ body.solo[data-tool="editor"] #editorTool .st-track-label{
+   flex:0 0 90px!important;width:90px!important;min-width:90px!important;max-width:90px!important;
+   box-sizing:border-box!important;
+ }
+ body.solo[data-tool="editor"] #editorTool .st-preview-panel{
+   margin-inline:auto!important;justify-self:center!important;
+ }
+ body.solo[data-tool="editor"] #editorTool .st-timeline-panel{
+   width:100%!important;min-width:0!important;max-width:100%!important;
+ }
+ body.solo[data-tool="editor"] #editorTool .st-pro-main>.st-timeline-panel{
+   width:100%!important;min-width:0!important;max-width:100%!important;
+ }
+ body.solo[data-tool="editor"] #editorTool .st-playhead{
+   z-index:8!important;pointer-events:none!important;
+ }
+}
