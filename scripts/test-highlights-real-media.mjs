@@ -74,7 +74,7 @@ try {
  await page.locator("#hsSfx").selectOption("off");
  await page.locator("#hsRatio").selectOption("16:9");
  await page.locator("#hsGenerate").click();
- await page.waitForFunction(()=>document.querySelector("#hsOutput a[download]"),{timeout:90000});
+ await page.waitForFunction(()=>document.querySelector("#hsOutput a[download]"),null,{timeout:90000});
  assert.equal(requests,3,"62-second source should produce three 30-second transcription chunks");
  assert.equal(maxActive,2,"Highlights should issue at most two simultaneous ASR requests");
  assert.ok(completions.indexOf(1)<completions.indexOf(0),"Fixture must exercise out-of-order completions");
@@ -99,9 +99,9 @@ try {
  // Cancellation: start a new analysis with slow mocked responses and stop it.
  cancelMode=true;requests=0;active=0;maxActive=0;completions=[];plans=[];
  await page.locator("#hsGenerate").click();
- await page.waitForFunction(()=>document.querySelector("#hsStatus").textContent.includes("Transcribing"),{timeout:45000});
+ await page.waitForFunction(()=>document.querySelector("#hsStatus").textContent.includes("Transcribing"),null,{timeout:45000});
  await page.locator("#hsStop").click();
- await page.waitForFunction(()=>/Stopped\./.test(document.querySelector("#hsStatus").textContent),{timeout:12000});
+ await page.waitForFunction(()=>/Stopped\./.test(document.querySelector("#hsStatus").textContent),null,{timeout:12000});
  assert.equal(plans.length,0,"Cancelled analysis must not reach AI highlight selection");
  assert.equal(await page.locator("#hsOutput a[download]").count(),0,"Cancelled output must not download");
  console.log("Highlights real-video cancellation passed; no AI plan or exported file after Stop.");

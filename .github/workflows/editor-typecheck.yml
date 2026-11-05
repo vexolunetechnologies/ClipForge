@@ -62,8 +62,10 @@ jobs:
       - name: Benchmark two-request Highlights transcription queue
         run: npm run bench:phase2
 
-      - name: Check ffmpeg tools for real-media test
+      - name: Install FFmpeg for real-media regression
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version
           ffprobe -version
       - name: Test Highlights with real MP4/AAC and mocked AI
