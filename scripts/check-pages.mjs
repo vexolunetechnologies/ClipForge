@@ -58,4 +58,9 @@ for (const tool of tools) {
   assert.match(html, /data-cf-link-bridge/);
   assert.match(html, /href="#editor"/);
 }
+
+const css = from("styles.css");
+assert.match(css, /body\[data-page="workspace"\]\[data-tool="animator"\] #top\.wrap/);
+assert.match(css, /body\[data-page="workspace"\]\[data-tool="reverse"\] #top\.wrap/);
+assert.match(css, /display:none!important;/);
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");
