@@ -1909,7 +1909,7 @@ function timeline(){
  (S.audioTracks||[]).forEach(track=>{if(!track.linkedVideoId)return;const parent=S.clips.find(c=>c.id===track.linkedVideoId);if(parent){track.start=parent.start;track.in=parent.in;track.out=parent.out;track.duration=parent.duration;}});
  const allAudio=(S.audioTracks&&S.audioTracks.length)?S.audioTracks:(S.audio?[S.audio]:[]);
  const lanes=[
-  ...Array.from({length:Math.max(2,Math.min(8,Number(S.videoTrackCount)||4))},(_,i)=>({label:'VIDEO '+(i+1),kind:'video',track:i+1,items:S.clips.filter(c=>(Number(c.track)||1)===i+1)})),
+  ...Array.from({length:1},(_,i)=>({label:'VIDEO '+(i+1),kind:'video',track:i+1,items:S.clips})),
   {label:'OVERLAYS',kind:'overlay',items:(S.overlays||[]),track:0},{label:'ADJUSTMENT LAYERS',kind:'adjustment',items:(S.adjustments||[]),track:0},
   {label:'CAPTIONS / TITLES',kind:'caption',items:[...(S.titles||[]),...(S.captions||[])],track:0},
   ...allAudio.map((audio,i)=>({label:'AUDIO '+(i+1)+(audio.linkedVideoId?' · LINKED':''),kind:'audio',track:i+1,items:[audio]}))
