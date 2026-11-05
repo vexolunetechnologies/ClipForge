@@ -83,6 +83,9 @@ try{
  await page.locator('[data-tool-route="shorts"]').click();
  await page.waitForFunction(()=>location.pathname==="/tools/shorts/");
  assert.equal(await page.evaluate(()=>S.cs),"creator-yellow");
+ // The Shorts settings appear after upload. This gallery-only regression exposes
+ // the workspace without invoking the separate media-import workflow.
+ await page.evaluate(()=>document.getElementById("work").classList.remove("hide"));
  await page.locator('#soBox [data-k="cap"][data-v="auto"]').click();
  await page.waitForFunction(()=>document.querySelectorAll("#cfShortTemplateGrid button").length===55);
  const short=page.locator("#stylebox .cf-style-browser");
