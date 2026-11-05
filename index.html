@@ -176,8 +176,8 @@
   <div hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div></div>
 </div></details>
 
-<!-- Live preview of the 9:16 frame -->
-  <div class="lbl">Live preview <small>(9:16)</small></div><canvas id="cv" width="720" height="1280"></canvas><p class="note" id="pnote"></p>
+<!-- Live preview follows the selected tool and trailer aspect ratio. -->
+  <div class="lbl">Live preview <small id="cfPreviewRatio">9:16</small></div><canvas id="cv" width="720" height="1280"></canvas><p class="note" id="pnote"></p>
 </div>
 <!-- Trailer only: short explanation of step 1 -->
   <div class="toBox"><p class="note">Step 1: analysis scans the video for its strongest moments. Long episodes take a few minutes; you can stop anytime.</p></div>
@@ -344,4 +344,25 @@
 </script>
 <script type="module" src="/dist/editor/layout.js"></script>
 <script src="/editor-loader.js" defer></script>
+<script>
+/* Keep the live preview aspect ratio aligned with trailer format selection. */
+(function(){
+  const canvas=document.getElementById('cv'),label=document.getElementById('cfPreviewRatio');
+  if(!canvas||!label)return;
+  function sync(){
+    const trailer=document.body.dataset.tool==='trailer';
+    const wide=trailer && !!document.querySelector('[data-k="tasp"][data-v="wide"].on');
+    const ratio=wide?'16:9':'9:16';
+    label.textContent=ratio;
+    canvas.style.aspectRatio=wide?'16 / 9':'9 / 16';
+    canvas.style.width='100%';
+    canvas.style.height='auto';
+    canvas.style.maxWidth=wide?'720px':'405px';
+    canvas.style.objectFit='contain';
+  }
+  document.addEventListener('click',e=>{if(e.target.closest('[data-k="tasp"],[data-tool="trailer"],[data-tool-route="trailer"]'))requestAnimationFrame(sync)});
+  new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['data-tool']});
+  sync();
+})();
+</script>
 </body></html>
