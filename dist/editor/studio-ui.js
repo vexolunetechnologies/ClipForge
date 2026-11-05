@@ -552,40 +552,82 @@
   mobileDock.className = "st-mobile-dock";
   mobileDock.setAttribute("aria-label", "Mobile editing tools");
   mobileDock.innerHTML = `
-    <button type="button" data-mobile-action="edit"><span>✎</span><small>Edit</small></button>
-    <button type="button" data-mobile-action="audio"><span>♫</span><small>Audio</small></button>
-    <button type="button" data-mobile-action="text"><span>T</span><small>Text</small></button>
-    <button type="button" data-mobile-action="effects"><span>✧</span><small>Effects</small></button>
-    <button type="button" data-mobile-action="overlay"><span>▧</span><small>Overlay</small></button>
-    <button type="button" data-mobile-action="captions"><span>▤</span><small>Captions</small></button>`;
+    <button type="button" data-mobile-action="edit" aria-label="Edit selected clip"><span aria-hidden="true">✂</span><small>Edit</small></button>
+    <button type="button" data-mobile-action="audio" aria-label="Audio tools"><span aria-hidden="true">♫</span><small>Audio</small></button>
+    <button type="button" data-mobile-action="text" aria-label="Text tools"><span aria-hidden="true">T</span><small>Text</small></button>
+    <button type="button" data-mobile-action="effects" aria-label="Video effects"><span aria-hidden="true">✧</span><small>Effects</small></button>
+    <button type="button" data-mobile-action="overlay" aria-label="Overlays and graphics"><span aria-hidden="true">▧</span><small>Overlay</small></button>
+    <button type="button" data-mobile-action="captions" aria-label="Caption tools"><span aria-hidden="true">▤</span><small>Captions</small></button>`;
   root.append(mobileDock);
+  // The mobile shell reuses the existing timeline, media bin and editor tools.
+  // Nothing is cloned, so desktop editing/export event handlers remain intact.
+  const mobileUtilities=document.createElement("div");
+  mobileUtilities.className="st-mobile-utilities";
+  mobileUtilities.setAttribute("aria-label","Mobile timeline controls");
+  mobileUtilities.innerHTML=`
+    <button type="button" data-mobile-utility="back" aria-label="Close panel">✕</button>
+    <span class="st-mobile-time" aria-live="off">00:00 / 00:00</span>
+    <span class="st-mobile-utilities-spacer"></span>
+    <button type="button" data-mobile-utility="split" title="Split clip" aria-label="Split selected clip">✂ Split</button>
+    <button type="button" data-mobile-utility="undo" aria-label="Undo">↶</button>
+    <button type="button" data-mobile-utility="redo" aria-label="Redo">↷</button>`;
+  const timelineMobileHeader=root.querySelector(".st-timeline-panel .st-timeline-top");
+  timelineMobileHeader?.insertAdjacentElement("beforebegin",mobileUtilities);
+  const updateMobileTime=()=>{
+    const current=$("stCurrent")?.textContent?.trim()||"00:00";
+    const total=$("stTotal")?.textContent?.trim()||"00:00";
+    const label=mobileUtilities.querySelector(".st-mobile-time");
+    if(label)label.textContent=current+" / "+total;
+  };
+  ["stCurrent","stTotal"].forEach(id=>{const el=$(id);if(el)new MutationObserver(updateMobileTime).observe(el,{childList:true,characterData:true,subtree:true})});
+  updateMobileTime();
+  const dismissMobilePanels=()=>{
+    root.classList.remove("st-mobile-media-open","st-mobile-inspector-open");
+    mobileDock.querySelectorAll("[data-mobile-action]").forEach(b=>b.setAttribute("aria-pressed","false"));
+  };
+  mobileUtilities.addEventListener("click",e=>{
+    const b=e.target.closest("[data-mobile-utility]");
+    if(!b)return;
+    const action=b.dataset.mobileUtility;
+    if(action==="back")dismissMobilePanels();
+    else if(action==="split")$("stSplit")?.click();
+    else if(action==="undo")$("stUndo")?.click();
+    else if(action==="redo")$("stRedo")?.click();
+  });
   const mobileImport = document.createElement("button");
   mobileImport.type = "button";
   mobileImport.className = "st-mobile-import";
   mobileImport.textContent = "+ Media";
   mobileImport.addEventListener("click", () => {
     root.classList.remove("st-mobile-inspector-open");
+    root.querySelector('[data-rail-tab="media"]')?.click();
     root.classList.toggle("st-mobile-media-open");
   });
   const programTitle = root.querySelector(".st-preview-panel .st-panel-title");
   programTitle?.append(mobileImport);
-  mobileDock.addEventListener("click", event => {
-    const button = event.target.closest("[data-mobile-action]");
-    if (!button) return;
-    const action = button.dataset.mobileAction;
-    root.classList.remove("st-mobile-media-open");
-    if (action === "edit") {
-      root.classList.toggle("st-mobile-inspector-open");
-      return;
-    }
+  const openToolDrawer=tab=>{
     root.classList.remove("st-mobile-inspector-open");
-    if (action === "audio") {
-      const picker = $("stImport");
-      if (picker) { picker.accept = "audio/*"; picker.click(); setTimeout(() => { picker.accept = "video/*,audio/*,image/*"; }, 1200); }
-    } else if (action === "text") $("stAddText")?.click();
-    else if (action === "effects") root.querySelector('[data-rail-tab="effects"]')?.click();
-    else if (action === "overlay") root.querySelector('[data-rail-tab="stickers"]')?.click();
-    else if (action === "captions") root.querySelector('[data-rail-tab="captions"]')?.click();
+    root.querySelector('[data-rail-tab="'+tab+'"]')?.click();
+    root.classList.add("st-mobile-media-open");
+  };
+  mobileDock.addEventListener("click", event => {
+    const button=event.target.closest("[data-mobile-action]");
+    if(!button)return;
+    const action=button.dataset.mobileAction;
+    const wasMedia=root.classList.contains("st-mobile-media-open");
+    const wasInspector=root.classList.contains("st-mobile-inspector-open");
+    const selected=mobileDock.querySelector('[aria-pressed="true"]')?.dataset.mobileAction;
+    dismissMobilePanels();
+    if(action==="edit"){
+      if(!wasInspector){
+        // Show actual selected clip properties rather than a fake edit panel.
+        root.classList.add("st-mobile-inspector-open");
+      }
+    }else{
+      const tab={audio:"audio",text:"text",effects:"effects",overlay:"stickers",captions:"captions"}[action];
+      if(tab&&!(wasMedia&&selected===action))openToolDrawer(tab);
+    }
+    button.setAttribute("aria-pressed",String(root.classList.contains("st-mobile-media-open")||root.classList.contains("st-mobile-inspector-open")));
   });
   root.querySelector(".st-assets .st-import")?.addEventListener("click", () => root.classList.remove("st-mobile-media-open"));
 
