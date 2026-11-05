@@ -2133,16 +2133,23 @@ $('stExport').onclick=async()=>{
  catch(e){cleanup();msg('The browser encoder could not start.');return}
  const chunks=[];
  rec.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
- rec.onstop=()=>{
+ rec.onstop=async()=>{
   const cancelled=!!S.exportCancel;
   if(cancelled){cleanup();S.exportCancel=false;msg('Export cancelled. Your original media and edit remain in this session.');return}
-  const blob=new Blob(chunks,{type:rec.mimeType||'video/webm'});
+  let blob=new Blob(chunks,{type:rec.mimeType||'video/webm'});
   if(blob.size<1500){cleanup();msg('Export output was empty. Try a shorter clip or another browser.');return}
+  let mp4Warning='';
+  if(rec.mimeType?.includes('mp4')&&window.ClipForgeMp4){
+    msg('Finalizing MP4 duration metadata…');
+    const finalized=await window.ClipForgeMp4.finalize(blob,{force:true});
+    blob=finalized.blob;mp4Warning=finalized.warning;
+  }
+  if(S.exportCancel){cleanup();S.exportCancel=false;msg('Export cancelled.');return}
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;
   const projectName=(document.getElementById('stProjectName')?.value||'clipforge-edit').trim().replace(/[^a-z0-9-_]+/gi,'-').replace(/^-+|-+$/g,'')||'clipforge-edit';
   a.download=projectName+'.'+(rec.mimeType&&rec.mimeType.includes('mp4')?'mp4':'webm');a.click();
   setTimeout(()=>URL.revokeObjectURL(url),60000);
-  cleanup();msg('Export downloaded as '+(rec.mimeType&&rec.mimeType.includes('mp4')?'MP4':'WebM')+'.');
+  cleanup();msg(mp4Warning||('Export downloaded as '+(rec.mimeType&&rec.mimeType.includes('mp4')?'MP4':'WebM')+'.'));
  };
  rec.onerror=()=>{S.exportCancel=true;try{if(rec.state!=='inactive')rec.stop()}catch(e){cleanup();msg('Video export failed.')}};
  $('stExport').disabled=true;

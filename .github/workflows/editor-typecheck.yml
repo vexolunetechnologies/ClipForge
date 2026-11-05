@@ -31,6 +31,7 @@ jobs:
       - name: Check generated JavaScript syntax
         run: |
           node --check public/assets/js/core/app.js
+          node --check public/assets/js/shared/mp4-finalize.js
           node --check public/assets/js/core/navigation.js
           node --check navigation.js
           node --check editor-loader.js
@@ -66,6 +67,8 @@ jobs:
 
       - name: Test mobile CapCut-like Studio editor
         run: npm run test:mobile-editor
+      - name: Test Trailer preview and MP4 duration guardrails
+        run: npm run test:fix-three-issues
       - name: Upload mobile Studio design screenshots
         if: always()
         uses: actions/upload-artifact@v4
