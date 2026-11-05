@@ -3075,3 +3075,7 @@ body[data-page="workspace"][data-tool="reverse"] #top.wrap {
    padding-bottom:env(safe-area-inset-bottom,0px)!important;
  }
 }
+
+/* Trailer already displays the uploaded source video and rendered output. Keep the
+   canvas in the DOM for recording, but remove the redundant live preview UI. */
+body[data-tool="trailer"] #cfLivePreviewBlock{display:none!important}
