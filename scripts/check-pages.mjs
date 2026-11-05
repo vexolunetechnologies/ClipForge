@@ -38,7 +38,8 @@ for (const tool of tools) {
   assert.doesNotMatch(html, /data-cf-tool-bootstrap|data-cf-link-bridge/);
   assert.ok(html.includes("https://clipforgestudio.pages.dev/tools/" + tool + "/"), "Missing clean canonical URL");
   assert.match(html, /\/assets\/css\/styles\.css/);
-  assert.match(html, /\/dist\/editor\/timeline\.js/);
+  assert.match(html, /src="\/assets\/js\/core\/editor-loader\.js"/);
+  assert.doesNotMatch(html, /<script[^>]+src="\/dist\/editor\/(?:timeline|studio-ui)\.js"/);
   assert.match(html, /src="\/assets\/js\/core\/navigation\.js"/);
 }
 for (const name of ["about", "contact", "privacy", "terms", "cookies", "copyright"]) {
