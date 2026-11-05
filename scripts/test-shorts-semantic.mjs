@@ -8,9 +8,9 @@ const transcript=Array.from({length:85},(_,i)=>({
  text:"Episode dialogue line "+i+(i%4===0?"؟":"۔")
 }));
 function setup(aiResponse,options={}){
- const calls={ai:0,limit:0};
+ const calls={ai:0,limit:0,modelOptions:null};
  const env={
-  AI:{async run(){calls.ai++;if(options.fail)throw Error("Model temporarily unavailable");return {response:aiResponse}}},
+  AI:{async run(_model,params){calls.ai++;calls.modelOptions=params;if(options.fail)throw Error("Model temporarily unavailable");return {response:aiResponse}}},
   AI_LIMITS:{async get(){return "0"},async put(){calls.limit++}},
   ASSETS:{fetch(){throw Error("Worker route not matched")}}
  };
@@ -38,6 +38,9 @@ function validateRanges(clips, min=36,max=56,duration=215){
  assert.equal(status,200);assert.equal(data.selectionMode,"ai");
  assert.equal(data.clips[0].start,20);assert.equal(data.clips[0].end,65);
  assert.equal(data.clips[0].score,92);assert.equal(t.calls.ai,1);
+ assert.ok(t.calls.limit===1&&t.calls.modelOptions.max_tokens>=1600,"Model receives sufficient JSON output budget");
+ assert.match(t.calls.modelOptions.messages[0].content,/36 to 56 seconds/,"Manual 45s target should use accurate limits");
+ assert.doesNotMatch(t.calls.modelOptions.messages[0].content,/"end":42\\.1/,"Model schema example must match selected duration");
 }
 // A useful but undersized AI scene gets bounded context added (still one continuous interval).
 {
@@ -82,4 +85,22 @@ function validateRanges(clips, min=36,max=56,duration=215){
  const {status,data}=await setup("",{fail:true}).request();
  assert.equal(status,502);assert.match(data.error,/temporarily unavailable/);
 }
-console.log("ClipForge Shorts: AI duration recovery, transcript fallback, no fake scores, quota discipline and failure handling passed.");
+// Auto uses the natural duration of each continuous dialogue scene, not a 45s limit.
+{
+ const model=JSON.stringify({clips:[
+  {start:12,end:32,score:95,category:"Reveal"},
+  {start:60,end:142,score:89,category:"Family drama"}
+ ]});
+ const t=setup(model);
+ const {status,data}=await t.request({autoDuration:true});
+ assert.equal(status,200);assert.equal(data.selectionMode,"ai");
+ assert.deepEqual(data.clips.map(c=>Math.round(c.end-c.start)),[20,82]);
+ assert.match(t.calls.modelOptions.messages[0].content,/AUTO DURATION/);
+ assert.match(t.calls.modelOptions.messages[0].content,/8 to 110 seconds/);
+}
+{
+ const {status,data}=await setup('{"clips":[]}').request({autoDuration:true});
+ assert.equal(status,200);assert.equal(data.selectionMode,"transcript-fallback");
+ validateRanges(data.clips,8,110);
+}
+console.log("ClipForge Shorts: flexible Auto, manual durations, transcript recovery, no fake scores, quota and failure handling passed.");

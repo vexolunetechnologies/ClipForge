@@ -10,6 +10,8 @@ try{
  const errors=[];page.on("pageerror",e=>errors.push(e.message));
  await page.goto(site.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>typeof window.semanticShortPlan==="function"&&!!document.getElementById("list"));
+ assert.equal(await page.evaluate(()=>S.len),"auto","Auto Duration must be the default");
+ assert.match(await page.locator("#lens .chip.on").innerText(),/Auto/);
  await page.route("**/api/v1/shorts/semantic-plan",async route=>{
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
    selectionMode:"transcript-fallback",clips:[{start:10,end:50,score:null,category:"Dialogue review",
