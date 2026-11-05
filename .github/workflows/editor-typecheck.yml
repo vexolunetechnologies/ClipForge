@@ -39,11 +39,13 @@ jobs:
           node --check public/assets/js/core/animator-idle.js
           node --check public/assets/js/tools/captions-studio.js
           node --check public/assets/js/tools/highlights-studio.js
+          node --check public/assets/js/shared/transcription-queue.js
+          node --check transcription-queue.js
           node --check public/dist/editor/studio-ui.js
           node --check public/_worker.js
 
       - name: Install headless Chromium for browser regression
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       - name: Test no-reload navigation in a real browser
         run: npm run test:browser
 
@@ -56,3 +58,14 @@ jobs:
         with:
           name: clipforge-phase1-performance
           path: reports/phase1-performance.json
+
+      - name: Benchmark two-request Highlights transcription queue
+        run: npm run bench:phase2
+
+      - name: Install FFmpeg for real-media regression
+        run: |
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version
+          ffprobe -version
+      - name: Test Highlights with real WebM/Opus and mocked AI
+        run: npm run test:media
