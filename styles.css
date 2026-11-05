@@ -2600,3 +2600,12 @@ footer .copy a{display:inline;color:inherit;text-decoration:underline;text-under
     padding:32px clamp(28px,3vw,64px)!important;
   }
 }
+
+/* Tighten the top spacing on the standalone desktop animator/reverse workspaces. */
+@media (min-width:901px) {
+  body[data-page="workspace"] #iaTool,
+  body[data-page="workspace"] #rvTool {
+    margin-top:0!important;
+    padding-top:8px!important;
+  }
+}
