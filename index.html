@@ -176,8 +176,8 @@
   <div hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div></div>
 </div></details>
 
-<!-- Live preview follows the selected tool and trailer aspect ratio. -->
-  <div class="lbl">Live preview <small id="cfPreviewRatio">9:16</small></div><canvas id="cv" width="720" height="1280"></canvas><p class="note" id="pnote"></p>
+<!-- Canvas stays mounted for recording; only the redundant trailer preview is hidden. -->
+  <div id="cfLivePreviewBlock"><div class="lbl">Live preview <small id="cfPreviewRatio">9:16</small></div><canvas id="cv" width="720" height="1280"></canvas><p class="note" id="pnote"></p></div>
 </div>
 <!-- Trailer only: short explanation of step 1 -->
   <div class="toBox"><p class="note">Step 1: analysis scans the video for its strongest moments. Long episodes take a few minutes; you can stop anytime.</p></div>
