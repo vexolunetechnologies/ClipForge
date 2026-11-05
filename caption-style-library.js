@@ -1,9 +1,126 @@
 /* Shared caption-style library: previews and all exports use this renderer. */
 (()=>{'use strict';
-const list=[["classic","Classic"],["pop","Pop"],["box","Box"],["karaoke","Karaoke"],["karaoke-pro","Karaoke Captions"],["hl","Highlight"],["neon","Neon"],["min","Minimal"],["pill","Pill"],["news","News bar"],["outline","Bold outline"],["urdu","Urdu Nastaliq"],["hormozi","Hormozi Style"],["mrbeast","MrBeast Style"],["alex","Alex Style"],["word","Word-by-Word Captions"],["dynamic","Dynamic Captions"],["popup","Pop-up Captions"],["glow","Glow Captions"],["impact","Bold Impact Captions"],["highlight-word","Highlight Word Captions"],["bounce","Bounce Captions"],["neon-pro","Neon Captions"],["podcast","Podcast Captions"],["tiktok","TikTok Viral Captions"],["reels","Instagram Reels Captions"],["kinetic","Kinetic Typography"],["typewriter","Typewriter Captions"],["boxed","Boxed Captions"],["minimal-white","Minimal White Captions"],["animated","Animated Subtitles"],["punch","Punch Captions"],["gaming","Gaming Captions"],["news-caption","News Captions"],["cinematic","Cinematic Captions"],["red","Red Highlight Captions"],["sliding","Sliding Captions"],["bubble","Bubble Captions"],["aesthetic","Aesthetic Captions"],["multi","Multi-Color Captions"],["trending","Trending Shorts Captions"]];
+const classicList=[["classic","Classic"],["pop","Pop"],["box","Box"],["karaoke","Karaoke"],["karaoke-pro","Karaoke Captions"],["hl","Highlight"],["neon","Neon"],["min","Minimal"],["pill","Pill"],["news","News bar"],["outline","Bold outline"],["urdu","Urdu Nastaliq"],["hormozi","Hormozi Style"],["mrbeast","MrBeast Style"],["alex","Alex Style"],["word","Word-by-Word Captions"],["dynamic","Dynamic Captions"],["popup","Pop-up Captions"],["glow","Glow Captions"],["impact","Bold Impact Captions"],["highlight-word","Highlight Word Captions"],["bounce","Bounce Captions"],["neon-pro","Neon Captions"],["podcast","Podcast Captions"],["tiktok","TikTok Viral Captions"],["reels","Instagram Reels Captions"],["kinetic","Kinetic Typography"],["typewriter","Typewriter Captions"],["boxed","Boxed Captions"],["minimal-white","Minimal White Captions"],["animated","Animated Subtitles"],["punch","Punch Captions"],["gaming","Gaming Captions"],["news-caption","News Captions"],["cinematic","Cinematic Captions"],["red","Red Highlight Captions"],["sliding","Sliding Captions"],["bubble","Bubble Captions"],["aesthetic","Aesthetic Captions"],["multi","Multi-Color Captions"],["trending","Trending Shorts Captions"]];
+
+/* 2026-inspired, original styles. Legacy IDs remain for existing saved projects. */
+const modernPresets=[
+ ["creator-yellow","Creator Yellow"],["word-spotlight","Word Spotlight"],
+ ["pop-punch","Bold Pop"],["karaoke-wave","Karaoke Wave"],
+ ["marker-sweep","Marker Highlight"],["glass-subtitle","Glass Subtitle"],
+ ["cinema-gold","Cinema Gold"],["drama-white","Drama Dialogue"],
+ ["podcast-lime","Podcast Lime"],["bubble-blue","Bubble Blue"],
+ ["editorial-minimal","Editorial Minimal"],["neon-coral","Coral Glow"],
+ ["urdu-cinema","Urdu Cinema"],["bold-stack","Stacked Hook"]
+];
+const groups=[
+ {id:"trending",label:"Trending",ids:modernPresets.map(x=>x[0])},
+ {id:"drama",label:"Drama",ids:["cinema-gold","drama-white","urdu-cinema","glass-subtitle","editorial-minimal","classic","urdu","cinematic"]},
+ {id:"bold",label:"Bold & Pop",ids:["creator-yellow","word-spotlight","pop-punch","karaoke-wave","marker-sweep","podcast-lime","bubble-blue","bold-stack","hormozi","word","bounce"]},
+ {id:"clean",label:"Clean",ids:["glass-subtitle","editorial-minimal","drama-white","cinema-gold","classic","minimal-white","min","box"]},
+ {id:"classic",label:"Original 41",ids:classicList.map(x=>x[0])},
+ {id:"all",label:"All",ids:[...modernPresets,...classicList].map(x=>x[0])}
+];
+const list=[...modernPresets,...classicList];
+function drawModern(ctx,text,key,w,h,t,d){
+ const rtl=/[\u0590-\u08ff]/.test(text),dev=/[\u0900-\u097f]/.test(text);
+ const scale=w/720,fs=Math.max(11,Math.round((
+  ["pop-punch","bold-stack"].includes(key)?76:
+  ["creator-yellow","word-spotlight","marker-sweep"].includes(key)?56:
+  ["cinema-gold","editorial-minimal","drama-white","urdu-cinema"].includes(key)?42:49
+ )*scale));
+ const font=rtl?'"Noto Nastaliq Urdu","Noto Naskh Arabic",serif':
+   dev?'"Noto Sans Devanagari",sans-serif':
+   ["cinema-gold","editorial-minimal","urdu-cinema"].includes(key)?'Georgia,serif':'Arial,sans-serif';
+ const raw=text.split(/\s+/).filter(Boolean);
+ if(!raw.length)return;
+ const phase=Math.max(0,Math.min(.999,(Number(t)||0)/Math.max(.2,Number(d)||2)));
+ const active=Math.min(raw.length-1,Math.floor(phase*raw.length));
+ const single=["pop-punch","bold-stack","bubble-blue"].includes(key);
+ const words=single?(key==="bold-stack"?raw.slice(active,active+2):[raw[active]]):raw;
+ const fx=(key==="bold-stack"?Math.round(fs*.78):fs);
+ const max=w*.88,lh=fx*(rtl?1.63:1.24),centerY=h*.75;
+ const round=(x,y,ww,hh,r=10)=>{
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(x,y,ww,hh,r);
+  else ctx.rect(x,y,ww,hh);
+  ctx.fill();
+ };
+ ctx.save();
+ ctx.direction=rtl?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+ ctx.font=(rtl||dev?'700 ':'900 ')+fx+'px '+font;
+ let lines=[],line=[];
+ for(const word of words){
+  let joined=[...line,word].join(' ');
+  if(line.length&&ctx.measureText(joined).width>max){lines.push(line);line=[word]}else line.push(word);
+ }
+ if(line.length)lines.push(line);
+ lines=lines.slice(0,3);
+ const maxLineWidth=Math.max(...lines.map(ln=>ctx.measureText(ln.join(' ')).width)),padding=fx*.36;
+ const height=lines.length*lh+fx*.45;
+ const top=centerY-height/2,blockWidth=Math.min(w*.94,maxLineWidth+padding*2);
+ if(["glass-subtitle","podcast-lime","bubble-blue"].includes(key)){
+  ctx.fillStyle=key==="podcast-lime"?"rgba(11,17,23,.92)":key==="bubble-blue"?"#126cf4":"rgba(18,24,36,.83)";
+  round((w-blockWidth)/2,top,blockWidth,height,fx*.35);
+  if(key==="podcast-lime"){ctx.fillStyle="#afff58";round((w-blockWidth)/2,top,5*scale,height,2*scale)}
+ }
+ if(["cinema-gold","urdu-cinema"].includes(key)){
+  ctx.fillStyle="rgba(6,9,20,.73)";
+  round((w-blockWidth)/2-7*scale,top-6*scale,blockWidth+14*scale,height+12*scale,5*scale);
+  ctx.fillStyle="#dcb878";round((w-blockWidth)/2,top-7*scale,blockWidth,2*scale,1*scale);
+ }
+ if(key==="drama-white"){
+  ctx.fillStyle="rgba(7,9,17,.51)";
+  round((w-blockWidth)/2,top,blockWidth,height,4*scale);
+ }
+ const lime="#c3ff5a",yellow="#ffe04e",coral="#ff7667",blue="#6fd6ff";
+ let wi=single?active:0;
+ lines.forEach((parts,row)=>{
+  const full=parts.join(' '),total=ctx.measureText(full).width,sp=ctx.measureText(' ').width;
+  let x=rtl?w/2+total/2:w/2-total/2;
+  const y=centerY-(lines.length-1)*lh/2+row*lh;
+  parts.forEach(word=>{
+   const length=ctx.measureText(word).width,x0=rtl?x-length:x;
+   const on=single||wi===active,done=wi<=active;
+   let color="#fff",yy=y;
+   if(key==="creator-yellow")color=on?yellow:"#fff";
+   if(key==="word-spotlight")color=on?"#fff":"#aeb5c0";
+   if(key==="pop-punch")color=coral;
+   if(key==="karaoke-wave")color=done?yellow:"#fff";
+   if(key==="marker-sweep")color=on?"#101d1f":"#fff";
+   if(key==="glass-subtitle")color=on?blue:"#fff";
+   if(key==="cinema-gold")color="#f9dfad";
+   if(key==="drama-white")color="#fff";
+   if(key==="podcast-lime")color=on?lime:"#fff";
+   if(key==="bubble-blue")color="#fff";
+   if(key==="editorial-minimal")color="#faf8f3";
+   if(key==="neon-coral")color=on?coral:"#fff";
+   if(key==="urdu-cinema")color=on?yellow:"#fff";
+   if(key==="bold-stack")color=on?yellow:"#fff";
+   if(key==="marker-sweep"&&on){ctx.fillStyle=yellow;round(x0-5*scale,y-fx*.6,length+10*scale,fx*1.17,4*scale)}
+   if(key==="word-spotlight"&&on){ctx.fillStyle="#4379ff";round(x0-5*scale,y-fx*.6,length+10*scale,fx*1.17,8*scale)}
+   if(key==="pop-punch"){yy-=Math.sin(phase*Math.PI)*fx*.12;ctx.shadowColor=coral;ctx.shadowBlur=fx*.22}
+   if(key==="neon-coral"&&on){ctx.shadowColor=coral;ctx.shadowBlur=fx*.45}
+   ctx.fillStyle=color;
+   if(["creator-yellow","pop-punch","karaoke-wave","drama-white","neon-coral","bold-stack","urdu-cinema"].includes(key)){
+    ctx.strokeStyle="rgba(5,8,13,.94)";ctx.lineWidth=fx*(rtl?.09:.16);
+    ctx.strokeText(word,x0+length/2,yy);
+   }
+   ctx.fillText(word,x0+length/2,yy);
+   ctx.shadowBlur=0;ctx.shadowColor="transparent";
+   x+=rtl?-(length+sp):length+sp;wi++;
+  });
+ });
+ if(key==="cinema-gold"||key==="editorial-minimal"){
+  ctx.fillStyle=key==="cinema-gold"?"#c69b66":"rgba(255,255,255,.75)";
+  round(w*.36,top+height+6*scale,w*.28,2*scale,1*scale);
+ }
+ ctx.restore();
+}
+
 const normalize=k=>k==='minimal'?'min':k==='news-bar'?'news':(k||'classic');
 function draw(ctx,text,key,w,h,t=0,d=2){
  key=normalize(key);text=String(text||'').trim();if(!text||!w||!h)return;
+ if(modernPresets.some(x=>x[0]===key)){drawModern(ctx,text,key,w,h,t,d);return}
  const rtl=/[\u0590-\u08ff]/.test(text),dev=/[\u0900-\u097f]/.test(text);
  const font=rtl?'"Noto Nastaliq Urdu","Noto Naskh Arabic",serif':dev?'"Noto Sans Devanagari",sans-serif':'Arial,sans-serif';
  const scale=w/720,fs=Math.max(16,Math.round((key==='urdu'&&rtl?48:['min','minimal-white','aesthetic'].includes(key)?34:['impact','mrbeast','punch','gaming'].includes(key)?54:42)*scale));
@@ -46,5 +163,5 @@ function draw(ctx,text,key,w,h,t=0,d=2){
  ctx.restore();
 }
 function populateSelect(select){if(!select)return;const value=normalize(select.value);select.innerHTML='';list.forEach(([id,label])=>{const o=document.createElement('option');o.value=id;o.textContent=label;select.append(o)});select.value=list.some(x=>x[0]===value)?value:'classic'}
-window.ClipForgeCaptionStyles={list,draw,normalize,populateSelect};
+window.ClipForgeCaptionStyles={list,draw,normalize,populateSelect,modernPresets,groups};
 })();
