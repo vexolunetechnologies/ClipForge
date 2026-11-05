@@ -20,7 +20,7 @@ const run=(cmd,args)=>{
 const parseProbe=(path)=>JSON.parse(run("ffprobe",["-v","error","-show_streams","-show_format","-of","json",path]));
 // 62 seconds means three 30-second transcription blocks; VP8/Opus decodes in stock Chromium.
 run("ffmpeg",["-hide_banner","-loglevel","error","-y",
- "-f","lavfi","-i","testsrc2=size=320x180:rate=10",
+ "-f","lavfi","-i","testsrc2=size=320x180:rate=30",
  "-f","lavfi","-i","sine=frequency=440:sample_rate=48000",
  "-t","62","-c:v","libvpx","-deadline","realtime","-cpu-used","8","-b:v","150k",
  "-c:a","libopus","-b:a","48k",source]);
