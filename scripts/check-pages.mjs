@@ -11,6 +11,8 @@ const files = [
   ["_worker.js", "public/_worker.js"],
   ["styles.css", "public/assets/css/styles.css"],
   ["app.js", "public/assets/js/core/app.js"],
+  ["navigation.js", "public/navigation.js"],
+  ["navigation.js", "public/assets/js/core/navigation.js"],
   ["caption-style-library.js", "public/assets/js/shared/caption-style-library.js"],
   ["captions-studio.js", "public/assets/js/tools/captions-studio.js"],
   ["highlights-studio.js", "public/assets/js/tools/highlights-studio.js"],
@@ -29,11 +31,11 @@ for (const tool of tools) {
   const pathname = "public/tools/" + tool + "/index.html";
   has(pathname);
   const html = from(pathname);
-  assert.match(html, /data-cf-tool-bootstrap/);
-  assert.ok(html.includes('location.search+"#' + tool + '"'), "Wrong entry route: " + tool);
+  assert.doesNotMatch(html, /data-cf-tool-bootstrap|data-cf-link-bridge/);
+  assert.ok(html.includes("https://clipforgestudio.pages.dev/tools/" + tool + "/"), "Missing clean canonical URL");
   assert.match(html, /\/assets\/css\/styles\.css/);
   assert.match(html, /\/dist\/editor\/timeline\.js/);
-  assert.match(html, /data-cf-link-bridge/);
+  assert.match(html, /src="\/assets\/js\/core\/navigation\.js"/);
 }
 for (const name of ["about", "contact", "privacy", "terms", "cookies", "copyright"]) {
   has("public/" + name + ".html");
@@ -47,15 +49,15 @@ assert.match(worker, /env\.ASSETS\.fetch\(request\)/);
 assert.match(from("public/dist/editor/layout.js"), /toolcard\[href="\/tools\/editor\/"\]/);
 
 const rootHome = from("index.html");
-assert.match(rootHome, /data-cf-link-bridge/);
+assert.match(rootHome, /src="\/navigation\.js"/);
 for (const tool of tools) {
   const standalone = "tools/" + tool + "/index.html";
   has(standalone);
   const html = from(standalone);
-  assert.match(html, /data-cf-tool-bootstrap/);
-  assert.ok(html.includes('location.search+"#' + tool + '"'), "Incorrect legacy router bootstrap: " + tool);
+  assert.doesNotMatch(html, /data-cf-tool-bootstrap|data-cf-link-bridge/);
+  assert.ok(html.includes("https://clipforgestudio.pages.dev/tools/" + tool + "/"), "Missing canonical route");
   assert.match(html, /src="\/app\.js"/);
-  assert.match(html, /data-cf-link-bridge/);
+  assert.match(html, /src="\/navigation\.js"/);
   assert.match(html, /href="#editor"/);
 }
 

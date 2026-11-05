@@ -5,10 +5,12 @@
   "scripts": {
     "build": "tsc -p tsconfig.editor.json && node scripts/build-pages.mjs",
     "typecheck": "tsc -p tsconfig.editor.json --noEmit",
-    "test": "node scripts/check-pages.mjs",
-    "verify": "npm run typecheck && npm run build && npm run test"
+    "test": "node scripts/check-pages.mjs && node scripts/test-navigation.mjs",
+    "verify": "npm run typecheck && npm run build && npm run test",
+    "test:browser": "node scripts/test-browser.mjs"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "playwright": "^1.56.1"
   }
 }

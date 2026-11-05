@@ -31,7 +31,14 @@ jobs:
       - name: Check generated JavaScript syntax
         run: |
           node --check public/assets/js/core/app.js
+          node --check public/assets/js/core/navigation.js
+          node --check navigation.js
           node --check public/assets/js/tools/captions-studio.js
           node --check public/assets/js/tools/highlights-studio.js
           node --check public/dist/editor/studio-ui.js
           node --check public/_worker.js
+
+      - name: Install headless Chromium for browser regression
+        run: npx playwright install --with-deps chromium
+      - name: Test no-reload navigation in a real browser
+        run: npm run test:browser

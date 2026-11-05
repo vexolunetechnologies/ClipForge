@@ -26,7 +26,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@700&family=Noto+Sans+Devanagari:wght@700&display=swap" rel="stylesheet">
-<script data-cf-tool-bootstrap>if(!location.hash)history.replaceState(null,"",location.pathname+location.search+"#editor");</script>
+<script src="/navigation.js"></script>
+<link rel="canonical" href="https://clipforgestudio.pages.dev/tools/editor/" />
 </head>
 <body data-tool="shorts" data-page="home">
 <!-- ===== HTML: page structure ===== -->
@@ -307,7 +308,7 @@
  'use strict';
  var tools=['shorts','trailer','animator','reverse','montage','highlights','editor','captions'];
  function route(){
-  var hash=(location.hash||'#top').slice(1);
+  var hash=window.ClipForgeNavigation.current();
   var page=tools.indexOf(hash)>=0?'workspace':hash==='tools'?'tools':hash==='features'?'features':hash==='faq'?'faq':'home';
   var body=document.body;
   body.dataset.page=page;
@@ -344,28 +345,4 @@
 <script type="module" src="/dist/editor/layout.js"></script>
 <script type="module" src="/dist/editor/timeline.js"></script>
 <script type="module" src="/dist/editor/studio-ui.js"></script>
-<script data-cf-link-bridge>
-(function(){
-  "use strict";
-  var routes={"#top":"/","#tools":"/#tools","#features":"/#features","#faq":"/#faq","#how":"/#how","#tool":"/tools/shorts/","#shorts":"/tools/shorts/","#trailer":"/tools/trailer/","#animator":"/tools/animator/","#reverse":"/tools/reverse/","#montage":"/tools/montage/","#highlights":"/tools/highlights/","#editor":"/tools/editor/","#captions":"/tools/captions/"};
-  document.addEventListener('click',function(event){
-    var anchor=event.target.closest&&event.target.closest('a[href^="#"]');
-    if(!anchor||event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
-    var url=routes[anchor.getAttribute('href')];
-    if(!url)return;
-    event.preventDefault();
-    location.assign(url);
-  });
-  window.addEventListener('beforeunload',function(event){
-    if(!/^\/tools\//.test(location.pathname))return;
-    for(var inputs=document.querySelectorAll('input[type=file]'),i=0;i<inputs.length;i++){
-      if(inputs[i].files&&inputs[i].files.length){
-        event.preventDefault();
-        event.returnValue='';
-        return;
-      }
-    }
-  });
-})();
-</script>
 </body></html>

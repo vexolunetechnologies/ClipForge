@@ -149,6 +149,7 @@ const v=$('#src'),cv=$('#cv'),ctx=cv.getContext('2d');
 let S={n:'auto',len:30,mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
 // Runtime state: clips (the plan), busy flag, RUN token (changing it cancels running work), loaded file info, and audio analysis data (ENV = loudness every 0.1 s).
 let clips=[],busy=false,RUN=0,url=null,fname='video',file=null,PL=30,cues=[],capOn=false,AUD=null,SHORTS_TRANSCRIPT=null,ENV=null,LAST=null,REC=null,ALL=false,RECING=false;
+window.ClipForgeMainBusy=()=>busy;
 // Web Audio objects: actx = audio context, src = video as audio source, adest = stream that is recorded, outG = speaker volume, recG = recording volume.
 let actx=null,src=null,adest=null,outG=null,recG=null,EL={v2:null,a:null};
 // Format seconds as m:ss.
@@ -479,7 +480,7 @@ function setTool(t,scroll){S.tool=t;document.body.dataset.tool=t;
  else{if(_langSave){S.lang=_langSave;_langSave=null;$$('[data-k=lang]').forEach(c=>c.classList.toggle('on',c.dataset.v===S.lang))}if(_modeSave){S.mode=_modeSave;_modeSave=null}$('#go').textContent='Find AI-selected moments'}
  if(scroll)$('#tool').scrollIntoView({behavior:'smooth'})}
 // Address-hash routing: #shorts, #trailer, #animator and #tools decide which tool is shown.
-function route(){const h=location.hash.replace('#','');
+function route(){const h=window.ClipForgeNavigation.current();
  if(h==='shorts'||h==='trailer'){document.body.classList.add('solo');setTool(h);document.title=(h==='trailer'?'Trailer / Promo':'Long Video → Shorts')+' – ClipForge Studio';window.scrollTo(0,0)}
  else if(h===''||h==='tools'){document.body.classList.remove('solo');document.title='ClipForge Studio'}}
 // Re-route whenever the address hash changes, and once at start-up (see route() below).
@@ -1330,13 +1331,13 @@ function mount(){if(fr)return;fr=document.createElement('iframe');fr.title='Imag
 // Send the theme again whenever it changes.
 new MutationObserver(sendTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 // Messages from the animator: its busy state and its height.
-addEventListener('message',e=>{if(!fr||e.source!==fr.contentWindow)return;const d=e.data||{};if(d.ia==='busy')iaBusy=!!d.v;else if(d.ia==='h')fr.style.height=Math.max(700,+d.v+8)+'px'});
+addEventListener('message',e=>{if(!fr||e.source!==fr.contentWindow)return;const d=e.data||{};if(d.ia==='busy'){iaBusy=!!d.v;window.ClipForgeNavigation.setBusy('animator',iaBusy)}else if(d.ia==='h')fr.style.height=Math.max(700,+d.v+8)+'px'});
 // Show the animator when the address is #animator; refuse to leave while it is busy.
-function route(){const h=location.hash.replace('#','');
+function route(){const h=window.ClipForgeNavigation.current();
  // The page-level router in index.html is the single authority for body state and visibility.
  // This handler only mounts the isolated animator and protects an active render from navigation.
  if(h==='animator'){onIa=true;if(note)note.textContent='';mount()}
- else if(onIa){if(iaBusy){location.hash='#animator';return}onIa=false}}
+ else if(onIa){if(iaBusy){window.ClipForgeNavigation.restore('animator');return}onIa=false}}
 // Block other links while the animator is busy and show a message.
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#"]');if(a&&onIa&&iaBusy&&a.getAttribute('href')!=='#animator'){e.preventDefault();note.textContent='Image Animator is working. Wait for it to finish (or press Cancel inside it) before leaving this page.'}},true);
 // Run on every hash change and once now.
@@ -1550,9 +1551,9 @@ E.back.addEventListener('click',e=>{if(busy){e.preventDefault();say('Stop the cu
 
 // ---- routing: show this tool when the address is #reverse
 let onRv=false;
-function route(){const h=location.hash.replace('#','');
+function route(){const h=window.ClipForgeNavigation.current();
   if(h==='reverse'){onRv=true;document.body.classList.add('solo');document.body.dataset.tool='reverse';document.title='Reverse Video – ClipForge Studio';window.scrollTo(0,0)}
-  else if(onRv){if(busy){location.hash='#reverse';return}onRv=false}}
+  else if(onRv){if(busy){window.ClipForgeNavigation.restore('reverse');return}onRv=false}}
 addEventListener('hashchange',route);route();
 })();
 
@@ -1600,7 +1601,7 @@ const editorHTML='<div class="cf-studio-topbar"><a class="cf-studio-brand" href=
 '<div class="cf-grid"><div class="cf-panel"><video id="edPreview" class="cf-preview" controls playsinline></video><div class="cf-row" style="margin-top:12px"><button class="sm" id="edPlay">Preview selected</button><span class="cf-muted" id="edPreviewInfo">Select a clip to inspect it.</span></div></div><div class="cf-panel"><div class="cf-kicker">CLIP CONTROLS</div><div class="cf-field"><label>TRIM START (SECONDS)</label><input id="edStart" type="number" min="0" step=".1" value="0"></div><div class="cf-field"><label>TRIM END (SECONDS)</label><input id="edEnd" type="number" min="0" step=".1" value="0"></div><button class="sm p" id="edApply">Apply trim</button><div class="cf-field"><label>CANVAS RATIO</label><select id="edRatio"><option value="9:16">9:16 · Vertical</option><option value="16:9" selected>16:9 · Landscape</option><option value="1:1">1:1 · Square</option></select></div><div class="cf-field"><label>VISUAL LOOK</label><select id="edFilter"><option value="none">Original</option><option value="cinema">Cinematic</option><option value="mono">Black &amp; white</option><option value="warm">Warm</option></select></div><div class="cf-field"><label>TITLE / TEXT OVERLAY</label><input id="edTitle" maxlength="100" placeholder="Add a title to your video"></div><div class="cf-field"><label>BACKGROUND MUSIC (OPTIONAL)</label><input id="edMusic" type="file" accept="audio/*"></div><div class="cf-field"><label>CAPTIONS (OPTIONAL · SRT / VTT)</label><input id="edCaptions" type="file" accept=".srt,.vtt,text/vtt,application/x-subrip"><select id="edCaptionStyle"><option value="classic">Classic</option><option value="box">Box</option><option value="news">News bar</option><option value="minimal">Minimal</option></select><button class="sm" id="edCaptionClear" type="button">No captions / Clear</button><small id="edCaptionStatus" class="cf-muted">No captions added. Export remains unchanged.</small></div><div class="cf-stat"><b id="edDuration">0:00</b><span>Timeline duration</span></div><button class="main" id="edExport">Export edited video</button><button class="sm" id="edStop" style="display:none;margin-top:8px">Stop export</button><div class="cf-progress"><i id="edProgress"></i></div><div id="edStatus" class="cf-status" role="status"></div><div id="edOutput" class="cf-output"></div></div></div>'+
 '<p class="cf-muted">Note: this first editor release is a browser-rendered single video timeline. Advanced multi-track keyframes and project recovery are not part of this no-save version.</p>';
 addWorkspace('vmTool',montageHTML);addWorkspace('editorTool',editorHTML);
-const activeWorkspace=()=>['montage','editor'].includes(location.hash.slice(1));
+const activeWorkspace=()=>['montage','editor'].includes(window.ClipForgeNavigation.current());
 // Routing is owned by the final page router in index.html. Keeping a second
 // router here caused competing .solo/data-tool updates on hash navigation.
 /* Reusable in-memory timeline engine. Files and exports are never written to storage. */
