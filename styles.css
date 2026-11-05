@@ -2622,3 +2622,13 @@ footer .copy a{display:inline;color:inherit;text-decoration:underline;text-under
     padding-top:0!important;
   }
 }
+
+
+/* The homepage wrapper comes before the standalone animator and reverse
+   workspaces. Its viewport min-height caused a blank screen above them.
+   Remove it from layout only while either standalone workspace is active;
+   its DOM and all existing video/export handlers remain unchanged. */
+body[data-page="workspace"][data-tool="animator"] #top.wrap,
+body[data-page="workspace"][data-tool="reverse"] #top.wrap {
+  display:none!important;
+}
