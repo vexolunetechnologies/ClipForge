@@ -22,3 +22,6 @@ Run `npm install && npm run verify && npx playwright install chromium && npm run
 - Compare actual transcription duration at 1, 3 and 15 minutes under real network conditions, especially rate-limited or weak connections.
 - Confirm proper failures on absent audio, errors, no speech and 2,500 segment limit.
 - **No merge, deployment, or production settings change without user approval.**
+
+## Browser video fixture validation
+An automated Playwright test uses a generated **VP8/Opus WebM** containing 62 seconds of actual video and audio, verifies 3 sequential audio time ranges with two concurrent mocked ASR calls, validates the AI-plan timestamps, exports a 5-second highlight video and checks Stop. MP4 H.264/AAC decoding is **not** verified by this Chromium fixture. Actual production Cloudflare AI remains untested by these mocks.

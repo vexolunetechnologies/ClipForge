@@ -1,4 +1,4 @@
-/* Browser regression with a real H.264/AAC MP4 and mocked Cloudflare AI.
+/* Browser regression with a real VP8/Opus WebM and mocked Cloudflare AI.
  * It tests actual decoding, concurrent chunk requests and MediaRecorder export.
  * No production AI quota is used by this test.
  */
@@ -11,19 +11,19 @@ import { chromium } from "playwright";
 import { serveLocalSite } from "./test-http-server.mjs";
 
 const dir=mkdtempSync(join(tmpdir(),"clipforge-highlights-media-"));
-const source=join(dir,"speech-test.mp4");
+const source=join(dir,"speech-test.webm");
 const run=(cmd,args)=>{
  const p=spawnSync(cmd,args,{encoding:"utf8",timeout:90000,maxBuffer:1024*1024*3});
  if(p.status!==0)throw Error(cmd+" failed: "+String(p.stderr||p.error).slice(-2500));
  return p.stdout||"";
 };
 const parseProbe=(path)=>JSON.parse(run("ffprobe",["-v","error","-show_streams","-show_format","-of","json",path]));
-// 62 seconds means three 30-second transcription blocks; 62s of compressed A/V is small.
+// 62 seconds means three 30-second transcription blocks; VP8/Opus decodes in stock Chromium.
 run("ffmpeg",["-hide_banner","-loglevel","error","-y",
  "-f","lavfi","-i","testsrc2=size=320x180:rate=10",
  "-f","lavfi","-i","sine=frequency=440:sample_rate=48000",
- "-t","62","-c:v","libx264","-preset","ultrafast","-crf","38",
- "-pix_fmt","yuv420p","-c:a","aac","-b:a","48k","-movflags","+faststart",source]);
+ "-t","62","-c:v","libvpx","-deadline","realtime","-cpu-used","8","-b:v","150k",
+ "-c:a","libopus","-b:a","48k",source]);
 const sourceInfo=parseProbe(source);
 assert.ok(sourceInfo.streams.some(s=>s.codec_type==="video"),"Fixture missing video");
 assert.ok(sourceInfo.streams.some(s=>s.codec_type==="audio"),"Fixture missing audio");
@@ -68,7 +68,13 @@ try {
  await page.goto(site.origin+"/tools/highlights/",{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>!!window.ClipForgeNavigation && document.body.dataset.tool==="highlights");
  await page.locator("#hsVideo").setInputFiles(source);
- await page.waitForFunction(()=>document.querySelector("#hsVideoInfo").textContent.includes("speech-test.mp4"));
+ await page.waitForFunction(()=>{
+   const video=document.querySelector("#hsSourcePreview");
+   return document.querySelector("#hsVideoInfo").textContent.includes("speech-test.webm") || video.error;
+  },null,{timeout:20000});
+ const meta=await page.evaluate(()=>({name:document.querySelector("#hsVideoInfo").textContent,
+  error:document.querySelector("#hsSourcePreview").error?.message||""}));
+ assert.ok(meta.name.includes("speech-test.webm"),"Video metadata could not load: "+JSON.stringify(meta));
  await page.locator("#hsDuration").fill("5");
  await page.locator("#hsMood").selectOption("none");
  await page.locator("#hsSfx").selectOption("off");
@@ -94,7 +100,7 @@ try {
  const duration=Number(probe.format.duration);
  assert.ok(duration>=3 && duration<=10,"Export should have approximately five seconds of video: "+duration);
  assert.deepEqual(errors,[],"Unexpected browser errors during media export");
- console.log("Highlights real-video test passed: H264/AAC input, 3 ASR chunks, ordered plan, two-request max, video export "+duration.toFixed(2)+"s.");
+ console.log("Highlights real-video test passed: VP8/Opus WebM input, 3 ASR chunks, ordered plan, two-request max, video export "+duration.toFixed(2)+"s.");
 
  // Cancellation: start a new analysis with slow mocked responses and stop it.
  cancelMode=true;requests=0;active=0;maxActive=0;completions=[];plans=[];

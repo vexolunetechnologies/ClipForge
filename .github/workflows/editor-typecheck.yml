@@ -68,5 +68,5 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version
           ffprobe -version
-      - name: Test Highlights with real MP4/AAC and mocked AI
+      - name: Test Highlights with real WebM/Opus and mocked AI
         run: npm run test:media
