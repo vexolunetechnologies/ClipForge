@@ -725,12 +725,16 @@ $('#go').onclick=async()=>{
    }
    if(S.logo==='on'&&v.videoWidth){try{const dn=await logoFilter(tok);$('#capnote').textContent=(dn?'Replaced '+dn+' short(s) that showed a logo. ':'')+(LAST.logoNote||'')}catch(e){if(e.message==='Stopped')throw e;$('#capnote').textContent='Logo check skipped: '+(e.message||e)}}
    if(!clips.length)throw new Error('No moments found. Try a shorter length.');
-   say(clips.length<S.n?'Only '+clips.length+' non-overlapping shorts fit. Try a shorter length.':'Found '+clips.length+' moments spread across the video. Tap "Different picks" for another set.')}
+   if(LAST&&LAST.selectionMode==='transcript-fallback')
+    say('AI timing was invalid, so ClipForge recovered '+clips.length+' continuous dialogue section(s) from the transcript. Preview and adjust the boundaries before exporting.');
+   else if(LAST&&LAST.selectionMode==='ai-adjusted')
+    say('Found '+clips.length+' AI-selected moments. Some timing was adjusted to fit your chosen Short length; preview before export.');
+   else say(clips.length<S.n?'Only '+clips.length+' non-overlapping shorts fit. Try a shorter length.':'Found '+clips.length+' moments spread across the video. Tap "Different picks" for another set.')}
   prog(1);render();if(S.tool==='trailer')say('Analysis done. Choose the length and format below, then make your trailer.');$('#res').classList.remove('hide');$('#trl').classList.remove('hide');TRAILER=null;renderTrailer();$('#res').scrollIntoView({behavior:'smooth'})
  }catch(e){if(e.message!=='Stopped'){say('Analysis failed: '+(e.message||e));err('Analysis failed: '+(e.message||e))}}
  if(tok===RUN){setTimeout(()=>$('#pbar').classList.add('hide'),600);busy=false;lock(false)}};
 // "Different picks" button: build a new plan with some random variety.
-$('#shuf').onclick=()=>{if(busy||!LAST)return;if(LAST.semanticPool&&LAST.semanticPool.length){const pool=LAST.semanticPool,n=S.n==='auto'?Math.min(10,Math.max(3,Math.round((LAST.dur||180)/180))):Math.max(1,Math.min(50,+S.n||3)),start=LAST.semanticCursor||0;clips=Array.from({length:Math.min(n,pool.length)},(_,i)=>{const q=pool[(start+i)%pool.length];return{...q,tags:[...q.tags],blob:null,pcm:null,cap:false}});LAST.semanticCursor=(start+clips.length)%pool.length;render();say('Showing another set of AI-selected dialogue moments.')}else{clips=doPlan(true);render();say('New set of picks.')}};
+$('#shuf').onclick=()=>{if(busy||!LAST)return;if(LAST.semanticPool&&LAST.semanticPool.length){const pool=LAST.semanticPool,n=S.n==='auto'?Math.min(10,Math.max(3,Math.round((LAST.dur||180)/180))):Math.max(1,Math.min(50,+S.n||3)),start=LAST.semanticCursor||0;clips=Array.from({length:Math.min(n,pool.length)},(_,i)=>{const q=pool[(start+i)%pool.length];return{...q,tags:[...q.tags],blob:null,pcm:null,cap:false}});LAST.semanticCursor=(start+clips.length)%pool.length;render();say(LAST.selectionMode==='transcript-fallback'?'Showing another set of transcript-based dialogue sections. Preview before export.':'Showing another set of AI-selected dialogue moments.')}else{clips=doPlan(true);render();say('New set of picks.')}};
 
 // Draw the list of shorts (thumbnail, score, tags, Export / Save buttons).
 function render(){
@@ -951,7 +955,9 @@ async function semanticShortPlan(tok,dur){
  if(!response.ok)throw new Error(data.error||('AI analysis failed ('+response.status+').'));
  if(!data||!Array.isArray(data.clips))throw new Error('The AI API response is missing its clips list. Please try again.');
  const minClip=Math.max(8,Math.round(PL*.8)),maxClip=Math.min(110,Math.round(PL*1.25));
- const pool=(data.clips||[]).map(q=>({s:Number(q.start),e:Number(q.end),score:Math.max(0,Math.min(100,Math.round(Number(q.score)||0))),tags:[String(q.category||'AI selected').slice(0,32)],reason:String(q.reason||'').slice(0,240),hook:String(q.hook||'').slice(0,120),blob:null,pcm:null,cap:false,ai:true}))
+ const recovered=data.selectionMode==='transcript-fallback';
+ LAST.selectionMode=data.selectionMode||'ai';
+ const pool=(data.clips||[]).map(q=>({s:Number(q.start),e:Number(q.end),score:recovered?null:Math.max(0,Math.min(100,Math.round(Number(q.score)||0))),tags:[String(q.category||(recovered?'Dialogue review':'AI selected')).slice(0,32)],reason:String(q.reason||'').slice(0,240),hook:String(q.hook||'').slice(0,120),blob:null,pcm:null,cap:false,ai:true}))
   .filter(q=>Number.isFinite(q.s)&&Number.isFinite(q.e)&&q.s>=0&&q.e<=dur&&q.e-q.s>=minClip&&q.e-q.s<=maxClip);
  if(!pool.length)throw new Error('AI could not find enough strong dialogue moments. Try another source or a longer target length.');
  pool.sort((a,b)=>b.score-a.score);LAST.semanticPool=pool;LAST.semanticCursor=Math.min(wanted,pool.length);

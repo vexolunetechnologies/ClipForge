@@ -33,6 +33,62 @@ async function transcribeAudio(request,env){
   }
 }
 
+
+/* Conservative recovery when a text model ignores requested Shorts lengths.
+ * Prefer complete, continuous transcript time ranges; never join distinct timestamps.
+ * These suggestions are labelled for user review and are NOT AI-ranked moments. */
+function transcriptShortFallback(segments,duration,target,minClip,maxClip,count){
+ const rows=segments.filter(x=>x.text&&x.end>x.start)
+  .sort((a,b)=>a.start-b.start);
+ const candidates=[];
+ const wanted=Math.max(minClip,Math.min(maxClip,target,duration));
+ for(let i=0;i<rows.length;i++){
+  const start=rows[i].start;
+  if(duration-start<minClip)continue;
+  let speech=0,previousEnd=start;
+  for(let j=i;j<rows.length;j++){
+   const q=rows[j],end=q.end,span=end-start;
+   if(j>i&&q.start-previousEnd>8)break;
+   if(span>maxClip)break;
+   speech+=Math.max(0,Math.min(end,duration)-Math.max(q.start,previousEnd));
+   previousEnd=Math.max(previousEnd,end);
+   if(span>=minClip && j>i){
+    const proximity=1-Math.min(1,Math.abs(span-wanted)/Math.max(wanted,1));
+    const density=Math.min(1,speech/span);
+    const sentenceEnd=/[.!?؟۔]$/.test(q.text)?1:0;
+    const rank=density*50+proximity*35+sentenceEnd*10+Math.min(5,(j-i)*.35);
+    candidates.push({start,end,rank});
+   }
+  }
+ }
+ // Some drama scenes have long reaction shots and 8+ second pauses. Keep one
+ // continuous interval (never a montage), marking its boundaries for review.
+ if(!candidates.length){
+  for(let i=0;i<rows.length;i++){
+   const start=Math.max(0,Math.min(duration-minClip,rows[i].start-1));
+   const end=Math.min(duration,start+wanted);
+   if(end-start<minClip)continue;
+   let speech=0;
+   for(let j=i;j<rows.length&&rows[j].start<end;j++)
+    speech+=Math.max(0,Math.min(end,rows[j].end)-Math.max(start,rows[j].start));
+   if(speech/(end-start)>=.12)candidates.push({start,end,rank:speech/(end-start)*60});
+  }
+ }
+ candidates.sort((a,b)=>b.rank-a.rank);
+ const chosen=[];
+ for(const candidate of candidates){
+  if(chosen.some(c=>candidate.start<c.end-1&&candidate.end>c.start+1))continue;
+  const start=Number(candidate.start.toFixed(2)),end=Number(candidate.end.toFixed(2));
+  if(end-start<minClip-.02||end-start>maxClip+.02)continue;
+  chosen.push({
+   start,end,score:null,category:"Dialogue review",hook:"",
+   reason:"Transcript-based recovery, not an AI quality score. Preview the complete dialogue and adjust the boundaries if needed."
+  });
+  if(chosen.length>=Math.min(60,count*3))break;
+ }
+ return chosen;
+}
+
 async function semanticPlan(request,env){
   if(request.method!=="POST")return json({error:"Method not allowed."},405);
   if(!env.AI)return json({error:"Cloudflare Workers AI binding is not configured yet. Add the AI binding in the Pages project."},503);
@@ -64,20 +120,45 @@ async function semanticPlan(request,env){
     await env.AI_LIMITS.put(key,String(used+1),{expirationTtl:86400});
     const result=await env.AI.run(MODEL,{messages:[{role:"system",content:system+" Do not reveal or generate reasoning. Make the editorial decisions internally and return the requested JSON immediately."},{role:"user",content:user}],max_tokens:1200,temperature:0.2,reasoning_effort:"low",chat_template_kwargs:{enable_thinking:false,clear_thinking:true}});
     let content=typeof result==="string"?result:(result&&typeof result.response==="string"?result.response:(result&&result.choices&&result.choices[0]&&result.choices[0].message&&result.choices[0].message.content)||"");
-    const a=content.indexOf("{"),b=content.lastIndexOf("}");
-    if(a<0||b<=a)throw new Error("The AI model returned an unreadable response.");
-    const parsed=JSON.parse(content.slice(a,b+1)),clips=[];
-    for(const q of Array.isArray(parsed.clips)?parsed.clips:[]){
+    let parsed=null;
+    try{
+      const a=content.indexOf("{"),b=content.lastIndexOf("}");
+      if(a>=0&&b>a)parsed=JSON.parse(content.slice(a,b+1));
+    }catch(e){/* Model text may contain malformed JSON; use transcript recovery. */}
+    const clips=[];let adjusted=0;
+    for(const q of Array.isArray(parsed&&parsed.clips)?parsed.clips:[]){
       let start=Number(q.start),end=Number(q.end);
-      if(!Number.isFinite(start)||!Number.isFinite(end))continue;
+      if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)continue;
       start=Math.max(0,Math.min(duration,start));end=Math.max(0,Math.min(duration,end));
-      if(end-start<minClip||end-start>maxClip)continue;
+      if(end<=start)continue;
+      let span=end-start,changed=false;
+      // A model can return a good story beat slightly outside the length limit.
+      // Preserve that continuous beat and add limited surrounding context.
+      if(span<minClip&&minClip-span<=Math.max(8,targetLength*.35)&&duration>=minClip){
+        const missing=minClip-span;
+        start=Math.max(0,start-missing/2);
+        end=Math.min(duration,start+minClip);
+        start=Math.max(0,end-minClip);changed=true;
+      }else if(span>maxClip&&span-maxClip<=Math.max(8,targetLength*.35)){
+        const excess=span-maxClip;
+        start=Math.max(0,start+excess/2);end=Math.min(duration,start+maxClip);changed=true;
+      }
+      span=end-start;
+      if(span<minClip-.02||span>maxClip+.02)continue;
       if(clips.some(c=>start<c.end-1&&end>c.start+1))continue;
-      clips.push({start:Number(start.toFixed(2)),end:Number(end.toFixed(2)),score:Math.max(0,Math.min(100,Math.round(Number(q.score)||0))),category:String(q.category||"AI selected").slice(0,32),hook:String(q.hook||"").slice(0,120),reason:String(q.reason||"").slice(0,240)});
+      if(changed)adjusted++;
+      clips.push({start:Number(start.toFixed(2)),end:Number(end.toFixed(2)),
+        score:Math.max(0,Math.min(100,Math.round(Number(q.score)||0))),
+        category:String(q.category||"AI selected").slice(0,32),
+        hook:String(q.hook||"").slice(0,120),
+        reason:(String(q.reason||"").slice(0,195)+(changed?" · Timing adjusted; preview before export.":"")).slice(0,240)});
       if(clips.length>=count*3)break;
     }
-    if(!clips.length)throw new Error("No valid clip suggestions were returned.");
-    return json({clips:clips,model:MODEL});
+    if(clips.length)return json({clips,model:MODEL,selectionMode:adjusted?"ai-adjusted":"ai"});
+    const recovered=transcriptShortFallback(segments,duration,targetLength,minClip,maxClip,count);
+    if(recovered.length)return json({clips:recovered,selectionMode:"transcript-fallback",
+      notice:"AI could not supply clips within the requested length. Showing continuous dialogue sections from your transcript for manual review; these are not AI-ranked picks."});
+    return json({error:"AI could not produce clips matching this length, and no suitable continuous dialogue interval was found. Try a shorter target length or another section of the episode."},422);
   }catch(error){
     const message=String(error&&error.message||error).slice(0,180);
     return json({error:"AI dialogue analysis failed: "+message},502);
