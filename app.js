@@ -1911,7 +1911,7 @@ function timeline(){
  const allAudio=(S.audioTracks&&S.audioTracks.length)?S.audioTracks:(S.audio?[S.audio]:[]);
  const textItems=[...(S.titles||[]),...(S.captions||[])];
  const lanes=[
-  {label:'VIDEO 1',kind:'video',track:1,items:S.clips},
+  {label:S.clips.length?'VIDEO 1':'+ Add video',kind:'video',track:1,items:S.clips},
   {label:allAudio.length?'AUDIO':'+ Add audio',kind:'audio',track:1,items:allAudio},
   {label:textItems.length?'TEXT':'+ Add text',kind:'caption',track:0,items:textItems},
   ...((S.overlays||[]).length?[{label:'OVERLAYS',kind:'overlay',items:S.overlays,track:0}]:[]),
@@ -1920,9 +1920,10 @@ function timeline(){
  function createLane(spec){
   const lane=document.createElement('div');lane.className='st-lane st-pro-lane';lane.dataset.laneKind=spec.kind;lane.dataset.track=String(spec.track||0);
   const label=document.createElement('div');label.className='st-track-label';label.textContent=spec.label;
-  if(spec.kind==='audio'||spec.kind==='caption'){
+  if((spec.kind==='video'&&!S.clips.length)||spec.kind==='audio'||spec.kind==='caption'){
     label.classList.add('st-lane-action');label.setAttribute('role','button');label.tabIndex=0;
     const openTool=()=>{
+      if(spec.kind==='video'){document.querySelector('#editorTool #stImport')?.click();return}
       const kind=spec.kind==='audio'?'audio':'text';
       if(window.matchMedia('(max-width:760px)').matches){document.querySelector('#editorTool .st-mobile-dock [data-mobile-action="'+kind+'"]')?.click()}
       else{document.querySelector('#editorTool [data-rail-tab="'+kind+'"]')?.click()}
