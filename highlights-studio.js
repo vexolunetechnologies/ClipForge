@@ -131,7 +131,26 @@ async function exportMontage(){
  const [w,h]=dimensions(),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d',{alpha:false}),stream=canvas.captureStream(30);
  const mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
  if(!mime)throw new Error('This browser does not provide a supported MP4/WebM recorder.');
- const audioCtx=new(window.AudioContext||window.webkitAudioContext)(),audioDest=audioCtx.createMediaStreamDestination();audioDest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
+ const audioCtx=new(window.AudioContext||window.webkitAudioContext)(),audioDest=audioCtx.createMediaStreamDestination();
+ // A disconnected destination creates a silent track without audio clock data.
+ // On Chromium this can make a 5s canvas recording mux as ~1.67s of video.
+ // Do not add an audio track when the user selected no music or sound effects.
+ const hasAudio=!!state.music||el.mood.value!=='none'||el.sfx.value!=='off';
+ let silentClock=null;
+ if(hasAudio){
+  // Keep a zero-level audio source running so effects-only recordings retain
+  // correct timestamps even during silent gaps. This source is inaudible.
+  if(typeof audioCtx.createConstantSource==='function'){
+   silentClock=audioCtx.createConstantSource();silentClock.offset.value=0;
+   silentClock.connect(audioDest);
+  }else{
+   const oscillator=audioCtx.createOscillator(),gain=audioCtx.createGain();
+   gain.gain.value=0;oscillator.connect(gain);gain.connect(audioDest);
+   silentClock=oscillator;
+  }
+  silentClock.start();
+  audioDest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
+ }
  let musicEl=null,musicUrl=null,musicSource=null,musicGain=null,stopSynth=()=>{},recorder=null,raf=0,sourceVideo=document.createElement('video'),chunks=[];
  sourceVideo.muted=true;sourceVideo.playsInline=true;sourceVideo.preload='auto';sourceVideo.src=state.url;sourceVideo.load();if(sourceVideo.readyState<1)await waitFor(sourceVideo,'loadedmetadata');
  let sfx=createSfx(audioCtx,audioDest,el.sfx.value);
@@ -171,7 +190,7 @@ async function exportMontage(){
   cancelAnimationFrame(raf);sourceVideo.pause();sourceVideo.removeAttribute('src');sourceVideo.load();
   if(recorder&&recorder.state!=='inactive'){try{recorder.stop()}catch(e){}}
   if(musicEl){musicEl.pause();musicEl.removeAttribute('src')}if(musicUrl)URL.revokeObjectURL(musicUrl);
-  stopSynth();stream.getTracks().forEach(t=>t.stop());audioCtx.close().catch(()=>{});
+  stopSynth();if(silentClock){try{silentClock.stop()}catch(e){}try{silentClock.disconnect()}catch(e){}}stream.getTracks().forEach(t=>t.stop());audioCtx.close().catch(()=>{});
  }
 }
 el.generate.addEventListener('click',async()=>{

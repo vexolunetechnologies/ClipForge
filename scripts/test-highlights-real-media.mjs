@@ -97,10 +97,31 @@ try {
  assert.ok(statSync(output).size>2000,"Export should not be empty");
  const probe=parseProbe(output);
  assert.ok(probe.streams.some(s=>s.codec_type==="video"),"Export missing encoded video");
+ assert.ok(!probe.streams.some(s=>s.codec_type==="audio"),
+   "Music and SFX off must produce silent video without an unnecessary audio track");
  const duration=Number(probe.format.duration);
  assert.ok(duration>=3 && duration<=10,"Export should have approximately five seconds of video: "+duration);
  assert.deepEqual(errors,[],"Unexpected browser errors during media export");
  console.log("Highlights real-video test passed: VP8/Opus WebM input, 3 ASR chunks, ordered plan, two-request max, video export "+duration.toFixed(2)+"s.");
+
+ // Effects-only output: an inaudible constant source must keep the audio
+ // clock active during gaps without changing the rendered music/SFX policy.
+ requests=0;active=0;maxActive=0;completions=[];plans=[];
+ await page.locator("#hsSfx").selectOption("whoosh");
+ await page.locator("#hsGenerate").click();
+ await page.waitForFunction(()=>document.querySelector("#hsOutput a[download]"),null,{timeout:90000});
+ assert.equal(requests,3,"Effects-only export must still transcribe all three audio blocks");
+ const effectsDownload=page.waitForEvent("download");
+ await page.locator("#hsOutput a[download]").click();
+ const sfxOutput=await effectsDownload;
+ const sfxPath=join(dir,"effects-only."+((sfxOutput.suggestedFilename()||"").endsWith(".mp4")?"mp4":"webm"));
+ await sfxOutput.saveAs(sfxPath);
+ const effectsProbe=parseProbe(sfxPath),effectsDuration=Number(effectsProbe.format.duration);
+ assert.ok(effectsProbe.streams.some(s=>s.codec_type==="video"),"Effects-only export missing video");
+ assert.ok(effectsProbe.streams.some(s=>s.codec_type==="audio"),"Effects-only export missing audio track");
+ assert.ok(effectsDuration>=3&&effectsDuration<=10,
+  "Effects-only export should keep ~5s timeline while preserving audio: "+effectsDuration);
+ console.log("Highlights effects-only export passed: duration "+effectsDuration.toFixed(2)+"s, video and audio tracks.");
 
  // Cancellation: start a new analysis with slow mocked responses and stop it.
  cancelMode=true;requests=0;active=0;maxActive=0;completions=[];plans=[];
