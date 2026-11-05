@@ -28,6 +28,7 @@ try{
  page.on("pageerror",e=>errors.push(e.message));
  await page.goto(server.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>!!window.ClipForgeMp4);
+ const downloadPromise=page.waitForEvent("download",{timeout:90000});
  const details=await page.evaluate(async()=>{
   const inputBytes=await (await fetch("/reports/android-fragmented-input.mp4")).blob();
   const blob=new Blob([inputBytes],{type:"video/mp4"});
@@ -44,7 +45,7 @@ try{
  });
  assert.equal(details.changed,true,"Actual fragmented MP4 could not be remuxed: "+JSON.stringify(details));
  assert.equal(details.warning,"");
- const download=await page.waitForEvent("download",{timeout:30000});
+ const download=await downloadPromise;
  const output="reports/android-finalized-output.mp4";
  await download.saveAs(output);
  const finalProbe=duration(output);
