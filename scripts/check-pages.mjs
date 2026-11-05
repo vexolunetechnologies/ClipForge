@@ -20,6 +20,8 @@ const files = [
   ["caption-style-library.js", "public/assets/js/shared/caption-style-library.js"],
   ["captions-studio.js", "public/assets/js/tools/captions-studio.js"],
   ["highlights-studio.js", "public/assets/js/tools/highlights-studio.js"],
+  ["transcription-queue.js", "public/transcription-queue.js"],
+  ["transcription-queue.js", "public/assets/js/shared/transcription-queue.js"],
   ["dist/editor/studio-ui.js", "public/dist/editor/studio-ui.js"],
   ["dist/editor/timeline.js", "public/dist/editor/timeline.js"]
 ];
@@ -55,6 +57,7 @@ assert.match(from("public/dist/editor/layout.js"), /toolcard\[href="\/tools\/edi
 
 const rootHome = from("index.html");
 assert.match(rootHome, /src="\/navigation\.js"/);
+assert.match(rootHome, /src="\/transcription-queue\.js"/);
 for (const tool of tools) {
   const standalone = "tools/" + tool + "/index.html";
   has(standalone);

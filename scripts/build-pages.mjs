@@ -25,7 +25,7 @@ const copy = (from, to = from) => {
 for (const file of [
   "_worker.js", "about.html", "contact.html", "privacy.html", "terms.html",
   "cookies.html", "copyright.html", "styles.css", "app.js", "navigation.js",
-  "caption-style-library.js", "captions-studio.js", "highlights-studio.js",
+  "caption-style-library.js", "captions-studio.js", "highlights-studio.js", "transcription-queue.js",
   "editor-loader.js", "animator-idle.js",
   "dist/editor/layout.js", "dist/editor/timeline.js",
   "dist/editor/studio-ui.js", "dist/editor/types.js"
@@ -39,6 +39,7 @@ copy("navigation.js", "assets/js/core/navigation.js");
 copy("caption-style-library.js", "assets/js/shared/caption-style-library.js");
 copy("captions-studio.js", "assets/js/tools/captions-studio.js");
 copy("highlights-studio.js", "assets/js/tools/highlights-studio.js");
+copy("transcription-queue.js", "assets/js/shared/transcription-queue.js");
 
 const editorLayout = read("dist/editor/layout.js");
 const selector = '.toolcard[href="#editor"]';
@@ -69,7 +70,8 @@ function page(tool = null) {
     ["/editor-loader.js", "/assets/js/core/editor-loader.js"],
     ["/navigation.js", "/assets/js/core/navigation.js"],
     ["/captions-studio.js", "/assets/js/tools/captions-studio.js"],
-    ["/highlights-studio.js", "/assets/js/tools/highlights-studio.js"]
+    ["/highlights-studio.js", "/assets/js/tools/highlights-studio.js"],
+    ["/transcription-queue.js", "/assets/js/shared/transcription-queue.js"]
   ]);
   for (const [oldPath, newPath] of paths) {
     html = html.split('"' + oldPath + '"').join('"' + newPath + '"');
