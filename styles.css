@@ -3027,3 +3027,17 @@ body[data-page="workspace"][data-tool="reverse"] #top.wrap {
    position:static!important;height:auto!important;min-height:0!important;
  }
 }
+
+@media(max-width:760px){
+ body.solo[data-tool="editor"] #editorTool .st-mobile-sheet-close{
+  position:sticky!important;top:0!important;z-index:160!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  float:right!important;width:34px!important;height:34px!important;
+  margin:0 0 6px auto!important;border:1px solid #62656b!important;
+  border-radius:8px!important;background:#393d43!important;
+  color:#f6f7f8!important;font-size:17px!important;cursor:pointer!important;
+ }
+ body.solo[data-tool="editor"] #editorTool .st-assets .st-panel-title{clear:both!important}
+ body.solo[data-tool="editor"] #editorTool .st-source-panel .st-left-tabs{clear:both!important}
+}
+@media(min-width:761px){#editorTool .st-mobile-sheet-close{display:none!important}}

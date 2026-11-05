@@ -60,27 +60,27 @@ try{
   assert.ok(await editor.locator(".st-assets").isVisible());
  }
  await open("effects","effects");
- await editor.locator('[data-mobile-utility="back"]').click();
+ await editor.locator(".st-assets .st-mobile-sheet-close").click();
  assert.equal(await editor.evaluate(e=>e.classList.contains("st-mobile-media-open")),false);
  await open("audio","audio");
- await editor.locator('[data-mobile-utility="back"]').click();
+ await editor.locator(".st-assets .st-mobile-sheet-close").click();
  await open("captions","captions");
- await editor.locator('[data-mobile-utility="back"]').click();
+ await editor.locator(".st-assets .st-mobile-sheet-close").click();
  await open("overlay","stickers");
- await editor.locator('[data-mobile-utility="back"]').click();
+ await editor.locator(".st-assets .st-mobile-sheet-close").click();
  await open("text","text");
- await editor.locator('[data-mobile-utility="back"]').click();
+ await editor.locator(".st-assets .st-mobile-sheet-close").click();
  await editor.locator('[data-mobile-action="edit"]').click();
  assert.ok(await editor.evaluate(e=>e.classList.contains("st-mobile-inspector-open")));
  assert.ok(await editor.locator(".st-source-panel .st-inspector").isVisible(),
   "Edit opens real inspector in mobile sheet");
- await editor.locator('[data-mobile-utility="back"]').click();
+ await editor.locator(".st-source-panel .st-mobile-sheet-close").click();
 
  // Media import uses the existing project bin, unchanged underlying file handler.
  await editor.locator(".st-mobile-import").click();
  assert.ok(await editor.locator(".st-assets").isVisible());
  assert.ok(await editor.locator("#stImport").count());
- await editor.locator('[data-mobile-utility="back"]').click();
+ await editor.locator(".st-assets .st-mobile-sheet-close").click();
  await page.screenshot({path:"reports/mobile-studio-closed-sheet.png"});
 
  // Narrow small-phone view must remain usable without horizontal document overflow.

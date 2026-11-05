@@ -585,6 +585,19 @@
     root.classList.remove("st-mobile-media-open","st-mobile-inspector-open");
     mobileDock.querySelectorAll("[data-mobile-action]").forEach(b=>b.setAttribute("aria-pressed","false"));
   };
+  // Accessible close controls live inside the sheets, which overlay the
+  // timeline. A timeline-only close button would otherwise sit underneath.
+  const addSheetClose=(panel,title)=>{
+    if(!panel)return;
+    const close=document.createElement("button");
+    close.type="button";close.className="st-mobile-sheet-close";
+    close.setAttribute("aria-label","Close "+title+" panel");
+    close.textContent="✕";
+    close.addEventListener("click",dismissMobilePanels);
+    panel.prepend(close);
+  };
+  addSheetClose(root.querySelector(".st-assets"),"tools");
+  addSheetClose(root.querySelector(".st-source-panel"),"edit");
   mobileUtilities.addEventListener("click",e=>{
     const b=e.target.closest("[data-mobile-utility]");
     if(!b)return;
