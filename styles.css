@@ -3017,3 +3017,13 @@ body[data-page="workspace"][data-tool="reverse"] #top.wrap {
     display:none!important;
   }
 }
+
+/* Only the active editor should receive taps. Legacy site sections must not
+   become fullscreen overlays through generic .wrap positioning rules. */
+@media(max-width:760px){
+ body.solo[data-tool="editor"] .cf-lower-sections,
+ body.solo[data-tool="editor"] > footer{display:none!important}
+ body.solo[data-tool="editor"] .wrap:not(#top):not(:has(#editorTool)){
+   position:static!important;height:auto!important;min-height:0!important;
+ }
+}
