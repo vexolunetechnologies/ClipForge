@@ -181,11 +181,15 @@ async function exportMontage(){
    sourceVideo.pause();elapsed+=c.end-c.start;
   }
   if(recorder.state!=='inactive')recorder.stop();await finished;
-  const blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<2000)throw new Error('The exported video was empty.');
+  let blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<2000)throw new Error('The exported video was empty.');
+  let mp4Warning='';if(mime.includes('mp4')&&window.ClipForgeMp4){
+   const finalized=await window.ClipForgeMp4.finalize(blob,{force:true});
+   blob=finalized.blob;mp4Warning=finalized.warning;
+  }
   if(state.outputUrl)URL.revokeObjectURL(state.outputUrl);state.outputUrl=URL.createObjectURL(blob);
   const ext=mime.includes('mp4')?'mp4':'webm';
   el.output.innerHTML='<video controls playsinline src="'+state.outputUrl+'"></video><div class="cf-row" style="margin-top:10px"><a class="sm p" style="text-decoration:none;padding:10px 14px" download="clipforge-highlights-'+Date.now()+'.'+ext+'" href="'+state.outputUrl+'">Download '+ext.toUpperCase()+'</a><span class="cf-muted">'+(blob.size/1048576).toFixed(1)+' MB</span></div>';
-  progress(100);say('Highlights ready. Original video audio was muted; selected music and sound effects were mixed into the export.');
+  progress(100);say(mp4Warning||'Highlights ready. Original video audio was muted; selected music and sound effects were mixed into the export.');
  }finally{
   cancelAnimationFrame(raf);sourceVideo.pause();sourceVideo.removeAttribute('src');sourceVideo.load();
   if(recorder&&recorder.state!=='inactive'){try{recorder.stop()}catch(e){}}

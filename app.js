@@ -1247,7 +1247,11 @@ async function exportClip(i,forceWC){
 // Stop recording and wait for the file.
   alive(tok);v.pause();if(rec.state!=='inactive')rec.stop();await done;alive(tok);
 // Check that the finished file really plays, then store it.
-  if(rec.err)throw rec.err;const bl=rec.out||new Blob(parts,{type:'video/mp4'});say('Checking the finished file…');const vr=await verifyVideo(bl);if(!vr.ok)throw new Error('The finished file is not usable ('+(vr.why||'unknown problem')+'), so it was not saved. Choose 720p and try again, or use Chrome or Edge on a computer.');c.blob=bl;const chk=' File check: '+(vr.dur?vr.dur.toFixed(1)+' s, ':'length not readable, ')+vr.w+'×'+vr.h+(vr.seek?', plays to the end.':'.');say((c.planInfo&&c.planInfo.n?'Done. Faces found in '+c.planInfo.faces+' of '+c.planInfo.n+' frames, '+c.planInfo.cuts+' scene cuts.':'Done.')+chk)
+  if(rec.err)throw rec.err;const rawBlob=rec.out||new Blob(parts,{type:'video/mp4'});
+  say('Finalizing MP4 duration metadata…');
+  const processed=window.ClipForgeMp4?await window.ClipForgeMp4.finalize(rawBlob,{force:!rec.out}):{blob:rawBlob,warning:'MP4 finalizer is unavailable.'};
+  const bl=processed.blob;
+  say('Checking the finished file…');const vr=await verifyVideo(bl);if(!vr.ok)throw new Error('The finished file is not usable ('+(vr.why||'unknown problem')+'), so it was not saved. Choose 720p and try again, or use Chrome or Edge on a computer.');c.blob=bl;const chk=' File check: '+(vr.dur?vr.dur.toFixed(1)+' s, ':'length not readable, ')+vr.w+'×'+vr.h+(vr.seek?', plays to the end.':'.');say((processed.warning?processed.warning+' ':'')+(c.planInfo&&c.planInfo.n?'Done. Faces found in '+c.planInfo.faces+' of '+c.planInfo.n+' frames, '+c.planInfo.cuts+' scene cuts.':'Done.')+chk)
 // Report a failure.
  }catch(e){if(e.message!=='Stopped'){try{REC&&REC.state!=='inactive'&&REC.stop()}catch(_){}v.pause();
   // Native recorder gave an unusable file: try again once with the WebCodecs recorder.
@@ -1749,10 +1753,13 @@ function mountTimeline(prefix,mode){
     video.pause();elapsed+=clipDur;
    }
    if(recorder.state!=='inactive')recorder.stop();await finished;
-   const blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<2000)throw new Error('The exported video is empty. Please try again.');
+   let blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<2000)throw new Error('The exported video is empty. Please try again.');
+   let warning='';if(mime.includes('mp4')&&window.ClipForgeMp4){
+    const finalized=await window.ClipForgeMp4.finalize(blob,{force:true});blob=finalized.blob;warning=finalized.warning;
+   }
    state.outUrl=URL.createObjectURL(blob);const ext=mime.includes('mp4')?'mp4':'webm';
    output.innerHTML='<video controls playsinline src="'+state.outUrl+'"></video><div class="cf-row" style="margin-top:10px"><a class="sm p" style="text-decoration:none;padding:10px 14px" download="clipforge-'+mode+'-'+Date.now()+'.'+ext+'" href="'+state.outUrl+'">Download '+ext.toUpperCase()+'</a><span class="cf-muted">'+(blob.size/1048576).toFixed(1)+' MB</span></div>';
-   bar.style.width='100%';setStatus('Export complete. Your file is ready to download. This session will not be saved.');
+   bar.style.width='100%';setStatus(warning||'Export complete. Your file is ready to download. This session will not be saved.');
   }catch(e){if(recorder&&recorder.state!=='inactive'){try{recorder.stop()}catch(x){}}setStatus(e.message||'Export failed.');}
   finally{
    cancelAnimationFrame(raf);if(video){video.pause();video.removeAttribute('src');video.load()}

@@ -25,7 +25,7 @@ const copy = (from, to = from) => {
 for (const file of [
   "_worker.js", "about.html", "contact.html", "privacy.html", "terms.html",
   "cookies.html", "copyright.html", "styles.css", "app.js", "navigation.js",
-  "caption-style-library.js", "captions-studio.js", "highlights-studio.js", "transcription-queue.js",
+  "caption-style-library.js", "captions-studio.js", "highlights-studio.js", "transcription-queue.js", "mp4-finalize.js",
   "editor-loader.js", "animator-idle.js",
   "dist/editor/layout.js", "dist/editor/timeline.js",
   "dist/editor/studio-ui.js", "dist/editor/types.js"
@@ -33,6 +33,7 @@ for (const file of [
 
 copy("styles.css", "assets/css/styles.css");
 copy("app.js", "assets/js/core/app.js");
+copy("mp4-finalize.js", "assets/js/shared/mp4-finalize.js");
 copy("editor-loader.js", "assets/js/core/editor-loader.js");
 copy("animator-idle.js", "assets/js/core/animator-idle.js");
 copy("navigation.js", "assets/js/core/navigation.js");
@@ -67,6 +68,7 @@ function page(tool = null) {
     ["/styles.css", "/assets/css/styles.css"],
     ["/caption-style-library.js", "/assets/js/shared/caption-style-library.js"],
     ["/app.js", "/assets/js/core/app.js"],
+    ["/mp4-finalize.js", "/assets/js/shared/mp4-finalize.js"],
     ["/editor-loader.js", "/assets/js/core/editor-loader.js"],
     ["/navigation.js", "/assets/js/core/navigation.js"],
     ["/captions-studio.js", "/assets/js/tools/captions-studio.js"],
