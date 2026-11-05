@@ -21,8 +21,12 @@ async function transcribeAudio(request,env){
     const language=String(input.language||"").slice(0,12);
     const result=await env.AI.run(ASR_MODEL,{audio,task:"transcribe",vad_filter:true,beam_size:1,...(language?{language}:{})});
     const rawSegments=Array.isArray(result&&result.segments)?result.segments:[];
-    const segments=rawSegments.map(q=>({start:Number(q.start),end:Number(q.end),text:String(q.text||"").trim()}))
-      .filter(q=>Number.isFinite(q.start)&&Number.isFinite(q.end)&&q.end>q.start&&q.text);
+    const segments=rawSegments.map(q=>({
+      start:Number(q.start),end:Number(q.end),text:String(q.text||"").trim(),
+      words:Array.isArray(q.words)?q.words.map(w=>({
+        start:Number(w.start),end:Number(w.end),word:String(w.word||w.text||"").trim()
+      })).filter(w=>Number.isFinite(w.start)&&Number.isFinite(w.end)&&w.end>w.start&&w.word):[]
+    })).filter(q=>Number.isFinite(q.start)&&Number.isFinite(q.end)&&q.end>q.start&&q.text);
     return json({text:String(result&&result.text||""),segments,model:ASR_MODEL});
   }catch(error){
     return json({error:"Speech transcription failed: "+String(error&&error.message||error).slice(0,160)},502);
