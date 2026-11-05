@@ -59,6 +59,8 @@ jobs:
           name: clipforge-phase1-performance
           path: reports/phase1-performance.json
 
+      - name: Test Shorts transcript recovery UI in Chromium
+        run: node scripts/test-shorts-browser.mjs
       - name: Benchmark two-request Highlights transcription queue
         run: npm run bench:phase2
 
