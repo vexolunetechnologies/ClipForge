@@ -24,7 +24,8 @@ function harness(start) {
   }
   function dispatch(which, type, data = {}) {
     events.push(type);
-    for (const fn of handlers[which].get(type) || []) fn({type, ...data});
+    data.type = type;
+    for (const fn of handlers[which].get(type) || []) fn(data);
   }
   const history = {
     state: null, calls: [],
