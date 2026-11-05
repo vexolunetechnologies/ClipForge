@@ -23,13 +23,16 @@ try {
 
   await page.locator('[data-tool-route="captions"]').click();
   await page.waitForFunction(()=>location.pathname==="/tools/captions/" &&
-    document.body.dataset.tool==="captions" && document.querySelectorAll("#cfCapTemplateGrid button").length===41);
-  assert.equal(await page.locator("#cfCapTemplateGrid canvas").count(),41);
+    document.body.dataset.tool==="captions" && document.querySelectorAll("#cfCapTemplateGrid button").length===window.ClipForgeCaptionStyles.list.length);
+  const styleCount=await page.evaluate(()=>window.ClipForgeCaptionStyles.list.length);
+  assert.ok(styleCount>=55,"Modern captions should be included without removing the original 41");
+  assert.equal(await page.locator("#cfCapTemplateGrid canvas").count(),styleCount);
   const canvases=page.locator("#cfCapTemplateGrid canvas");
   await canvases.first().scrollIntoViewIfNeeded();
   await page.waitForFunction(()=>document.querySelectorAll('#cfCapTemplateGrid canvas[data-cf-painted="1"]').length>0);
   const count=await page.locator('#cfCapTemplateGrid canvas[data-cf-painted="1"]').count();
-  assert.ok(count < 41,"Offscreen caption samples should remain unpainted");
+  assert.ok(count < styleCount,"Offscreen caption samples should remain unpainted");
+  await page.locator('#cfCaptionsWorkspace .cf-style-category[data-cf-category="all"]').click();
   await canvases.last().scrollIntoViewIfNeeded();
   await page.waitForFunction(()=>document.querySelector('#cfCapTemplateGrid canvas:last-of-type') ||
      document.querySelector('#cfCapTemplateGrid button:last-child canvas')?.dataset.cfPainted==="1");

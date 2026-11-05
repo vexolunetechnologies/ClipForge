@@ -71,3 +71,13 @@ jobs:
           ffprobe -version
       - name: Test Highlights with real WebM/Opus and mocked AI
         run: npm run test:media
+
+      - name: Test trending captions and scrollable style gallery
+        run: npm run test:caption-gallery
+      - name: Upload caption gallery preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipforge-caption-gallery-preview
+          path: reports/trending-caption-gallery.png
+          if-no-files-found: ignore
