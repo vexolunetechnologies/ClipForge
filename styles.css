@@ -2609,3 +2609,16 @@ footer .copy a{display:inline;color:inherit;text-decoration:underline;text-under
     padding-top:8px!important;
   }
 }
+
+/* Remove the parent workspace wrapper's top padding on these two desktop tools. */
+@media (min-width:901px) {
+  body[data-page="workspace"][data-tool="animator"] .wrap,
+  body[data-page="workspace"][data-tool="reverse"] .wrap {
+    padding-top:0!important;
+  }
+  body[data-page="workspace"][data-tool="animator"] #iaTool,
+  body[data-page="workspace"][data-tool="reverse"] #rvTool {
+    margin-top:0!important;
+    padding-top:0!important;
+  }
+}
