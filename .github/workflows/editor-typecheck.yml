@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/editor-phase-1-layout
+      - refactor/public-multipage-20261105
   pull_request:
     branches:
       - main
@@ -23,5 +24,14 @@ jobs:
         run: npm install
       - name: Type-check editor modules
         run: npm run typecheck
-      - name: Build editor modules
+      - name: Build static Cloudflare Pages output
         run: npm run build
+      - name: Verify tool routes and unchanged engines
+        run: npm run test
+      - name: Check generated JavaScript syntax
+        run: |
+          node --check public/assets/js/core/app.js
+          node --check public/assets/js/tools/captions-studio.js
+          node --check public/assets/js/tools/highlights-studio.js
+          node --check public/dist/editor/studio-ui.js
+          node --check public/_worker.js

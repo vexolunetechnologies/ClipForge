@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<!--
+  ClipForge Studio: one single page (HTML + CSS + JavaScript in one file)
+  Turns a long video into shorts, makes trailers, and animates pictures.
+  Video media stays on the device; dialogue transcripts are sent securely for AI moment selection.
+
+  FILE MAP (search for these markers):
+    1. HEAD    page title and fonts
+    2. STYLE   all CSS (look and layout)
+    3. BODY    all HTML (page structure)
+    4. SCRIPT  main JavaScript (app logic), section list at its top
+    5. SCRIPT  Image Animator (separate small tool)
+    6. SCRIPT  Video Reverser (separate small tool, last script block)
+
+  Libraries (mp4-muxer, MediaPipe face detector, Whisper) are loaded from CDNs
+  only when needed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ClipForge Studio – Long video to Shorts</title>
+<!-- ===== CSS: look and layout ===== -->
+<link rel="stylesheet" href="/styles.css">
+<!-- Fonts: Noto Naskh Arabic (Urdu / Arabic) and Noto Sans Devanagari (Hindi) for the captions -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@700&family=Noto+Sans+Devanagari:wght@700&display=swap" rel="stylesheet">
+<script data-cf-tool-bootstrap>if(!location.hash)history.replaceState(null,"",location.pathname+location.search+"#highlights");</script>
+</head>
+<body data-tool="shorts" data-page="home">
+<!-- ===== HTML: page structure ===== -->
+<!-- ===== SITE HEADER: logo, menu links, privacy badge, light/dark theme button ===== -->
+<header><div class="nav">
+ <a class="brand" href="#top"><svg width="26" height="26" viewBox="0 0 26 26"><rect x="7" y="1" width="12" height="24" rx="3" fill="var(--ac)"/><path d="M11 9l6 4-6 4z" fill="var(--acx)"/></svg>ClipForge Studio</a>
+ <nav class="cf-main-nav" aria-label="Main navigation">
+  <div class="cf-nav-label">WORKSPACE</div>
+  <a class="cf-nav-link" data-route="home" href="#top"><span class="cf-nav-icon">⌂</span><span>Home</span></a>
+  <a class="cf-nav-link" data-route="tools" href="#tools"><span class="cf-nav-icon">▦</span><span>All tools</span></a>
+  <div class="cf-nav-label cf-nav-create">CREATE</div>
+  <a class="cf-nav-link" data-tool-route="shorts" href="#shorts"><span class="cf-nav-icon">▣</span><span>Video to Shorts</span></a>
+  <a class="cf-nav-link" data-tool-route="trailer" href="#trailer"><span class="cf-nav-icon">▶</span><span>Trailer Maker</span></a>
+  <a class="cf-nav-link" data-tool-route="animator" href="#animator"><span class="cf-nav-icon">✧</span><span>Picture to Video</span></a>
+  <a class="cf-nav-link" data-tool-route="reverse" href="#reverse"><span class="cf-nav-icon">↶</span><span>Reverse Video</span></a>
+  <a class="cf-nav-link" data-tool-route="montage" href="#montage"><span class="cf-nav-icon">▤</span><span>Video Montage</span></a>
+  <a class="cf-nav-link" data-tool-route="highlights" href="#highlights"><span class="cf-nav-icon">✦</span><span>Highlights Studio</span></a>
+  <a class="cf-nav-link" data-tool-route="editor" href="#editor"><span class="cf-nav-icon">▥</span><span>Studio Editor</span></a>
+  <a class="cf-nav-link" data-tool-route="captions" href="#captions"><span class="cf-nav-icon">T</span><span>Captions Studio</span></a>
+  <div class="cf-nav-label cf-nav-explore">MORE</div>
+  <a class="cf-nav-link" data-route="features" href="#features"><span class="cf-nav-icon">✦</span><span>Features</span></a>
+  <a class="cf-nav-link" data-route="faq" href="#faq"><span class="cf-nav-icon">?</span><span>Help & FAQ</span></a>
+</nav>
+ <span class="pill">Local-first video processing</span><button class="tbtn" id="theme" type="button" aria-label="Switch light or dark theme" title="Switch theme">◐</button></div></header>
+
+
+<!-- ===== PAGE WRAPPER: everything below until the footer sits in this centred column ===== -->
+<div class="wrap" id="top">
+<!-- ===== HERO: main heading and one-line description ===== -->
+<section class="hero hero-banner">
+ <div class="hero-copy">
+  <span class="hero-eyebrow"><i></i> THE CREATIVE STUDIO BY VEXOLUNE</span>
+  <h1>Every idea deserves<br><span> a better frame.</span></h1>
+  <p>One workspace to create shorts, trailers, animated visuals and polished video edits — with powerful tools that run right in your browser.</p>
+  <div class="hero-actions"><a class="hero-primary" href="#editor">Open Studio Editor <b>↗</b></a><a class="hero-secondary" href="#tools">Explore all tools</a></div>
+  <div class="hero-proof"><span>✓ No account required</span><span>✓ Local-first media processing</span><span>✓ Built for creators</span></div>
+ </div>
+
+</section>
+<section class="studio-spotlight" id="studioSpotlight">
+ <div class="studio-spotlight-copy">
+  <span class="hero-eyebrow"><i></i> FLAGSHIP CREATIVE WORKSPACE</span>
+  <h2>Meet your new <span>editing desk.</span></h2>
+  <p>A full-screen, multi-track video editor for precise cuts, layered visuals, captions and sound — right in your browser.</p>
+  <div class="studio-spotlight-points"><span>✦ Frame-level timeline controls</span><span>✦ Multi-track video and audio</span><span>✦ Local-first editing and export</span></div>
+  <a class="studio-spotlight-cta" href="#editor">Launch Studio Editor <b>↗</b></a>
+ </div>
+ <div class="studio-spotlight-preview" aria-label="Illustration of the Studio Editor workspace">
+  <div class="ss-top"><span class="ss-mark">▶</span><b>STUDIO <i>EDITOR</i></b><span class="ss-project">UNTITLED PROJECT</span><span class="ss-export">EXPORT</span></div>
+  <div class="ss-body"><div class="ss-rail"><i>▦</i><i>♫</i><i>T</i><i>✧</i><i>▤</i></div><div class="ss-stage"><div class="ss-frame"><span>PREVIEW</span><b>YOUR NEXT<br>GREAT EDIT</b><small>16:9 · 1080p</small></div><div class="ss-inspector"><b>INSPECTOR</b><i></i><i></i><i></i><i></i></div></div></div>
+  <div class="ss-timeline"><div class="ss-ruler"><span>00:00</span><span>00:05</span><span>00:10</span><span>00:15</span><span>00:20</span></div><div class="ss-track"><b>VIDEO 1</b><i></i><i></i><i></i></div><div class="ss-track audio"><b>AUDIO</b><i></i><i></i></div><div class="ss-track text"><b>TEXT</b><i></i></div></div>
+ </div>
+</section>
+<!-- ===== CREATIVE WORKSPACES: all ClipForge tools ===== -->
+<section id="tools"><div class="section-heading"><span class="hero-eyebrow"><i></i> PICK YOUR WORKFLOW</span><h2>One studio. Eight ways to create.</h2><p>Start with a quick automated workflow or open the full editor when you need more control.</p></div><div class="grid tools">
+ <a class="card toolcard" href="#shorts"><span class="ttag">9:16 · vertical</span><h3>Long Video → Shorts</h3><ul><li>AI understands dialogue and selects engaging moments</li><li>Smart reframe that follows faces, steady per shot</li><li>AI captions: English, Urdu and Hindi (Cloudflare Workers AI)</li><li>Dialogue-only trim: cuts the gaps between spoken lines</li><li>Skips scenes with logos and sponsor banners</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard" href="#trailer"><span class="ttag">16:9 · wide or 9:16</span><h3>Trailer / Promo</h3><ul><li>45, 60 or 90 second trailer from the strongest moments</li><li>Title, tagline and “Releasing on” end card (your text)</li><li>Built-in sound effects: whooshes, impacts, riser</li><li>Review and remove parts before exporting</li><li>Skips logo and banner scenes, avoids end spoilers</li><li>MP4 export in 720p or 1080p</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard" href="#animator"><span class="ttag">9:16 · 16:9 · 1:1</span><h3>Image Animator</h3><ul><li>Add many pictures and describe the camera motion in a prompt</li><li>Crossfades between pictures, 2 minutes or any length you ask for</li><li>Built-in music and sound effects, chosen from your prompt</li><li>Record your voice or add a voiceover file</li><li>MP4 export (WebM if your browser cannot make MP4)</li><li>Camera motion only: people and objects in a picture do not move</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard" href="#reverse"><span class="ttag">Any size · MP4</span><h3>Reverse Video</h3><ul><li>Upload a video and get it back playing backwards</li><li>The sound can be reversed too, or removed</li><li>Pick the size: original, up to 1080p or up to 720p</li><li>Keeps your video's own frame rate</li><li>Everything stays on your device</li><li>Rebuilt frame by frame, so best for clips up to a few minutes</li></ul><span class="go">Open tool →</span></a>
+ <a class="card toolcard studio-toolcard" href="#highlights"><span class="tool-icon">✦</span><span class="ttag">AI · AUTO HIGHLIGHTS</span><h3>Highlights Studio</h3><p>Turn one long video into a tight highlight montage with AI-selected moments, music and sound effects.</p><ul><li>Upload one long video and choose output duration</li><li>AI selects meaningful 1–4 second moments</li><li>Choose a synthesized music mood or upload your own track</li><li>Optional whoosh and impact effects between clips</li><li>Original video audio is muted in the export</li></ul><span class="go">Open Highlights Studio →</span></a>
+ <a class="card toolcard studio-toolcard" href="#montage"><span class="tool-icon">▤</span><span class="ttag">MULTI-CLIP WORKFLOW</span><h3>Video Montage Maker</h3><p>Combine clips into a clean sequence with independent trimming, transitions, music and title text.</p><ul><li>Import and reorder multiple videos</li><li>Trim every clip independently</li><li>Choose vertical, landscape or square format</li><li>Preview and export your montage</li></ul><span class="go">Open workspace →</span></a>
+ <a class="card toolcard studio-toolcard flagship-studio-card" href="#editor"><span class="tool-icon">▥</span><span class="ttag">MULTI-TRACK CREATIVE WORKSPACE</span><h3>Studio Editor</h3><p>Take control of your edit with a timeline-based workspace built for detailed video projects.</p><ul><li>Video, overlay, caption and audio lanes</li><li>Trim, split, move and duplicate clips</li><li>Text, shapes, stickers and subtitles</li><li>Audio fades, speed, framing and export settings</li></ul><span class="go">Open Studio →</span></a>
+ <a class="card toolcard studio-toolcard" href="#captions"><span class="tool-icon">T</span><span class="ttag">FULL VIDEO · 41 STYLES</span><h3>Captions Studio</h3><p>Transcribe a full video, review captions, choose a visual style and export.</p><ul><li>English, Urdu and Hindi transcription</li><li>41 always-visible style previews</li><li>Edit captions and download SRT / VTT</li><li>Export the captioned video</li></ul><span class="go">Open Captions Studio →</span></a>
+</div></section>
+
+
+<!-- ===== HIGHLIGHTS STUDIO: independent AI highlight workflow ===== -->
+<section id="highlightsTool" class="cf-workspace" style="display:none">
+ <a class="cf-back" href="#tools">← All creative tools</a>
+ <div class="cf-page-head"><div><div class="cf-kicker">CLIPFORGE / AI HIGHLIGHTS</div><h2>Highlights Studio</h2><p>Upload one long video, choose the final duration and let AI select short moments. Original dialogue stays muted in the finished video.</p></div><span class="cf-badge">AI-assisted workflow</span></div>
+ <div class="cf-grid">
+  <div class="cf-panel">
+   <div class="cf-field"><label for="hsVideo">SOURCE VIDEO</label><label class="cf-upload-btn" for="hsVideo">＋ Choose source video</label><input id="hsVideo" type="file" accept="video/*"><small id="hsVideoInfo" class="cf-muted">Current AI service: up to 6 hours per source, 2,500 transcript segments and 20 AI analyses per day per network. Device/browser limits may also apply.</small></div>
+   <video id="hsSourcePreview" class="cf-preview" controls playsinline muted style="display:none"></video>
+   <div class="cf-field"><label for="hsDuration">FINAL HIGHLIGHTS DURATION (SECONDS)</label><input id="hsDuration" type="number" min="5" max="300" step="1" value="30"><small class="cf-muted">Choose 5–300 seconds. AI will target this total duration using short scenes.</small></div>
+   <div class="cf-field"><label for="hsRatio">OUTPUT FORMAT</label><select id="hsRatio"><option value="9:16">9:16 · Reels / Shorts</option><option value="16:9">16:9 · YouTube</option><option value="1:1">1:1 · Square</option></select></div>
+   <div class="cf-field"><label for="hsMood">BACKGROUND MUSIC MOOD</label><select id="hsMood"><option value="cinematic">Cinematic</option><option value="emotional">Emotional</option><option value="dramatic">Dramatic</option><option value="funny">Funny</option><option value="action">Action / Energetic</option><option value="suspense">Suspense</option><option value="none">No background music</option></select></div>
+   <div class="cf-field"><label for="hsMusic">OR UPLOAD YOUR OWN MUSIC (OPTIONAL)</label><label class="cf-upload-btn cf-upload-btn-secondary" for="hsMusic">＋ Choose music file</label><input id="hsMusic" type="file" accept="audio/*"><small class="cf-muted" id="hsMusicInfo">Uploaded music replaces the simple synthesized mood backing.</small></div>
+   <div class="cf-field"><label for="hsSfx">AUTOMATIC SOUND EFFECTS</label><select id="hsSfx"><option value="whoosh-impact">Whoosh + Impact between scenes</option><option value="whoosh">Whoosh only</option><option value="off">Off</option></select></div>
+   <button class="main" id="hsGenerate">Generate highlights</button><button class="sm" id="hsStop" style="display:none;margin-top:8px">Stop</button>
+   <div class="cf-progress"><i id="hsProgress"></i></div><div id="hsStatus" class="cf-status" role="status"></div>
+  </div>
+  <div class="cf-panel"><div class="cf-kicker">AI HIGHLIGHT PLAN</div><div id="hsEmpty" class="cf-empty">Upload a video and choose your output duration to begin.</div><div id="hsPlan" class="cf-timeline"></div><div class="cf-stat"><b id="hsCount">0 scenes</b><span id="hsPlanDuration">No highlight plan yet</span></div><div id="hsOutput" class="cf-output"></div></div>
+ </div>
+ <p class="cf-muted">Scene selection is guided by AI analysis of the video's dialogue transcript. The original source audio is not included in the export. Use music you have permission to use.</p>
+</section>
+
+<!-- ===== MAIN TOOL PANEL (Shorts and Trailer share this panel; the CSS shows or hides parts per tool) ===== -->
+<section id="tool">
+<a id="homeLink" href="#tools" class="soloonly">← All tools</a>
+<!-- Tool tabs (hidden by CSS; kept so the script can switch tools) -->
+<div class="row" id="tooltabs" role="tablist" aria-label="Tool"><button type="button" class="chip on" data-tool="shorts" role="tab">Long Video → Shorts</button><button type="button" class="chip" data-tool="trailer" role="tab">Trailer / Promo</button></div>
+<!-- Step 1: choose a video file (tap or drag and drop) -->
+<label class="drop" id="drop"><input type="file" id="file" accept="video/*"><b>Choose a video</b>tap here or drop a file</label>
+<p class="note ai-privacy-note">Your source video is processed in your browser. Audio is sent in short chunks to ClipForge’s Cloudflare Workers AI for transcription; transcript text and timestamps are then used for AI moment selection. Do not upload private or sensitive footage unless you are comfortable with this processing.</p>
+<!-- ...or paste a direct video link -->
+<div class="row" style="margin-top:10px"><input type="url" id="lnk" placeholder="Paste a direct MP4 / WebM video file URL" style="flex:1;min-width:0;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit"><button class="sm" id="lgo">Load</button></div><p class="note" id="lmsg">Social share links are not supported as direct media. Use a direct video-file URL that allows browser access (CORS), or upload the file.</p>
+<!-- Work area: appears after a video is loaded -->
+<div id="work" class="hide">
+ <div class="card">
+  <video id="src" controls playsinline></video>
+<!-- Shorts options: how many, length, quality, captions -->
+<div id="soBox">
+  <p class="note">Upload once. ClipForge reads the dialogue, finds the strongest moments and prepares editable Shorts automatically. Fine-tuning is optional.</p>
+  <div class="duration-panel" style="margin:12px 0;padding:14px;border:1px solid var(--bd);border-radius:12px;background:var(--card)">
+   <div class="lbl" style="font-size:15px;font-weight:700">Choose the duration of every Short</div>
+   <div class="row" id="lens"></div><input type="number" id="cl" class="hide" min="10" max="90" placeholder="Enter seconds (10–90)" style="width:170px;margin-top:8px">
+   <p class="note" style="margin:8px 0 0">Each result is one continuous moment, not a montage of separate clips. AI aims for your selected duration while keeping the dialogue complete.</p>
+  </div>
+  <details class="optional-settings"><summary>Short count and extra options</summary>
+   <div class="lbl">How many shorts do you want?</div>
+   <div class="row" id="counts"></div>
+   <p class="note hide" id="fullnote"><b>Full video:</b> turns the whole video into one 9:16 file. Export runs in real time, so a 30-minute video takes about 30 minutes and this screen must stay on. Choose <b>Fit + blur</b> to keep the whole picture (center crop cuts the sides). Smart reframe, captions and dialogue-only trim scan the entire video, so turn them off for long videos. Very long videos can run out of browser memory; 720p and under 30 minutes is safest.</p>
+  </details>
+  <div class="lbl">Export quality</div><div class="row"><button class="chip on" data-k="res" data-v="720">720p · faster</button><button class="chip" data-k="res" data-v="1080">1080p</button></div>
+  <div class="lbl">Add captions?</div>
+  <div class="row"><button class="chip on" data-k="cap" data-v="off">No captions</button><button class="chip" data-k="cap" data-v="auto">Auto-generate</button><button class="chip" data-k="cap" data-v="file">Subtitle file</button></div>
+  <div id="capbox" class="hide"><div class="row" style="margin-top:8px"><label class="chip" for="subf">Choose .srt / .vtt</label><input type="file" id="subf" accept=".srt,.vtt"></div></div>
+  <div id="autobox" class="hide"><div class="lbl">Speech language <small>(pick it for best accuracy)</small></div><div class="row"><button class="chip on" data-k="lang" data-v="auto">Auto</button><button class="chip" data-k="lang" data-v="english">English</button><button class="chip" data-k="lang" data-v="urdu">Urdu</button><button class="chip" data-k="lang" data-v="hindi">Hindi</button></div>
+  <button class="sm" id="capgo" hidden style="margin-top:10px">Generate captions for all shorts now</button></div>
+  <p class="note" id="capnote">Auto captions use Cloudflare Workers AI Whisper. Audio is sent to the ClipForge Worker for transcription; choose the spoken language for better results. Caption timing is currently phrase-level, not verified word-level alignment.</p>
+<div id="stylebox" class="hide"><div class="row" style="display:none!important"><button class="chip on" data-k="cs" data-v="classic">Classic</button><button class="chip" data-k="cs" data-v="pop">Pop</button><button class="chip" data-k="cs" data-v="box">Box</button><button class="chip" data-k="cs" data-v="karaoke">Karaoke</button><button class="chip" data-k="cs" data-v="karaoke-pro">Karaoke Captions</button><button class="chip" data-k="cs" data-v="hl">Highlight</button><button class="chip" data-k="cs" data-v="neon">Neon</button><button class="chip" data-k="cs" data-v="min">Minimal</button><button class="chip" data-k="cs" data-v="pill">Pill</button><button class="chip" data-k="cs" data-v="news">News bar</button><button class="chip" data-k="cs" data-v="outline">Bold outline</button><button class="chip" data-k="cs" data-v="urdu">Urdu Nastaliq</button><button class="chip" data-k="cs" data-v="hormozi">Hormozi Style</button><button class="chip" data-k="cs" data-v="mrbeast">MrBeast Style</button><button class="chip" data-k="cs" data-v="alex">Alex Style</button><button class="chip" data-k="cs" data-v="word">Word-by-Word Captions</button><button class="chip" data-k="cs" data-v="dynamic">Dynamic Captions</button><button class="chip" data-k="cs" data-v="popup">Pop-up Captions</button><button class="chip" data-k="cs" data-v="glow">Glow Captions</button><button class="chip" data-k="cs" data-v="impact">Bold Impact Captions</button><button class="chip" data-k="cs" data-v="highlight-word">Highlight Word Captions</button><button class="chip" data-k="cs" data-v="bounce">Bounce Captions</button><button class="chip" data-k="cs" data-v="neon-pro">Neon Captions</button><button class="chip" data-k="cs" data-v="podcast">Podcast Captions</button><button class="chip" data-k="cs" data-v="tiktok">TikTok Viral Captions</button><button class="chip" data-k="cs" data-v="reels">Instagram Reels Captions</button><button class="chip" data-k="cs" data-v="kinetic">Kinetic Typography</button><button class="chip" data-k="cs" data-v="typewriter">Typewriter Captions</button><button class="chip" data-k="cs" data-v="boxed">Boxed Captions</button><button class="chip" data-k="cs" data-v="minimal-white">Minimal White Captions</button><button class="chip" data-k="cs" data-v="animated">Animated Subtitles</button><button class="chip" data-k="cs" data-v="punch">Punch Captions</button><button class="chip" data-k="cs" data-v="gaming">Gaming Captions</button><button class="chip" data-k="cs" data-v="news-caption">News Captions</button><button class="chip" data-k="cs" data-v="cinematic">Cinematic Captions</button><button class="chip" data-k="cs" data-v="red">Red Highlight Captions</button><button class="chip" data-k="cs" data-v="sliding">Sliding Captions</button><button class="chip" data-k="cs" data-v="bubble">Bubble Captions</button><button class="chip" data-k="cs" data-v="aesthetic">Aesthetic Captions</button><button class="chip" data-k="cs" data-v="multi">Multi-Color Captions</button><button class="chip" data-k="cs" data-v="trending">Trending Shorts Captions</button></div>
+  <div class="lbl">Caption style previews <small>(shown when captions are enabled)</small></div><div id="cfShortTemplateGrid" class="cf-cap-template-grid cf-short-template-grid"></div></div>
+<details class="optional-settings"><summary>More editing controls (optional)</summary>
+<!-- More options. Only Framing, Crop position and Caption style are shown; the other settings keep their best default and are hidden (wrapped in hidden divs, so the script still finds them) -->
+<div id="adv">
+  <div hidden>
+  <div class="lbl">Clip selection</div>
+  <div class="row"><button class="chip on" data-k="mode" data-v="best">Best moments</button><button class="chip" data-k="mode" data-v="even">Split evenly</button></div>
+  <div id="depthbox">
+   <div class="lbl">Where to pick from</div>
+   <div class="row"><button class="chip on" data-k="vr" data-v="spread">Spread across video</button><button class="chip" data-k="vr" data-v="top">Highest scores only</button></div>
+   <div class="lbl">Skip intro &amp; end credits <small>(long videos)</small></div>
+   <div class="row"><button class="chip on" data-k="skip" data-v="on">Skip</button><button class="chip" data-k="skip" data-v="off">Use everything</button></div>
+   <div class="lbl">Analysis depth <small>(Deep also scans motion, slower)</small></div>
+   <div class="row"><button class="chip on" data-k="deep" data-v="0">Quick · speech &amp; audio</button><button class="chip" data-k="deep" data-v="1">Deep · + motion</button></div>
+   <p class="note">Speech-rich and emotional moments score higher than plain loud music. Very large files are scanned by sampling points across the video, which takes a few minutes. You can stop anytime.</p>
+  </div>
+  </div>
+  <div class="lbl">Framing</div>
+  <div class="row"><button class="chip on" data-k="fit" data-v="smart">Smart reframe</button><button class="chip" data-k="fit" data-v="crop">Center crop</button><button class="chip" data-k="fit" data-v="fit">Fit + blur</button></div>
+  <p class="note">Smart reframe first scans the short for faces and scene cuts, then keeps one steady crop per shot and hard-cuts to whoever is speaking, like an edited drama clip, instead of panning. The preview below stays centered. The scan adds a few seconds before recording.</p>
+  <div class="lbl">Trim silence <small>(skips quiet gaps while exporting)</small></div><div class="row"><button class="chip on" data-k="tr" data-v="off">Off</button><button class="chip" data-k="tr" data-v="gentle">Gentle</button><button class="chip" data-k="tr" data-v="normal">Normal</button><button class="chip" data-k="tr" data-v="strong">Aggressive</button><button class="chip" data-k="tr" data-v="speech">Dialogue only (speech AI)</button></div><p class="note">“Dialogue only” sends each short’s audio to Cloudflare Workers AI for transcription, then cuts detected gaps between spoken lines. Results depend on transcription accuracy and may need review.</p>
+  <div id="posbox" class="hide"><div class="lbl">Crop position <small>(left ↔ right)</small></div><input type="range" id="pos" min="0" max="100" value="50"></div>
+  <div hidden><div class="lbl">Caption model <small>(bigger = more accurate, slower)</small></div><div class="row"><button class="chip" data-k="model" data-v="tiny">Fast ~40MB</button><button class="chip on" data-k="model" data-v="base">Better ~75MB</button><button class="chip" data-k="model" data-v="small">Best ~250MB</button></div></div>
+  </div>
+  <div hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div></div>
+</div></details>
+
+<!-- Live preview of the 9:16 frame -->
+  <div class="lbl">Live preview <small>(9:16)</small></div><canvas id="cv" width="720" height="1280"></canvas><p class="note" id="pnote"></p>
+</div>
+<!-- Trailer only: short explanation of step 1 -->
+  <div class="toBox"><p class="note">Step 1: analysis scans the video for its strongest moments. Long episodes take a few minutes; you can stop anytime.</p></div>
+<!-- Trailer only: logo / banner scene option -->
+  <div id="logoTrailer" hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div>
+  <p class="note">Checks sample frames for static logos, sponsor banners and still title cards, and replaces those shorts with other picks. It cannot recognise a brand product that appears inside a normal scene.</p></div>
+<!-- Main button: analyze the video and create the plan, with progress bar and Stop button -->
+  <button class="main" id="go">Find AI-selected moments</button>
+  <div class="bar hide" id="pbar"><i></i></div><button class="sm hide" id="stop" style="margin-top:8px">Stop</button><button class="sm" id="skipAlign2" hidden style="margin-top:8px;margin-left:8px">Skip dialogue alignment</button><p class="note" id="msg"></p>
+ </div>
+<!-- Shorts result list (filled by JavaScript) -->
+ <div class="card hide" id="res"><div class="row" style="justify-content:space-between"><b id="rtitle">Your shorts</b><span class="row"><button class="sm hide" id="shuf">Different picks</button><button class="sm p" id="all">Export all</button></span></div><p class="note" id="sharenote">After exporting a short, use <b>Share…</b> (phone menu) or tap YouTube, Facebook, Instagram or TikTok. The file is saved first, then that site opens: choose the saved file there.</p><div id="list"></div></div>
+<!-- Trailer settings card: length, style, format, quality, texts, music (the plan is drawn into #trlbox) -->
+<div class="card hide" id="trl"><b>Trailer</b>
+ <p class="note">Builds a promo in three parts: scenes with dialogue, then a fast montage and a closing shot. The montage and closing shot use quiet moments and the original dialogue is muted there (add a music file below if you want sound under them). Scenes are chosen by sound, speech and motion, not by the story, so you can remove any part before exporting. The last 8% of the video is left out to avoid spoilers.</p>
+ <div class="row"><button class="chip" data-k="tl" data-v="45">45 s</button><button class="chip on" data-k="tl" data-v="60">60 s</button><button class="chip" data-k="tl" data-v="90">90 s</button><button class="sm p" id="trlgo">Make trailer</button><button class="sm" id="skipAlign" hidden>Skip dialogue alignment</button></div>
+ <div class="lbl">Style</div><div class="row"><button class="chip on" data-k="tstyle" data-v="clean">Clean promo</button><button class="chip" data-k="tstyle" data-v="cine">Cinematic</button></div>
+ <p class="note">Clean promo: straight cuts, the original sound only, no filters, effects or text unless you type text below. Cinematic: colour grade, effects, flashes and built-in music.</p>
+ <div class="lbl">Format</div><div class="row"><button class="chip on" data-k="tasp" data-v="wide">16:9 wide</button><button class="chip" data-k="tasp" data-v="tall">9:16 vertical</button></div>
+ <div class="lbl">Quality</div><div class="row"><button class="chip on" data-k="tres" data-v="720">720p · faster</button><button class="chip" data-k="tres" data-v="1080">1080p</button></div>
+ <label class="lbl" for="tWords">Montage words (optional, comma separated). They appear on short black cards between cuts. The app cannot match a word to what is on screen.</label><input id="tWords" maxlength="120" placeholder="e.g. LOVE, BETRAYAL, REVENGE" style="width:100%">
+ <div class="lbl">Dialogue language (for cutting at line ends)</div><div class="row"><button class="chip" data-k="lang" data-v="urdu">Urdu</button><button class="chip" data-k="lang" data-v="english">English</button><button class="chip" data-k="lang" data-v="hindi">Hindi</button><button class="chip on" data-k="lang" data-v="auto">Auto</button></div>
+ <div hidden>
+ <div class="lbl">Align dialogue cuts to full lines (Whisper: slow, can take several minutes on a phone, one-time ~75 MB download; off by default)</div><div class="row"><button class="chip" data-k="align" data-v="on">On</button><button class="chip on" data-k="align" data-v="off">Off</button></div>
+ <div class="lbl">Cinematic look <small>(color grade, vignette, slow push-in, flash cuts, 2.39:1 bars on wide)</small></div><div class="row"><button class="chip" data-k="cin" data-v="on">On</button><button class="chip on" data-k="cin" data-v="off">Off</button></div>
+ <div class="lbl">Sound effects &amp; score</div><div class="row"><button class="chip" data-k="sfx" data-v="on">On</button><button class="chip on" data-k="sfx" data-v="off">Off</button></div>
+ <div class="lbl">Text overlays</div><div class="row"><button class="chip on" data-k="ovl" data-v="on">On</button><button class="chip" data-k="ovl" data-v="off">Off</button></div>
+ </div>
+ <label class="lbl" for="tTag">Opening line (black card at the start)</label><input id="tTag" maxlength="80" placeholder="e.g. Some secrets burn forever" style="width:100%">
+ <label class="lbl" for="tCast">Middle card (before the fast montage)</label><input id="tCast" maxlength="80" placeholder="e.g. Muneeb Butt · Laiba Khan" style="width:100%">
+ <label class="lbl" for="tTitle">Title (final card)</label><input id="tTitle" maxlength="60" placeholder="e.g. Tapish" style="width:100%">
+ <label class="lbl" for="tRel">Release line (final card)</label><input id="tRel" maxlength="80" placeholder="e.g. Releasing 23rd June · 8 PM" style="width:100%">
+ <label class="lbl" for="tMusic">Your own music (optional)</label><input type="file" id="tMusic" accept="audio/*">
+ <p class="note">Without your own music the app plays a synthesized tension drone and heartbeat that speeds up. It is a simple built-in score, not a composed soundtrack, so a music file you have the rights to use will sound far better. Sound effects are simple sounds made inside the browser (a whoosh at each cut, an impact at the title and end card, a short riser before the end). They are mixed quietly under the dialogue. Text is typed by you; the app does not write it. Urdu text is supported.</p>
+ <div id="trlbox"></div></div>
+</div>
+</section>
+
+<!-- ===== IMAGE ANIMATOR: the iframe is created here by the second script ===== -->
+<section id="iaTool">
+<a id="iaBack" href="#tools" style="display:inline-block;margin:6px 0 10px;font-weight:700">← All tools</a>
+<p id="iaNote" role="status" style="margin:0 0 8px;font-size:14px"></p>
+<div id="iaBox"></div>
+</section>
+
+<!-- ===== VIDEO REVERSER: choose a video, get it back playing backwards (script: last block of this page) ===== -->
+<section id="rvTool">
+<a id="rvBack" href="#tools" style="display:inline-block;margin:6px 0 10px;font-weight:700">← All tools</a>
+<div class="card">
+<h3 style="margin-top:0">Reverse Video</h3>
+<label class="drop" id="rvDrop"><input type="file" id="rvFile" accept="video/*"><b>Choose a video</b>tap here or drop a file</label>
+<div id="rvWork" class="hide">
+<video id="rvSrc" controls playsinline preload="metadata" style="width:100%;max-height:50vh;border-radius:10px;background:#000;margin-top:12px"></video>
+<div class="lbl">Sound</div>
+<div class="row" id="rvSound"><button type="button" class="chip on" data-v="rev">Reverse the sound</button><button type="button" class="chip" data-v="off">No sound</button></div>
+<div class="lbl">Size</div>
+<div class="row" id="rvSize"><button type="button" class="chip" data-v="orig">Original</button><button type="button" class="chip on" data-v="1080">Up to 1080p</button><button type="button" class="chip" data-v="720">Up to 720p</button></div>
+<p class="note" id="rvEst"></p>
+<button class="main" id="rvGo">Reverse video</button>
+<div class="bar hide" id="rvBar"><i></i></div><button class="sm hide" id="rvStop" style="margin-top:8px">Stop</button>
+<p class="note" id="rvMsg" role="status"></p>
+<div id="rvOut" class="hide">
+<video id="rvRes" controls playsinline style="width:100%;max-height:50vh;border-radius:10px;background:#000"></video>
+<div class="row" style="margin-top:10px"><button class="main" id="rvSave">Save reversed video</button></div>
+</div>
+</div>
+</div>
+</section>
+
+<div class="wrap cf-lower-sections">
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how"><h2>How it works</h2>
+<div class="grid">
+<div class="card"><div class="num">1</div><h3>Pick a video</h3><p>Choose a file from your device. Most video processing happens in your browser; some AI features send audio or transcript data to external services.</p></div>
+<div class="card"><div class="num">2</div><h3>Analyze</h3><p>Speech activity, emotional peaks and strong openings are scored second by second.</p></div>
+<div class="card"><div class="num">3</div><h3>Export</h3><p>The top moments become 9:16 clips. Save each one to your device.</p></div></div></section>
+
+<!-- ===== FEATURES ===== -->
+<section class="capability-strip"><div><b>08</b><span>Creative tools</span></div><div><b>Multi-track</b><span>Studio timeline</span></div><div><b>On-device</b><span>Private workflow</span></div><div><b>HD</b><span>Export options</span></div></section>
+<section id="features"><h2>Features</h2>
+<div class="grid">
+<div class="card"><h3>Engagement scoring</h3><p>Every short gets a score and tags like “Strong hook” or “Dialogue”.</p></div>
+<div class="card"><h3>Spread across the story</h3><p>Picks come from the whole video, and “Different picks” re-rolls them.</p></div>
+<div class="card"><h3>Face-aware framing</h3><p>The 9:16 window follows faces and snaps on scene cuts.</p></div>
+<div class="card"><h3>Local-first processing</h3><p>Source video processing happens in your browser for many workflows. Selected AI features send limited audio or transcript data to external AI services.</p></div></div></section>
+
+<!-- ===== FAQ ===== -->
+<section id="faq"><h2>FAQ</h2>
+<details><summary>Why does export take as long as the clip?</summary><p>Clips are recorded in real time from the player, so a 30 second short takes about 30 seconds. Keep the page open and the screen on while exporting.</p></details>
+<details><summary>Why did it pick the same moments before?</summary><p>Older versions ranked by raw loudness, which favors theme music and intros. Now speech activity and peaks relative to the scene around them are used, intro and credits are skipped, and picks are spread across the video. Tap “Different picks” for a new set.</p></details>
+<details><summary>How does AI moment selection work?</summary><p>Cloudflare Workers AI Whisper transcribes audio sent in short chunks from your browser. The resulting transcript and timestamps are sent to the AI selection service to identify context, hooks, emotional turns and memorable dialogue. The original video file is not uploaded by the Shorts workflow. AI suggestions still need human review.</p></details>
+<details><summary>How does Smart reframe work?</summary><p>Before a short is recorded, a small face detector (downloaded once) scans it for faces and scene cuts. Each shot then gets one steady 9:16 crop that follows the speaker only when they really move, and it jumps exactly on cuts. If the detector cannot load, it falls back to motion.</p></details>
+<details><summary>Can I load a YouTube link?</summary><p>No. Browsers cannot download YouTube videos, and its terms do not allow it. Download your own video from YouTube Studio and choose the file. Direct .mp4 links work if the site allows it.</p></details>
+<details><summary>How do auto captions work?</summary><p>Cloudflare Workers AI Whisper transcribes the audio for each selected short. No local speech-model download is required. The app captures each short’s audio in the browser and sends it to the Worker; transcription time depends on clip length, server availability and network speed.</p></details>
+<details><summary>What does Trim silence do?</summary><p>While a short is recorded, ClipForge jumps over quiet stretches, so the result is tighter than the chosen length. Aggressive removes shorter pauses.</p></details>
+<details><summary>Which browser works best?</summary><p>Latest Chrome or Edge (v126 or newer) on Android and desktop, or Safari. Shorts are always saved as MP4. Firefox cannot record MP4, so it is not supported.</p></details>
+<details><summary>Are my videos uploaded to ClipForge?</summary><p>Most video workflows process the source video in your browser. Some AI features send short audio chunks, transcript text, timestamps or analysis requests to the relevant AI service so the feature can work. The source video itself is not uploaded by the Shorts workflow. Check the Privacy Policy for details.</p></details>
+<details><summary>Do I need an account?</summary><p>No account is currently required to use the available tools.</p></details>
+<details><summary>Can I use music, images and videos I find online?</summary><p>Only use media that you own, have permission to use, or are otherwise legally allowed to use. You are responsible for checking the rights to material you upload or export.</p></details>
+<details><summary>How can I contact ClipForge?</summary><p>Email <a href="mailto:shahzabahmed38@gmail.com">shahzabahmed38@gmail.com</a> for support, privacy questions or copyright concerns.</p></details>
+</section>
+
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer><div class="wrap"><div class="fg">
+<div><a class="brand" href="#top"><svg width="24" height="24" viewBox="0 0 26 26"><rect x="7" y="1" width="12" height="24" rx="3" fill="#8b7cff"/><path d="M11 9l6 4-6 4z" fill="#141413"/></svg>ClipForge Studio</a><p>Browser-based creative tools for shorts, trailers, highlights, captions and video editing. Developed by Vexolune Technologies.</p></div>
+<div><h4>Product</h4><a href="#tool">Create shorts</a><a href="#tools">All tools</a><a href="#features">Features</a><a href="#how">How it works</a></div>
+<div><h4>Company &amp; Support</h4><a href="/about.html">About Us</a><a href="#faq">FAQ</a><a href="/contact.html">Contact Us</a></div>
+<div><h4>Legal</h4><a href="/privacy.html">Privacy Policy</a><a href="/terms.html">Terms of Service</a><a href="/cookies.html">Cookie Policy</a><a href="/copyright.html">Copyright Policy</a></div></div>
+<div class="copy"><span>© <span id="yr">2026</span> ClipForge Studio. All rights reserved. Developed by Vexolune Technologies.</span><span>Support: <a href="mailto:shahzabahmed38@gmail.com">shahzabahmed38@gmail.com</a></span></div></div></footer>
+
+<!-- Error message box (red toast); shown by the err() function in the script -->
+<div id="toast" style="position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:#b42318;color:#fff;padding:12px 14px;border-radius:12px;z-index:50;display:none;font-size:14px"></div>
+<!-- ===== JAVASCRIPT: main application ===== -->
+
+<!-- ===== JAVASCRIPT: Image Animator ===== -->
+
+<!-- ===== JAVASCRIPT: Video Reverser ===== -->
+
+<script src="/caption-style-library.js"></script>
+<script src="/app.js"></script>
+<script src="/captions-studio.js"></script>
+<script src="/highlights-studio.js"></script>
+<script>
+(function(){
+ 'use strict';
+ var tools=['shorts','trailer','animator','reverse','montage','highlights','editor','captions'];
+ function route(){
+  var hash=(location.hash||'#top').slice(1);
+  var page=tools.indexOf(hash)>=0?'workspace':hash==='tools'?'tools':hash==='features'?'features':hash==='faq'?'faq':'home';
+  var body=document.body;
+  body.dataset.page=page;
+  body.classList.toggle('solo',page==='workspace');
+  body.classList.toggle('studio-app',page==='workspace'&&hash==='editor');
+  body.dataset.tool=tools.indexOf(hash)>=0?hash:'shorts';
+  // One authoritative visibility pass prevents legacy CSS/router rules from blanking tool workspaces.
+  var activeTool=tools.indexOf(hash)>=0?hash:'';
+  var panels={shorts:'tool',trailer:'tool',animator:'iaTool',reverse:'rvTool',montage:'vmTool',highlights:'highlightsTool',editor:'editorTool',captions:'cfCaptionsWorkspace'};
+  ['tool','iaTool','rvTool','vmTool','highlightsTool','editorTool','cfCaptionsWorkspace'].forEach(function(id){
+   var el=document.getElementById(id);
+   if(el)el.style.setProperty('display',page==='workspace'&&panels[activeTool]===id?'block':'none','important');
+  });
+  var section=document.getElementById('tools');
+  if(section)section.style.setProperty('display',page==='tools'?'block':'none','important');
+  document.querySelectorAll('[data-tool-route]').forEach(function(a){
+   var active=a.getAttribute('data-tool-route')===hash;
+   a.classList.toggle('active',active);
+   if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('[data-route]').forEach(function(a){
+   var active=a.getAttribute('data-route')===page;
+   a.classList.toggle('active',active);
+   if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+  });
+  document.title=page==='tools'?'All Creative Tools – ClipForge Studio':page==='workspace'?'ClipForge Studio – '+(hash==='animator'?'Picture to Video':hash==='reverse'?'Reverse Video':hash==='montage'?'Video Montage Maker':hash==='highlights'?'Highlights Studio':hash==='editor'?'Studio Editor':hash==='captions'?'Captions Studio':hash==='trailer'?'Trailer Maker':'Video to Shorts'):page==='home'?'ClipForge Studio – Creative Workspace':'ClipForge Studio';
+  if(page==='workspace')window.scrollTo(0,0);
+ }
+ window.addEventListener('hashchange',route);
+ window.addEventListener('pageshow',route);
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',route,{once:true});else route();
+})();
+</script>
+<script type="module" src="/dist/editor/layout.js"></script>
+<script type="module" src="/dist/editor/timeline.js"></script>
+<script type="module" src="/dist/editor/studio-ui.js"></script>
+<script data-cf-link-bridge>
+(function(){
+  "use strict";
+  var routes={"#top":"/","#tools":"/#tools","#features":"/#features","#faq":"/#faq","#how":"/#how","#tool":"/tools/shorts/","#shorts":"/tools/shorts/","#trailer":"/tools/trailer/","#animator":"/tools/animator/","#reverse":"/tools/reverse/","#montage":"/tools/montage/","#highlights":"/tools/highlights/","#editor":"/tools/editor/","#captions":"/tools/captions/"};
+  document.addEventListener('click',function(event){
+    var anchor=event.target.closest&&event.target.closest('a[href^="#"]');
+    if(!anchor||event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+    var url=routes[anchor.getAttribute('href')];
+    if(!url)return;
+    event.preventDefault();
+    location.assign(url);
+  });
+  window.addEventListener('beforeunload',function(event){
+    if(!/^\/tools\//.test(location.pathname))return;
+    for(var inputs=document.querySelectorAll('input[type=file]'),i=0;i<inputs.length;i++){
+      if(inputs[i].files&&inputs[i].files.length){
+        event.preventDefault();
+        event.returnValue='';
+        return;
+      }
+    }
+  });
+})();
+</script>
+</body></html>
