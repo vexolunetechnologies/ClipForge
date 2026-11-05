@@ -45,7 +45,7 @@ jobs:
           node --check public/_worker.js
 
       - name: Install headless Chromium for browser regression
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       - name: Test no-reload navigation in a real browser
         run: npm run test:browser
 
