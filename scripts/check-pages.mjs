@@ -45,4 +45,17 @@ for (const endpoint of [
 ]) assert.ok(worker.includes(endpoint), "Missing API: " + endpoint);
 assert.match(worker, /env\.ASSETS\.fetch\(request\)/);
 assert.match(from("public/dist/editor/layout.js"), /toolcard\[href="\/tools\/editor\/"\]/);
+
+const rootHome = from("index.html");
+assert.match(rootHome, /data-cf-link-bridge/);
+for (const tool of tools) {
+  const standalone = "tools/" + tool + "/index.html";
+  has(standalone);
+  const html = from(standalone);
+  assert.match(html, /data-cf-tool-bootstrap/);
+  assert.ok(html.includes('location.search+"#' + tool + '"'), "Incorrect legacy router bootstrap: " + tool);
+  assert.match(html, /src="\/app\.js"/);
+  assert.match(html, /data-cf-link-bridge/);
+  assert.match(html, /href="#editor"/);
+}
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");
