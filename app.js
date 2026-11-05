@@ -1130,7 +1130,7 @@ async function makeWC(aTrack,br){
  let ac='mp4a.40.2',am='aac';
  if(!(await AudioEncoder.isConfigSupported({codec:ac,sampleRate:sr,numberOfChannels:2,bitrate:128000})).supported){ac='opus';am='opus'}
 // Create the MP4 muxer (builds the file in memory).
- const tg=new M.ArrayBufferTarget(),mux=new M.Muxer({target:tg,video:{codec:vm,width:W,height:H,frameRate:30},audio:{codec:am,numberOfChannels:2,sampleRate:sr},fastStart:'in-memory'});
+ const tg=new M.ArrayBufferTarget(),mux=new M.Muxer({target:tg,video:{codec:vm,width:W,height:H,frameRate:30},audio:{codec:am,numberOfChannels:2,sampleRate:sr},fastStart:'in-memory',firstTimestampBehavior:'offset'});
 // R imitates the MediaRecorder interface (start, pause, resume, stop).
  const R={state:'inactive',out:null,err:null,onstop:null};
 // Timing state: pt = total paused time, aAcc = running position of the audio track.
