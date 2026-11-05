@@ -590,7 +590,7 @@
   root.querySelector(".st-assets .st-import")?.addEventListener("click", () => root.classList.remove("st-mobile-media-open"));
 
   window.addEventListener("hashchange", () => {
-    if (location.hash !== "#editor") {
+    if (window.ClipForgeNavigation.current() !== "editor") {
       if (state.exporting) state.exportCancel = true;
       if (voiceRecorder && voiceRecorder.state !== "inactive") voiceRecorder.stop();
     }

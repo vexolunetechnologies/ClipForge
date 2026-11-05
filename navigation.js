@@ -37,8 +37,8 @@
     if (tools.indexOf(tool) >= 0) busy[tool] = !!value;
   }
 
-  function isBusy() {
-    var active = current();
+  function isBusy(route) {
+    var active = route || current();
     if (busy[active]) return true;
     // app.js declares its Shorts/Trailer busy state in the shared classic-script scope.
     try { if ((active === "shorts" || active === "trailer") &&
@@ -61,8 +61,7 @@
   }
 
   function explainBusy() {
-    var note = document.getElementById("iaNote") ||
-      document.getElementById("toast");
+    var note = current() === "animator" ? document.getElementById("iaNote") : document.getElementById("toast");
     if (note) {
       note.textContent = "Stop or finish the current export before changing tools.";
       if (note.id === "toast") note.style.display = "block";
@@ -145,7 +144,7 @@
   });
 
   window.addEventListener("popstate", function () {
-    if (previousRoute !== current() && isBusy()) {
+    if (previousRoute !== current() && isBusy(previousRoute)) {
       restore(previousRoute);
       explainBusy();
       return;
