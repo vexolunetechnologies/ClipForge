@@ -40,10 +40,10 @@ try{
  assert.ok(neonCount>=2&&neonCount<10,"Search must find new and existing glow styles");
  await gallery.locator(".cf-style-search").fill("");
  await gallery.locator('[data-cf-category="trending"]').click();
- await grid.locator('[data-cf-preview-style="marker-sweep"]').click();
+ await grid.locator('button[data-cf-preview-style="marker-sweep"]').click();
  assert.equal(await gallery.locator(".cf-style-selected").innerText(),"Selected: Marker Highlight");
  assert.equal(await grid.locator("button.is-selected").count(),1);
- assert.equal(await grid.locator('[data-cf-preview-style="marker-sweep"]').getAttribute("aria-pressed"),"true");
+ assert.equal(await grid.locator('button[data-cf-preview-style="marker-sweep"]').getAttribute("aria-pressed"),"true");
 
  // All 14 modern styles must actually draw different pixels via the shared
  // caption renderer used by exported videos. Verify multilingual text paths.
@@ -93,7 +93,7 @@ try{
  assert.ok(shortHeight.client<=310&&shortHeight.scroll>shortHeight.client);
  assert.equal(shortHeight.overflow,"auto");
  await short.locator('[data-cf-category="bold"]').click();
- await short.locator('[data-cf-preview-style="podcast-lime"]').click();
+ await short.locator('button[data-cf-preview-style="podcast-lime"]').click();
  assert.equal(await page.evaluate(()=>S.cs),"podcast-lime");
  assert.match(await short.locator(".cf-style-selected").innerText(),/Podcast Lime/);
  assert.equal(new URL(page.url()).hash,"");
