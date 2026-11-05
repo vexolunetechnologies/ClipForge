@@ -7,6 +7,7 @@
   root.dataset.proUiReady = "1";
   const $ = id => document.getElementById(id);
   const state = api.state;
+  let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceButton = null;
   const audioPicker = document.createElement("input");
   audioPicker.type = "file"; audioPicker.accept = "audio/*"; audioPicker.multiple = true;
   audioPicker.hidden = true; audioPicker.setAttribute("aria-label","Import audio files");
@@ -232,7 +233,6 @@
       item.classList.add("is-dragging");
     });
     assets.addEventListener("dragend", event => event.target.closest(".st-media-item")?.classList.remove("is-dragging"));
-    let voiceRecorder = null, voiceStream = null, voiceChunks = [], voiceButton = null;
     async function toggleVoiceover(button) {
       if (voiceRecorder && voiceRecorder.state !== "inactive") {
         button.disabled = true;
