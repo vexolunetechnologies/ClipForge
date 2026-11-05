@@ -155,7 +155,7 @@ async function exportVideo(){
   };
   const tasks=[pumpVideo()];
   if(audioSource)tasks.push(pumpAudio());
-  await Promise.all(tasks.map(task=>task.catch(error=>{stop=true;throw error})));
+  await Promise.all(tasks.map(task=>task.catch(error=>{try{if(input&&!input.disposed)input.dispose()}catch(_){}throw error})));
   if(stop)throw Error('Stopped');
   setExport('Finalizing MP4…',98);
   await output.finalize();
