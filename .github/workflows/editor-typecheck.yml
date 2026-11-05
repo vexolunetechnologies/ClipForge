@@ -81,6 +81,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version
           ffprobe -version
+      - name: Test fragmented MP4 remux and duration metadata
+        run: npm run test:mp4-duration
       - name: Test Highlights with real WebM/Opus and mocked AI
         run: npm run test:media
 
