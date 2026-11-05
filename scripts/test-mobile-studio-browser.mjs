@@ -92,7 +92,7 @@ try{
   overflow:document.documentElement.scrollWidth>innerWidth+2
  }));
  assert.equal(narrow.overflow,false);
- assert.ok(narrow.w>=300&&narrow.dockW>=300&&narrow.previewH>100);
+ assert.ok(narrow.w>=300&&narrow.dockW>=300&&narrow.previewH>100,JSON.stringify(narrow));
 
  // Desktop editor stays professional multi-panel; no mobile dock overlaid.
  const desktop=await browser.newPage({viewport:{width:1440,height:900}});
