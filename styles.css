@@ -3041,3 +3041,12 @@ body[data-page="workspace"][data-tool="reverse"] #top.wrap {
  body.solo[data-tool="editor"] #editorTool .st-source-panel .st-left-tabs{clear:both!important}
 }
 @media(min-width:761px){#editorTool .st-mobile-sheet-close{display:none!important}}
+
+/* Narrow Android viewport safeguard. Some legacy NLE CSS calculates the
+   nested timeline as a zero-width implicit grid item below 360px. */
+@media(max-width:760px){
+ body.solo[data-tool="editor"] #editorTool .st-pro-main>.st-timeline-panel{
+  width:100vw!important;min-width:100vw!important;max-width:100vw!important;
+  grid-column:1!important;grid-row:2!important;justify-self:stretch!important;
+ }
+}
