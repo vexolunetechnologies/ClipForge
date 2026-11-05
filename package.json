@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.editor.json && node scripts/build-pages.mjs",
     "typecheck": "tsc -p tsconfig.editor.json --noEmit",
-    "test": "node scripts/check-pages.mjs && node scripts/test-navigation.mjs && node scripts/test-transcription-queue.mjs",
+    "test": "node scripts/check-pages.mjs && node scripts/test-navigation.mjs && node scripts/test-transcription-queue.mjs && node scripts/test-shorts-semantic.mjs && node scripts/test-shorts-framing.mjs",
     "verify": "npm run typecheck && npm run build && npm run test",
     "test:browser": "node scripts/test-browser.mjs",
     "test:phase1": "node scripts/test-phase1-browser.mjs",

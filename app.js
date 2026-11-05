@@ -126,7 +126,7 @@ function planFrames(S,ww,t0){
   let curx=cl(sm[0]);keys.push({t:si?sh.l:t0,t0:si?sh.e:t0,x:curx,cut:true});
   let streak=0;const dead=ww*.14;
   for(let i=1;i<n;i++){const x=cl(sm[i]),tt=S[sh.a+i].t,lk=keys[keys.length-1],dx=Math.abs(x-curx);
-   if(dx>ww*.3){if(++streak>=2&&tt-lk.t>1.2){curx=x;const ct=Math.max(lk.t+.05,tt-.5);keys.push({t:ct,t0:ct,x:curx,cut:true});streak=0}}
+   if(dx>ww*.3){if(++streak>=2&&tt-lk.t>1.2){curx=x;const ct=Math.max(lk.t+.05,tt-.5);keys.push({t:ct,t0:ct,x:curx,cut:false});streak=0}}
    else if(dx>ww*.2){if(++streak>=4){curx=x;keys.push({t:tt,t0:tt,x:curx,cut:false});streak=0}}
    else streak=0}
  });
@@ -146,7 +146,7 @@ function snapSeg(pcm,t0,t1){
 // Main elements: v = the video player, cv = preview / recording canvas, ctx = its 2D drawing context.
 const v=$('#src'),cv=$('#cv'),ctx=cv.getContext('2d');
 // S = every user setting (count, length, framing, captions, trailer options...). Option buttons write into it through their data-k / data-v attributes.
-let S={n:'auto',len:30,mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
+let S={n:'auto',len:'auto',mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'classic',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
 // Runtime state: clips (the plan), busy flag, RUN token (changing it cancels running work), loaded file info, and audio analysis data (ENV = loudness every 0.1 s).
 let clips=[],busy=false,RUN=0,url=null,fname='video',file=null,PL=30,cues=[],capOn=false,AUD=null,SHORTS_TRANSCRIPT=null,ENV=null,LAST=null,REC=null,ALL=false,RECING=false;
 window.ClipForgeMainBusy=()=>busy;
@@ -725,12 +725,16 @@ $('#go').onclick=async()=>{
    }
    if(S.logo==='on'&&v.videoWidth){try{const dn=await logoFilter(tok);$('#capnote').textContent=(dn?'Replaced '+dn+' short(s) that showed a logo. ':'')+(LAST.logoNote||'')}catch(e){if(e.message==='Stopped')throw e;$('#capnote').textContent='Logo check skipped: '+(e.message||e)}}
    if(!clips.length)throw new Error('No moments found. Try a shorter length.');
-   say(clips.length<S.n?'Only '+clips.length+' non-overlapping shorts fit. Try a shorter length.':'Found '+clips.length+' moments spread across the video. Tap "Different picks" for another set.')}
+   if(LAST&&LAST.selectionMode==='transcript-fallback')
+    say('AI timing was invalid, so ClipForge recovered '+clips.length+' continuous dialogue section(s) from the transcript. Preview and adjust the boundaries before exporting.');
+   else if(LAST&&LAST.selectionMode==='ai-adjusted')
+    say('Found '+clips.length+' AI-selected moments. Some timing was adjusted to fit your chosen Short length; preview before export.');
+   else say(clips.length<S.n?'Only '+clips.length+' non-overlapping shorts fit. Try a shorter length.':'Found '+clips.length+' moments spread across the video. Tap "Different picks" for another set.')}
   prog(1);render();if(S.tool==='trailer')say('Analysis done. Choose the length and format below, then make your trailer.');$('#res').classList.remove('hide');$('#trl').classList.remove('hide');TRAILER=null;renderTrailer();$('#res').scrollIntoView({behavior:'smooth'})
  }catch(e){if(e.message!=='Stopped'){say('Analysis failed: '+(e.message||e));err('Analysis failed: '+(e.message||e))}}
  if(tok===RUN){setTimeout(()=>$('#pbar').classList.add('hide'),600);busy=false;lock(false)}};
 // "Different picks" button: build a new plan with some random variety.
-$('#shuf').onclick=()=>{if(busy||!LAST)return;if(LAST.semanticPool&&LAST.semanticPool.length){const pool=LAST.semanticPool,n=S.n==='auto'?Math.min(10,Math.max(3,Math.round((LAST.dur||180)/180))):Math.max(1,Math.min(50,+S.n||3)),start=LAST.semanticCursor||0;clips=Array.from({length:Math.min(n,pool.length)},(_,i)=>{const q=pool[(start+i)%pool.length];return{...q,tags:[...q.tags],blob:null,pcm:null,cap:false}});LAST.semanticCursor=(start+clips.length)%pool.length;render();say('Showing another set of AI-selected dialogue moments.')}else{clips=doPlan(true);render();say('New set of picks.')}};
+$('#shuf').onclick=()=>{if(busy||!LAST)return;if(LAST.semanticPool&&LAST.semanticPool.length){const pool=LAST.semanticPool,n=S.n==='auto'?Math.min(10,Math.max(3,Math.round((LAST.dur||180)/180))):Math.max(1,Math.min(50,+S.n||3)),start=LAST.semanticCursor||0;clips=Array.from({length:Math.min(n,pool.length)},(_,i)=>{const q=pool[(start+i)%pool.length];return{...q,tags:[...q.tags],blob:null,pcm:null,cap:false}});LAST.semanticCursor=(start+clips.length)%pool.length;render();say(LAST.selectionMode==='transcript-fallback'?'Showing another set of transcript-based dialogue sections. Preview before export.':'Showing another set of AI-selected dialogue moments.')}else{clips=doPlan(true);render();say('New set of picks.')}};
 
 // Draw the list of shorts (thumbnail, score, tags, Export / Save buttons).
 function render(){
@@ -941,7 +945,7 @@ async function semanticShortPlan(tok,dur){
  if(segments.length>2500)throw new Error('This video has too much dialogue for one analysis pass. Try a shorter section first.');
  const wanted=S.n==='auto'?Math.min(10,Math.max(3,Math.round(dur/180))):Math.max(1,Math.min(50,+S.n||3));
  workProgress('Finding the best moments',66);
- const response=await guard(fetch(SEMANTIC_ENDPOINT,{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({duration:dur,targetLength:PL,count:wanted,language:S.lang,segments})}),120000,'AI dialogue analysis');
+ const response=await guard(fetch(SEMANTIC_ENDPOINT,{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({duration:dur,targetLength:PL,autoDuration:S.len==='auto',count:wanted,language:S.lang,segments})}),120000,'AI dialogue analysis');
  const responseText=await response.text();alive(tok);workProgress('Selecting the strongest moments',86);
  let data=null;try{data=JSON.parse(responseText)}catch(e){
   const preview=String(responseText||'').replace(/\s+/g,' ').slice(0,160);
@@ -950,8 +954,10 @@ async function semanticShortPlan(tok,dur){
  }
  if(!response.ok)throw new Error(data.error||('AI analysis failed ('+response.status+').'));
  if(!data||!Array.isArray(data.clips))throw new Error('The AI API response is missing its clips list. Please try again.');
- const minClip=Math.max(8,Math.round(PL*.8)),maxClip=Math.min(110,Math.round(PL*1.25));
- const pool=(data.clips||[]).map(q=>({s:Number(q.start),e:Number(q.end),score:Math.max(0,Math.min(100,Math.round(Number(q.score)||0))),tags:[String(q.category||'AI selected').slice(0,32)],reason:String(q.reason||'').slice(0,240),hook:String(q.hook||'').slice(0,120),blob:null,pcm:null,cap:false,ai:true}))
+ const isAuto=S.len==='auto',minClip=isAuto?8:Math.max(8,Math.round(PL*.8)),maxClip=isAuto?110:Math.min(110,Math.round(PL*1.25));
+ const recovered=data.selectionMode==='transcript-fallback';
+ LAST.selectionMode=data.selectionMode||'ai';
+ const pool=(data.clips||[]).map(q=>({s:Number(q.start),e:Number(q.end),score:recovered?null:Math.max(0,Math.min(100,Math.round(Number(q.score)||0))),tags:[String(q.category||(recovered?'Dialogue review':'AI selected')).slice(0,32)],reason:String(q.reason||'').slice(0,240),hook:String(q.hook||'').slice(0,120),blob:null,pcm:null,cap:false,ai:true}))
   .filter(q=>Number.isFinite(q.s)&&Number.isFinite(q.e)&&q.s>=0&&q.e<=dur&&q.e-q.s>=minClip&&q.e-q.s<=maxClip);
  if(!pool.length)throw new Error('AI could not find enough strong dialogue moments. Try another source or a longer target length.');
  pool.sort((a,b)=>b.score-a.score);LAST.semanticPool=pool;LAST.semanticCursor=Math.min(wanted,pool.length);
@@ -1072,9 +1078,12 @@ function camUpdate(t,dt,lc){const K=cam.keys,was=cam.k;
  // A planned shot cut is a real edit point: change crop on that frame, not with a fast pan.
  if(cam.k!==was&&K[cam.k].cut){cam.x=cam.tx;cam.vx=0;return}
  // Critically damped spring: smooth in-shot subject movement without abrupt velocity changes.
- const step=Math.max(.001,Math.min(.05,dt||0)),omega=5.2,y=cam.x-cam.tx,e=Math.exp(-omega*step),temp=(cam.vx+omega*y)*step;
- cam.x=cam.tx+(y+temp)*e;cam.vx=(cam.vx-omega*temp)*e;
- const maxV=.9;if(cam.vx>maxV)cam.vx=maxV;else if(cam.vx< -maxV)cam.vx=-maxV;
+ const step=Math.max(.001,Math.min(.05,dt||0)),omega=3.7,y=cam.x-cam.tx,e=Math.exp(-omega*step),temp=(cam.vx+omega*y)*step;
+ const intended=cam.tx+(y+temp)*e,maxStep=cam.ww*.7*step;
+ cam.x=Math.max(cam.ww/2,Math.min(1-cam.ww/2,Math.max(cam.x-maxStep,Math.min(cam.x+maxStep,intended))));
+ cam.vx=(cam.vx-omega*temp)*e;
+ // Velocity and position cap avoid camera whips when face detection switches.
+ const maxV=cam.ww*.7;if(cam.vx>maxV)cam.vx=maxV;else if(cam.vx< -maxV)cam.vx=-maxV;
  if(Math.abs(cam.tx-cam.x)<.001&&Math.abs(cam.vx)<.01){cam.x=cam.tx;cam.vx=0}}
 // Redraw the preview when the player seeks or its time changes (not while recording).
 v.addEventListener('seeked',()=>{if(!busy)draw()});v.addEventListener('timeupdate',()=>{if(!busy)draw()});v.addEventListener('loadeddata',()=>draw());
