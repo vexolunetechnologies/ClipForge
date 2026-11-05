@@ -3,8 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "build": "tsc -p tsconfig.editor.json",
-    "typecheck": "tsc -p tsconfig.editor.json --noEmit"
+    "build": "tsc -p tsconfig.editor.json && node scripts/build-pages.mjs",
+    "typecheck": "tsc -p tsconfig.editor.json --noEmit",
+    "test": "node scripts/check-pages.mjs",
+    "verify": "npm run typecheck && npm run build && npm run test"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
