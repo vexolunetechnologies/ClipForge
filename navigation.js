@@ -79,6 +79,9 @@
     };
     var old = document.getElementById(panels[route]);
     if (old) old.querySelectorAll("video").forEach(function (video) { video.pause(); });
+    if (route === "editor" && window.ClipForgeEditor?.state?.playing) {
+      document.getElementById("stPlay")?.click();
+    }
   }
 
   function notify() {

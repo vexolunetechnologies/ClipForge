@@ -13,6 +13,10 @@ const files = [
   ["app.js", "public/assets/js/core/app.js"],
   ["navigation.js", "public/navigation.js"],
   ["navigation.js", "public/assets/js/core/navigation.js"],
+  ["editor-loader.js", "public/editor-loader.js"],
+  ["animator-idle.js", "public/animator-idle.js"],
+  ["editor-loader.js", "public/assets/js/core/editor-loader.js"],
+  ["animator-idle.js", "public/assets/js/core/animator-idle.js"],
   ["caption-style-library.js", "public/assets/js/shared/caption-style-library.js"],
   ["captions-studio.js", "public/assets/js/tools/captions-studio.js"],
   ["highlights-studio.js", "public/assets/js/tools/highlights-studio.js"],
@@ -34,7 +38,8 @@ for (const tool of tools) {
   assert.doesNotMatch(html, /data-cf-tool-bootstrap|data-cf-link-bridge/);
   assert.ok(html.includes("https://clipforgestudio.pages.dev/tools/" + tool + "/"), "Missing clean canonical URL");
   assert.match(html, /\/assets\/css\/styles\.css/);
-  assert.match(html, /\/dist\/editor\/timeline\.js/);
+  assert.match(html, /src="\/assets\/js\/core\/editor-loader\.js"/);
+  assert.doesNotMatch(html, /<script[^>]+src="\/dist\/editor\/(?:timeline|studio-ui)\.js"/);
   assert.match(html, /src="\/assets\/js\/core\/navigation\.js"/);
 }
 for (const name of ["about", "contact", "privacy", "terms", "cookies", "copyright"]) {

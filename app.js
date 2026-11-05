@@ -1326,8 +1326,9 @@ const IA_HTML=JSON.parse("\"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n
 const box=document.getElementById('iaBox'),note=document.getElementById('iaNote');let fr=null,iaBusy=false,onIa=false;
 // Tell the animator which theme (light / dark) is active.
 function sendTheme(){try{fr&&fr.contentWindow.postMessage({ia:'theme',v:document.documentElement.dataset.theme||''},'*')}catch(e){}}
+ function sendVisibility(){try{fr&&fr.contentWindow.postMessage({ia:'visibility',v:window.ClipForgeNavigation.current()==='animator'},'*')}catch(e){}}
 // Create the iframe once and fill it with IA_HTML.
-function mount(){if(fr)return;fr=document.createElement('iframe');fr.title='Image Animator';fr.setAttribute('allow','microphone; autoplay');fr.style.cssText='width:100%;border:0;min-height:900px;display:block;background:transparent';fr.onload=sendTheme;fr.srcdoc=IA_HTML;box.append(fr)}
+function mount(){if(fr)return;fr=document.createElement('iframe');fr.title='Image Animator';fr.setAttribute('allow','microphone; autoplay');fr.style.cssText='width:100%;border:0;min-height:900px;display:block;background:transparent';fr.onload=()=>{sendTheme();sendVisibility()};fr.srcdoc=IA_HTML.replace('</body>','<script src="/animator-idle.js"></'+'script></body>');box.append(fr)}
 // Send the theme again whenever it changes.
 new MutationObserver(sendTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 // Messages from the animator: its busy state and its height.
@@ -1336,8 +1337,8 @@ addEventListener('message',e=>{if(!fr||e.source!==fr.contentWindow)return;const 
 function route(){const h=window.ClipForgeNavigation.current();
  // The page-level router in index.html is the single authority for body state and visibility.
  // This handler only mounts the isolated animator and protects an active render from navigation.
- if(h==='animator'){onIa=true;if(note)note.textContent='';mount()}
- else if(onIa){if(iaBusy){window.ClipForgeNavigation.restore('animator');return}onIa=false}}
+ if(h==='animator'){onIa=true;if(note)note.textContent='';mount();sendVisibility()}
+ else if(onIa){if(iaBusy){window.ClipForgeNavigation.restore('animator');return}onIa=false;sendVisibility()}}
 // Block other links while the animator is busy and show a message.
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#"]');if(a&&onIa&&iaBusy&&a.getAttribute('href')!=='#animator'){e.preventDefault();note.textContent='Image Animator is working. Wait for it to finish (or press Cancel inside it) before leaving this page.'}},true);
 // Run on every hash change and once now.

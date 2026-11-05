@@ -6,7 +6,43 @@ const SAMPLE={english:'VEXOLUNE TECHNOLOGIES',urdu:'ویکسولون ٹیکنا�
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let file=null,video=null,cues=[],sourceCues=[],style='classic',busy=false,stop=false,outUrl=null,activeOutput=null,activeInput=null;
 function draw(ctx,text,key,w,h,t=0,d=2){window.ClipForgeCaptionStyles.draw(ctx,text,key,w,h,t,d)}
-function grid(host,lang,selected,pick){if(!host)return;host.innerHTML='';ST.forEach(([key,label])=>{const b=document.createElement('button');b.type='button';b.className='cf-cap-template'+(key===selected?' is-selected':'');const c=document.createElement('canvas');c.width=180;c.height=108;c.getContext('2d').fillStyle='#171b25';c.getContext('2d').fillRect(0,0,180,108);draw(c.getContext('2d'),SAMPLE[lang]||SAMPLE.english,key,180,108);const s=document.createElement('span');s.textContent=label;b.append(c,s);b.onclick=()=>pick(key);host.append(b)})}
+/* Keep all 41 style buttons, but paint sample canvases only near the viewport. */
+const previewObservers=new WeakMap();
+function grid(host,lang,selected,pick,force=false){
+ if(!host)return;
+ if(!force&&host.dataset.cfPreviewLang===lang&&host.children.length===ST.length){
+  Array.from(host.children).forEach(button=>{
+   button.classList.toggle('is-selected',button.dataset.cfPreviewStyle===selected);
+   button.onclick=()=>pick(button.dataset.cfPreviewStyle);
+  });
+  return;
+ }
+ const previous=previewObservers.get(host);if(previous)previous.disconnect();
+ host.textContent='';host.dataset.cfPreviewLang=lang;
+ const fragment=document.createDocumentFragment();
+ const paint=canvas=>{
+  if(canvas.dataset.cfPainted==='1')return;
+  draw(canvas.getContext('2d'),SAMPLE[lang]||SAMPLE.english,canvas.dataset.cfPreviewStyle,180,108);
+  canvas.dataset.cfPainted='1';
+ };
+ const observer=typeof IntersectionObserver==='function'
+  ?new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{if(entry.isIntersecting){paint(entry.target);observer.unobserve(entry.target)}});
+   },{rootMargin:'96px 0px'}):null;
+ if(observer)previewObservers.set(host,observer);
+ ST.forEach(([key,label])=>{
+  const button=document.createElement('button');
+  button.type='button';button.className='cf-cap-template'+(key===selected?' is-selected':'');
+  button.dataset.cfPreviewStyle=key;
+  const canvas=document.createElement('canvas');canvas.width=180;canvas.height=108;
+  canvas.dataset.cfPreviewStyle=key;
+  const ctx=canvas.getContext('2d');ctx.fillStyle='#171b25';ctx.fillRect(0,0,180,108);
+  const title=document.createElement('span');title.textContent=label;
+  button.append(canvas,title);button.onclick=()=>pick(key);fragment.append(button);
+ });
+ host.append(fragment);
+ host.querySelectorAll('canvas').forEach(canvas=>{if(observer)observer.observe(canvas);else paint(canvas)});
+}
 function shortLang(){const b=document.querySelector('#autobox [data-k="lang"].on');return b&&b.dataset.v!=='auto'?b.dataset.v:'english'}
 function ensureShortStyleButtons(){
  const row=document.querySelector('#stylebox .row');if(!row)return;
@@ -14,7 +50,7 @@ function ensureShortStyleButtons(){
   const b=document.createElement('button');b.type='button';b.className='chip';b.dataset.k='cs';b.dataset.v=key;b.textContent=label;row.append(b);
  });
 }
-function shortGrid(){const host=$('cfShortTemplateGrid');if(!host)return;const b=document.querySelector('#stylebox [data-k="cs"].on'),sel=b?b.dataset.v:'classic';grid(host,shortLang(),sel,k=>{const chip=document.querySelector('#stylebox [data-k="cs"][data-v="'+k+'"]');if(chip)chip.click();shortGrid()})}
+function shortGrid(force=false){const host=$('cfShortTemplateGrid');if(!host)return;const b=document.querySelector('#stylebox [data-k="cs"].on'),sel=b?b.dataset.v:'classic';grid(host,shortLang(),sel,k=>{const chip=document.querySelector('#stylebox [data-k="cs"][data-v="'+k+'"]');if(chip)chip.click();shortGrid()},force)}
 function workspace(){if($('cfCaptionsWorkspace'))return;const s=document.createElement('section');s.id='cfCaptionsWorkspace';s.className='cf-workspace';s.style.display='none';s.innerHTML='<a class="cf-back" href="#tools">← All creative tools</a><div class="cf-page-head"><div><div class="cf-kicker">CLIPFORGE / CAPTIONS</div><h2>Captions Studio</h2><p>Upload a full video, transcribe dialogue, choose a caption style and export.</p></div></div><div class="cf-cap-layout"><div class="cf-panel"><div class="cf-field"><label>UPLOAD FULL VIDEO</label><input id="cfCapFile" type="file" accept="video/*"></div><div class="cf-cap-video-wrap"><video id="cfCapVideo" class="cf-preview" controls playsinline></video><canvas id="cfCapLive" aria-hidden="true"></canvas></div><div class="cf-row cf-cap-controls"><label>Speech language</label><select id="cfCapLang"><option value="english">English</option><option value="urdu">Urdu</option><option value="hindi">Hindi</option></select></div><div class="cf-row cf-cap-controls"><label>Caption length</label><select id="cfCapDensity"><option value="3">Short · 2–3 words</option><option value="5" selected>Balanced · 4–5 words</option><option value="7">Long · 6–7 words</option></select></div><button class="main" id="cfCapTranscribe" disabled>Transcribe full video</button><p class="cf-muted" id="cfCapStatus">Choose a video to begin. Audio is sent in short chunks to Cloudflare Workers AI.</p><div class="cf-cap-progress"><i id="cfCapProgress"></i></div><div class="cf-field"><label>REVIEW / EDIT CAPTIONS · ONE CAPTION PER LINE</label><textarea id="cfCapText" rows="9" disabled placeholder="Transcribed captions appear here."></textarea></div><div class="cf-row"><button class="sm" id="cfCapSrt" disabled>Download SRT</button><button class="sm" id="cfCapVtt" disabled>Download VTT</button></div></div><div class="cf-panel"><div class="cf-kicker">41 CAPTION STYLES</div><p class="cf-muted">Choose a style. Preview and export use the same renderer.</p><div id="cfCapTemplateGrid" class="cf-cap-template-grid"></div><div class="cf-field"><label>EXPORT QUALITY</label><select id="cfCapQuality"><option value="720">720p · faster</option><option value="1080">1080p</option></select></div><button class="main" id="cfCapExport" disabled>Export captioned video</button><div id="cfCapOutput" class="cf-output"></div><button class="sm" id="cfCapStop" disabled>Stop export</button></div></div>';(document.querySelector('.wrap')||document.body).insertBefore(s,$('tool')||null)}
 function status(t){$('cfCapStatus').textContent=t}
 function enabled(){const ready=!!cues.length;$('cfCapFile').disabled=busy;$('cfCapQuality').disabled=busy;$('cfCapLang').disabled=busy;$('cfCapDensity').disabled=busy;$('cfCapTranscribe').disabled=!file||busy;$('cfCapExport').disabled=!file||!ready||busy;$('cfCapText').disabled=!ready||busy;$('cfCapSrt').disabled=!ready||busy;$('cfCapVtt').disabled=!ready||busy;$('cfCapStop').disabled=!busy;const gridHost=$('cfCapTemplateGrid');if(gridHost)gridHost.querySelectorAll('button').forEach(b=>b.disabled=busy)}
@@ -260,11 +296,19 @@ function livePreview(){
 }
 function init(){
  workspace();video=$('cfCapVideo');
- if(document.fonts){Promise.all([document.fonts.load('700 48px "Noto Nastaliq Urdu"','اردو کیپشن'),document.fonts.load('700 48px "Noto Sans Devanagari"','हिन्दी')]).then(()=>{refresh();shortGrid()}).catch(()=>{})}
+ if(document.fonts){Promise.all([document.fonts.load('700 48px "Noto Nastaliq Urdu"','اردو کیپشن'),document.fonts.load('700 48px "Noto Sans Devanagari"','हिन्दी')]).then(()=>{if(activeRoute()==='captions')refresh(true);if(['shorts','trailer'].includes(activeRoute())&&$('cfShortTemplateGrid')?.children.length)shortGrid(true)}).catch(()=>{})}
  $('cfCapFile').onchange=e=>{file=e.target.files[0]||null;stop=false;cues=[];sourceCues=[];$('cfCapText').value='';$('cfCapOutput').innerHTML='';if(video.src)URL.revokeObjectURL(video.src);if(file){video.src=URL.createObjectURL(file);video.load();status(file.name+' selected.');livePreview()}else{video.removeAttribute('src');status('Choose a video to begin.')}enabled()};
  $('cfCapTranscribe').onclick=transcribe;$('cfCapLang').onchange=()=>{refresh();livePreview()};$('cfCapDensity').onchange=()=>{if(!sourceCues.length)return;cues=segmentTranscript(sourceCues);renderCaptionLines();status('Caption length updated · '+cues.length+' captions.');livePreview()};video.addEventListener('timeupdate',livePreview);video.addEventListener('loadedmetadata',livePreview);video.addEventListener('seeked',livePreview);window.addEventListener('resize',livePreview);
  $('cfCapText').oninput=sync;$('cfCapSrt').onclick=()=>subs(false);$('cfCapVtt').onclick=()=>subs(true);$('cfCapExport').onclick=exportVideo;$('cfCapStop').onclick=()=>{stop=true;try{if(activeInput&&!activeInput.disposed)activeInput.dispose()}catch(e){}try{if(activeOutput&&activeOutput.state!=='finalized'&&activeOutput.state!=='canceled')activeOutput.cancel().catch(()=>{})}catch(e){}};
- function refresh(){grid($('cfCapTemplateGrid'),$('cfCapLang').value,style,k=>{style=k;refresh();livePreview()})}refresh();shortGrid();enabled();
+ function refresh(force=false){grid($('cfCapTemplateGrid'),$('cfCapLang').value,style,k=>{style=k;refresh();livePreview()},force)}
+ function activeRoute(){return window.ClipForgeNavigation?.current?.()||'top'}
+ function activatePreviews(){
+  const route=activeRoute();
+  if(route==='captions')refresh();
+  if((route==='shorts'||route==='trailer')&&!$('stylebox')?.classList.contains('hide'))shortGrid();
+ }
+ window.addEventListener('hashchange',activatePreviews);
+ enabled();
  function syncShortsCaptionPanels(){
   const chosen=document.querySelector('#soBox [data-k="cap"].on');
   const mode=chosen?chosen.dataset.v:'off';
@@ -274,14 +318,14 @@ function init(){
   if(autoBox)autoBox.classList.toggle('hide',mode!=='auto'&&!trimSpeech);
   if(styleBox)styleBox.classList.toggle('hide',mode==='off');
   if(note)note.classList.toggle('hide',mode!=='auto'&&!trimSpeech);
-  if(mode!=='off')shortGrid();
+  if(mode!=='off'&&['shorts','trailer'].includes(activeRoute()))shortGrid();
  }
  document.addEventListener('click',e=>{
   if(e.target.closest('#soBox [data-k="cap"]'))syncShortsCaptionPanels();
   if(e.target.closest('#stylebox [data-k="cs"]')){shortGrid();livePreview()}
   if(e.target.closest('#autobox [data-k="lang"]'))setTimeout(shortGrid,0);
  });
- ensureShortStyleButtons();syncShortsCaptionPanels();
+ ensureShortStyleButtons();syncShortsCaptionPanels();activatePreviews();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

@@ -2,3 +2,4 @@
 /public/*
 !/public/.gitkeep
 .DS_Store
+/reports/
