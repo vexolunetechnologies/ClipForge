@@ -23,7 +23,7 @@ function mono(buf,start,end){const sr=buf.sampleRate,a=Array.from({length:buf.nu
 function normalizeWords(words,segment){
  const out=[];
  (Array.isArray(words)?words:[]).forEach(w=>{
-  const text=String(w.word||w.text||'').trim(),s=Number(w.start)+segment.s,e=Number(w.end)+segment.s;
+  const text=String(w.word||w.text||'').trim(),s=Number(w.s??w.start),e=Number(w.e??w.end);
   if(!text||!Number.isFinite(s)||!Number.isFinite(e)||e<=s)return;
   if(/^[,.;:!?؟۔،؛]+$/.test(text)&&out.length){
    out[out.length-1].text+=text;out[out.length-1].e=Math.max(out[out.length-1].e,e);
