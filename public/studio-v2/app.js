@@ -138,10 +138,10 @@ function clipPointerDown(e){if(e.button!==0)return;const el=e.currentTarget,clip
 const mode=e.target.dataset.trim||"move";
 if(state.tool==="razor"&&mode==="move"){const rect=el.getBoundingClientRect(),at=clip.start+(e.clientX-rect.left)/state.zoom;splitAt(at,clip);return;}
 state.selected=clip.id;renderInspector();for(const n of document.querySelectorAll(".clip"))n.classList.toggle("selected",n.dataset.clipId===clip.id);
-remember();drag={pointer:e.pointerId,client:e.clientX,original:{start:clip.start,duration:clip.duration,sourceIn:clip.sourceIn},mode,id:clip.id,changed:false};el.setPointerCapture(e.pointerId);el.addEventListener("pointermove",clipPointerMove);el.addEventListener("pointerup",clipPointerUp,{once:true});el.addEventListener("pointercancel",clipPointerUp,{once:true});e.stopPropagation();}
-function clipPointerMove(e){if(!drag||e.pointerId!==drag.pointer)return;const clip=getClip(drag.id);if(!clip)return;const delta=(e.clientX-drag.client)/state.zoom;if(Math.abs(delta)<.005)return;drag.changed=true;const o=drag.original;
+remember();drag={pointer:e.pointerId,client:e.clientX,original:{start:clip.start,duration:clip.duration,sourceIn:clip.sourceIn??0},mode,id:clip.id,changed:false};el.setPointerCapture(e.pointerId);el.addEventListener("pointermove",clipPointerMove);el.addEventListener("pointerup",clipPointerUp,{once:true});el.addEventListener("pointercancel",clipPointerUp,{once:true});e.stopPropagation();}
+function clipPointerMove(e){if(!drag||e.pointerId!==drag.pointer)return;if(e.cancelable)e.preventDefault();const clip=getClip(drag.id);if(!clip)return;const delta=(e.clientX-drag.client)/state.zoom;if(Math.abs(delta)<.005)return;drag.changed=true;const o=drag.original;
 if(drag.mode==="move")clip.start=snapTime(Math.max(0,o.start+delta),clip.id);
-if(drag.mode==="left"){const limit=Math.max(-o.sourceIn/(clip.speed||1),-(o.start));let dt=clamp(delta,limit,o.duration-.12);clip.start=snapTime(o.start+dt,clip.id);dt=clip.start-o.start;clip.duration=o.duration-dt;clip.sourceIn=o.sourceIn+dt*(clip.speed||1);}
+if(drag.mode==="left"){const limit=Math.max(-o.sourceIn/(clip.speed||1),-o.start);let dt=clamp(delta,limit,o.duration-.12);clip.start=snapTime(o.start+dt,clip.id);dt=clip.start-o.start;clip.duration=o.duration-dt;clip.sourceIn=o.sourceIn+dt*(clip.speed||1);}
 if(drag.mode==="right"){const asset=getAsset(clip),maxDuration=asset?Math.max(.12,(asset.duration-o.sourceIn)/(clip.speed||1)):7200;clip.duration=clamp(o.duration+delta,.12,Math.max(.12,maxDuration));}
 e.currentTarget.style.left=(lead+clip.start*state.zoom)+"px";e.currentTarget.style.width=Math.max(8,clip.duration*state.zoom)+"px";renderInspector();persist();}
 function clipPointerUp(e){e.currentTarget.removeEventListener("pointermove",clipPointerMove);if(!drag)return;const changed=drag.changed;drag=null;if(changed){persist();log("Clip edited");}else{state.history.pop();updateButtons();}renderTimeline();}
@@ -152,6 +152,17 @@ function getVideoElement(asset){if(!asset||asset.kind!=="video")return null;if(v
 function getImage(asset){if(!asset)return null;if(images.has(asset.id))return images.get(asset.id);const image=new Image();image.src=asset.url;image.onload=drawPreview;images.set(asset.id,image);return image;}
 function getAudioElement(asset){if(!asset)return null;if(videos.has("a-"+asset.id))return videos.get("a-"+asset.id);const a=document.createElement("audio");a.preload="auto";a.src=asset.url;videos.set("a-"+asset.id,a);return a;}
 function activeClip(kind,time){return state.clips.filter(c=>c.kind===kind&&time>=c.start&&time<c.start+c.duration).sort((a,b)=>b.start-a.start)[0];}
+// Non-destructive clip opacity/volume envelope. Defaults to full intensity
+// so existing projects retain their current look and sound.
+function fadeGain(clip,time){
+ if(!clip)return 1;
+ const start=Number.isFinite(clip.start)?clip.start:0;
+ const duration=Math.max(0,Number.isFinite(clip.duration)?clip.duration:0);
+ const elapsed=clamp(time-start,0,duration);
+ const inSec=clamp(Number(clip.fadeIn)||0,0,duration);
+ const outSec=clamp(Number(clip.fadeOut)||0,0,duration);
+ return clamp(Math.min(inSec>0?elapsed/inSec:1,outSec>0?(duration-elapsed)/outSec:1),0,1);
+}
 function drawComposite(ctx,width,height,time){
  ctx.save();ctx.fillStyle="#000000";ctx.fillRect(0,0,width,height);
  const clip=activeClip("video",time);
@@ -161,9 +172,10 @@ function drawComposite(ctx,width,height,time){
    const iw=el.videoWidth||el.naturalWidth,ih=el.videoHeight||el.naturalHeight;
    if(iw&&ih){
     const fit=Math.min(width/iw,height/ih)*(clip.scale||100)/100,ow=iw*fit,oh=ih*fit;
+    ctx.globalAlpha=fadeGain(clip,time);
     ctx.filter="brightness("+(clip.brightness||100)+"%) contrast("+(clip.contrast||100)+"%) saturate("+(clip.saturation||100)+"%)";
     try{ctx.drawImage(el,(width-ow)/2,(height-oh)/2,ow,oh);}catch(_){}
-    ctx.filter="none";
+    ctx.filter="none";ctx.globalAlpha=1;
    }
   }
  }
@@ -172,12 +184,12 @@ function drawComposite(ctx,width,height,time){
   const asset=getAsset(overlay),el=asset&&getImage(asset);
   if(!el?.complete||!el.naturalWidth)continue;
   const ow=width*.48*(overlay.scale??65)/100,oh=ow*el.naturalHeight/el.naturalWidth;
-  ctx.save();ctx.globalAlpha=clamp((overlay.opacity??100)/100,0,1);
+  ctx.save();ctx.globalAlpha=clamp((overlay.opacity??100)/100,0,1)*fadeGain(overlay,time);
   try{ctx.drawImage(el,width*(overlay.x??50)/100-ow/2,height*(overlay.y??50)/100-oh/2,ow,oh);}catch(_){}
   ctx.restore();
  }
  for(const item of state.clips.filter(c=>["text","caption"].includes(c.kind)&&time>=c.start&&time<c.start+c.duration)){
-  ctx.save();
+  ctx.save();ctx.globalAlpha=fadeGain(item,time);
   const isCaption=item.kind==="caption";
   const size=Math.max(12,(item.fontSize||(isCaption?40:62))*height/540);
   ctx.font="700 "+size+"px Arial, sans-serif";
@@ -203,8 +215,8 @@ function drawComposite(ctx,width,height,time){
 function drawPreview(){const c=$("preview"),ctx=c.getContext("2d");if(!ctx)return;drawComposite(ctx,c.width,c.height,state.time);if(exportCanvas)drawComposite(exportCanvas.getContext("2d"),exportCanvas.width,exportCanvas.height,state.time);$("emptyState").hidden=state.clips.some(c=>c.kind==="video");}
 function prepareAudio(){if(audioCtx)return;try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();audioBus=audioCtx.createMediaStreamDestination();}catch(e){log("Audio engine unavailable");}}
 function connectElement(el,volume=1){if(!audioCtx||!el)return;let item=audioNodes.get(el);if(!item){try{const src=audioCtx.createMediaElementSource(el),gain=audioCtx.createGain();src.connect(gain);gain.connect(audioCtx.destination);gain.connect(audioBus);item={gain};audioNodes.set(el,item);}catch(e){console.warn(e);return;}}item.gain.gain.value=clamp(volume,0,2);}
-function syncPlayers(){const target=new Set();for(const kind of ["video","audio"]){const c=activeClip(kind,state.time);if(!c)continue;const asset=getAsset(c);if(!asset||asset.kind==="image")continue;const el=kind==="video"?getVideoElement(asset):getAudioElement(asset);if(!el)continue;target.add(el);const seconds=Math.max(0,c.sourceIn+(state.time-c.start)*(c.speed||1));if(Math.abs((el.currentTime||0)-seconds)>.16&&Number.isFinite(seconds)){try{el.currentTime=seconds;}catch(_){}}
-if(state.playing){prepareAudio();connectElement(el,c.volume??1);el.playbackRate=clamp(c.speed||1,.25,4);if(el.paused)el.play().catch(()=>{});}else if(!el.paused)el.pause();}
+function syncPlayers(){const target=new Set();for(const kind of ["video","audio"]){const c=activeClip(kind,state.time);if(!c)continue;const asset=getAsset(c);if(!asset||asset.kind==="image")continue;const el=kind==="video"?getVideoElement(asset):getAudioElement(asset);if(!el)continue;target.add(el);const seconds=Math.max(0,(c.sourceIn??0)+(state.time-c.start)*(c.speed||1));if(Math.abs((el.currentTime||0)-seconds)>.16&&Number.isFinite(seconds)){try{el.currentTime=seconds;}catch(_){}}
+if(state.playing){prepareAudio();connectElement(el,(c.volume??1)*fadeGain(c,state.time));el.playbackRate=clamp(c.speed||1,.25,4);if(el.paused)el.play().catch(()=>{});}else if(!el.paused)el.pause();}
 for(const el of activeMedia){if(!target.has(el)&&!el.paused)el.pause();}
 activeMedia=target;drawPreview();}
 function pause(){state.playing=false;$("playBtn").textContent="▶";lastTick=0;for(const el of activeMedia)el.pause();}
@@ -216,6 +228,8 @@ function renderInspector(){const c=getClip(state.selected),body=$("inspectorCont
 const asset=getAsset(c);let html="<h3>"+safeName(asset?.name||(c.kind==="text"?"Text":c.kind==="caption"?"Caption":c.kind==="overlay"?"Image overlay":"Clip"))+"</h3><p class=\"hint\">"+c.kind.toUpperCase()+" CLIP</p>";
 html+=inspectorLabel("Start (seconds)",c.start,"start","number",0);
 html+=inspectorLabel("Duration (seconds)",c.duration,"duration","number",.1);
+html+=inspectorLabel("Fade In (seconds)",c.fadeIn??0,"fadeIn","number",0);
+html+=inspectorLabel("Fade Out (seconds)",c.fadeOut??0,"fadeOut","number",0);
 if(c.kind==="text"||c.kind==="caption"){
  html+='<label>'+(c.kind==="caption"?"Caption":"Text")+'<textarea data-field="text" rows="3">'+safeName(c.text)+'</textarea></label>';
  html+=inspectorLabel("Font size",c.fontSize,"fontSize","number",10,180);
@@ -233,7 +247,7 @@ if(c.kind==="text"||c.kind==="caption"){
 }
 if(c.kind==="video"){html+="<hr><h3>Visual adjustments</h3>";html+=inspectorLabel("Brightness %",c.brightness,"brightness","range",0,200);html+=inspectorLabel("Contrast %",c.contrast,"contrast","range",0,200);html+=inspectorLabel("Saturation %",c.saturation,"saturation","range",0,200);html+=inspectorLabel("Scale %",c.scale,"scale","range",20,300);}
 html+='<button class="full" id="duplicateClip">Duplicate Clip</button>';body.innerHTML=html;
-for(const el of body.querySelectorAll("[data-field]")){el.oninput=()=>{const target=getClip(state.selected);if(!target)return;if(!inspectorSnapshot){remember();inspectorSnapshot=true;}const f=el.dataset.field;let v=el.type==="color"||f==="text"?el.value:Number(el.value);if(f==="start")v=Math.max(0,v||0);if(f==="duration")v=Math.max(.1,v||.1);if(f==="speed")v=clamp(v||1,.25,4);if(f==="volume")v=clamp(v,0,2);if(f==="duration"&&target.mediaId){const a=getAsset(target);if(a)v=Math.min(v,Math.max(.1,(a.duration-(target.sourceIn??0))/(target.speed||1)));}
+for(const el of body.querySelectorAll("[data-field]")){el.oninput=()=>{const target=getClip(state.selected);if(!target)return;if(!inspectorSnapshot){remember();inspectorSnapshot=true;}const f=el.dataset.field;let v=el.type==="color"||f==="text"?el.value:Number(el.value);if(f==="start")v=Math.max(0,v||0);if(f==="duration")v=Math.max(.1,v||.1);if(f==="speed")v=clamp(v||1,.25,4);if(f==="volume")v=clamp(v,0,2);if(f==="fadeIn"||f==="fadeOut")v=clamp(Number.isFinite(v)?v:0,0,target.duration);if(f==="duration"&&target.mediaId){const a=getAsset(target);if(a)v=Math.min(v,Math.max(.1,(a.duration-(target.sourceIn??0))/(target.speed||1)));}
 target[f]=v;renderTimeline();syncPlayers();persist();};el.onchange=()=>{inspectorSnapshot=false;renderInspector();};}
 $("duplicateClip").onclick=()=>{remember();const copy={...c,id:uid(),start:c.start+c.duration};state.clips.push(copy);state.selected=copy.id;rebuild();log("Clip duplicated");};}
 function chooseTab(tab){for(const b of document.querySelectorAll("[data-tab]"))b.classList.toggle("active",b.dataset.tab===tab);for(const section of document.querySelectorAll(".tab-content"))section.classList.toggle("active",section.id==="tab"+tab[0].toUpperCase()+tab.slice(1));}
@@ -290,6 +304,33 @@ $("resetEffects").onclick=()=>{const c=getClip(state.selected);if(!c||c.kind!=="
 $("exportBtn").onclick=()=>{$("exportModal").hidden=false;};$("closeExport").onclick=()=>{if(!state.exporting)$("exportModal").hidden=true;};$("cancelExport").onclick=()=>{if(state.exporting){exportCancel=true;stopExport();}else $("exportModal").hidden=true;};$("startExport").onclick=startExport;
 $("timelineViewport").addEventListener("scroll",()=>{if(!suppressScroll){state.time=clamp($("timelineViewport").scrollLeft/state.zoom,0,maxEnd());updateClock();syncPlayers();}},{passive:true});
 $("timelineViewport").addEventListener("wheel",e=>{if(e.ctrlKey){e.preventDefault();changeZoom(e.deltaY<0?10:-10);}},{passive:false});
+// Premiere-style tap/drag scrub on the time ruler. Fixed gesture anchor prevents
+// the scrollable timeline moving out from under the pointer while scrubbing.
+const ruler=$("ruler");
+let rulerDrag=null;
+ruler.addEventListener("pointerdown",e=>{
+ if(e.button!==0||rulerDrag)return;
+ pause();
+ const rect=ruler.getBoundingClientRect();
+ const initial=clamp((e.clientX-rect.left-lead)/state.zoom,0,maxEnd());
+ rulerDrag={pointer:e.pointerId,clientX:e.clientX,time:initial,scale:state.zoom};
+ try{ruler.setPointerCapture(e.pointerId);}catch(_){}
+ setTime(initial);
+ e.preventDefault();
+});
+ruler.addEventListener("pointermove",e=>{
+ if(!rulerDrag||e.pointerId!==rulerDrag.pointer)return;
+ const desired=rulerDrag.time+(e.clientX-rulerDrag.clientX)/rulerDrag.scale;
+ setTime(desired);
+ if(e.cancelable)e.preventDefault();
+});
+function stopRulerDrag(e){
+ if(!rulerDrag||e.pointerId!==rulerDrag.pointer)return;
+ rulerDrag=null;
+ try{ruler.releasePointerCapture(e.pointerId);}catch(_){}
+}
+ruler.addEventListener("pointerup",stopRulerDrag);
+ruler.addEventListener("pointercancel",stopRulerDrag);
 // Two-finger timeline zoom for phones. This does not change the video itself,
 // clips, source media, or desktop keyboard shortcuts.
 const pinchDistance=touches=>Math.hypot(

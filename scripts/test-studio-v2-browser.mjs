@@ -56,6 +56,46 @@ try{
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.length===1);
   assert.equal((await page.evaluate(()=>window.ClipForgeStudioV2.getState())).clips[0].kind,"video");
   await page.waitForFunction(()=>document.querySelectorAll("#videoLane .clip").length===1);
+  // Exercise actual editor controls, not just mocked state mutations.
+  await page.locator("#videoLane .clip.video").first().click({position:{x:30,y:20}});
+  if(device.mobile)await page.locator('[data-action="inspector"]').click();
+  const fadeIn=page.locator('#inspectorContent [data-field="fadeIn"]');
+  const fadeOut=page.locator('#inspectorContent [data-field="fadeOut"]');
+  await fadeIn.fill("0.3");await fadeIn.dispatchEvent("change");
+  await fadeOut.fill("0.4");await fadeOut.dispatchEvent("change");
+  let edited=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.find(c=>c.kind==="video"));
+  assert.ok(Math.abs(edited.fadeIn-.3)<.001&&Math.abs(edited.fadeOut-.4)<.001,
+   "Fade In/Out inspector controls must update the selected real clip");
+  if(device.mobile){
+   await page.locator("#closeMobileInspector").click();
+   // Touch-sized right handle must trim a selected video without corrupting duration.
+   const handle=page.locator("#videoLane .clip.selected .trim.right");
+   const bounds=await handle.boundingBox();
+   assert.ok(bounds&&bounds.width>=16,"Mobile trim handle must be finger-sized");
+   await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2);
+   await page.mouse.down();
+   await page.mouse.move(bounds.x+bounds.width/2-22,bounds.y+bounds.height/2,{steps:6});
+   await page.mouse.up();
+   edited=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.find(c=>c.kind==="video"));
+   assert.ok(edited.duration<1.96&&edited.duration>1.3,"Drag trim should shorten video: "+JSON.stringify(edited));
+   await page.locator("#mobileUndo").click();
+   edited=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.find(c=>c.kind==="video"));
+   assert.ok(Math.abs(edited.duration-2)<.07,"Undo must restore video duration after trim");
+  }
+  // The time ruler is draggable in both layouts. Its fixed anchor must prevent
+  // compounding scroll offsets or jumping the playhead to an unrelated frame.
+  await page.evaluate(()=>window.ClipForgeStudioV2.setTime(0));
+  await page.waitForTimeout(70);
+  const vp=await page.locator("#timelineViewport").boundingBox();
+  const rulerBox=await page.locator("#ruler").boundingBox();
+  const rulerX=vp.x+vp.width/2+37,rulerY=rulerBox.y+8;
+  await page.mouse.move(rulerX,rulerY);
+  await page.mouse.down();
+  await page.mouse.move(rulerX+20,rulerY,{steps:5});
+  await page.mouse.up();
+  const scrub=await page.evaluate(()=>window.ClipForgeStudioV2.getState());
+  assert.ok(scrub.time>.4&&scrub.time<1.1,"Ruler drag must scrub timeline: "+JSON.stringify(scrub));
+  assert.equal(scrub.clips.length,1,"Ruler scrubbing must not modify clips");
   await page.evaluate(()=>window.ClipForgeStudioV2.setTime(.8));
   if(device.mobile){
    const before=await page.evaluate(()=>window.ClipForgeStudioV2.getState());
