@@ -112,17 +112,17 @@ function page(tool = null) {
   return html;
 }
 // Public crawl and discovery files. No invented AdSense publisher ID or ads.txt.
-put("robots.txt", "User-agent: *\\nAllow: /\\nSitemap: " + origin + "/sitemap.xml\\n");
+put("robots.txt", "User-agent: *\nAllow: /\nSitemap: " + origin + "/sitemap.xml\n");
 const sitemapPaths = [
   "/", "/guides/", ...guideSlugs.map(slug => "/guides/" + slug + "/"),
   ...tools.map(tool => "/tools/" + tool + "/"),
   "/about.html", "/contact.html", "/privacy.html", "/terms.html",
   "/cookies.html", "/copyright.html"
 ];
-put("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\\n' +
-  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\\n' +
-  sitemapPaths.map(path => "  <url><loc>" + origin + path + "</loc></url>").join("\\n") +
-  '\\n</urlset>\\n');
+put("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n' +
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+  sitemapPaths.map(path => "  <url><loc>" + origin + path + "</loc></url>").join("\n") +
+  '\n</urlset>\n');
 put("index.html", page());
 for (const tool of tools) put("tools/" + tool + "/index.html", page(tool));
 console.log("ClipForge: generated homepage, eight tool pages, four guides, SEO metadata and crawler files in public/");
