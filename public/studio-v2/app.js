@@ -248,6 +248,8 @@ function chooseTool(tool){state.tool=tool;for(const b of document.querySelectorA
 function changeZoom(amount){const old=state.time;state.zoom=clamp(state.zoom+amount,25,180);$("zoom").value=state.zoom;renderTimeline();setTime(old);}
 function wire(){
 $("fileInput").onchange=e=>{importFiles(e.target.files);e.target.value="";};
+$("overlayInput").onchange=e=>{const file=e.target.files?.[0];e.target.value="";if(file)addOverlayFile(file);};
+$("captionInput").onchange=e=>{const file=e.target.files?.[0];e.target.value="";if(file)importTimedCaptions(file).catch(error=>log("Subtitle import failed: "+error.message));};
 for(const id of ["importBtn","emptyImport"])$(id).onclick=()=>{$("fileInput").accept="video/*,audio/*,image/*";$("fileInput").click();};
 $("importAudio").onclick=()=>{$("fileInput").accept="audio/*";$("fileInput").click();};
 $("dropzone").onclick=()=>$("importBtn").click();$("dropzone").onkeydown=e=>{if(e.key==="Enter")$("importBtn").click();};for(const name of ["dragover","dragenter"])$("dropzone").addEventListener(name,e=>{e.preventDefault();e.currentTarget.classList.add("dragging");});$("dropzone").ondragleave=e=>e.currentTarget.classList.remove("dragging");$("dropzone").ondrop=e=>{e.preventDefault();e.currentTarget.classList.remove("dragging");importFiles(e.dataTransfer.files);};
@@ -255,7 +257,13 @@ for(const b of document.querySelectorAll("[data-tab]"))b.onclick=()=>chooseTab(b
 $("mobileSearch").onclick=()=>openSheet("media");
 $("mobileUndo").onclick=undo;$("mobileRedo").onclick=redo;
 $("mobileFullscreen").onclick=()=>{const el=document.querySelector(".monitor");if(document.fullscreenElement)document.exitFullscreen?.();else el?.requestFullscreen?.().catch(()=>log("Fullscreen not available in this browser"));};
-$("addText").onclick=addText;$("playBtn").onclick=togglePlay;$("jumpStart").onclick=()=>setTime(0);$("jumpEnd").onclick=()=>setTime(maxEnd());$("stepBack").onclick=()=>{pause();setTime(state.time-1/30);};$("stepForward").onclick=()=>{pause();setTime(state.time+1/30);};
+$("addText").onclick=addText;
+$("addOverlay").onclick=()=>$("overlayInput").click();
+$("addCaption").onclick=addCaption;
+$("importCaptions").onclick=()=>$("captionInput").click();
+$("mobileMuteClip").onclick=muteCurrentClip;
+$("mobileCover").onclick=saveCoverFrame;
+$("playBtn").onclick=togglePlay;$("jumpStart").onclick=()=>setTime(0);$("jumpEnd").onclick=()=>setTime(maxEnd());$("stepBack").onclick=()=>{pause();setTime(state.time-1/30);};$("stepForward").onclick=()=>{pause();setTime(state.time+1/30);};
 $("selectTool").onclick=()=>chooseTool("select");$("razorTool").onclick=()=>chooseTool("razor");$("splitBtn").onclick=()=>splitAt(state.time);$("deleteBtn").onclick=deleteSelected;$("undoBtn").onclick=undo;$("redoBtn").onclick=redo;
 $("snapBtn").onclick=()=>{state.snap=!state.snap;$("snapBtn").classList.toggle("active",state.snap);$("snapStatus").textContent=state.snap?"Snapping on":"Snapping off";};
 $("zoom").oninput=e=>changeZoom(Number(e.target.value)-state.zoom);$("zoomOut").onclick=()=>changeZoom(-15);$("zoomIn").onclick=()=>changeZoom(15);
