@@ -99,7 +99,8 @@ for(const slug of guides){
  const article = from("public/guides/" + slug + "/index.html");
  assert.ok(article.includes('<link rel="canonical" href="https://clipforgestudio.pages.dev' + location + '">'));
  assert.ok(article.includes("<h1>")&&article.includes("<h2>"));
- assert.ok((article.match(/<p/g)||[]).length>=8,"Guides should contain substantive text: " + slug);
+ const wordCount = article.replace(/<script[\\s\\S]*?<\\/script>/g," ").replace(/<[^>]*>/g," ").trim().split(/\\s+/).length;
+ assert.ok(wordCount>=400,"Guides should contain substantive original reading material: " + slug + " (" + wordCount + " words)");
 }
 assert.match(page, /href="\/guides\/"/);
 assert.match(page, /id="learning-center"/);
