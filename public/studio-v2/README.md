@@ -20,6 +20,8 @@ Then visit http://localhost:8080/studio-v2/
 - Editable picture overlays with position, scale, opacity and separate timeline clips.
 - Editable captions with text styling and timed SRT/VTT import, rendered in preview and export.
 - Mobile Mute Clip and PNG Cover Frame controls.
+- Fade In / Fade Out duration controls for video, audio, text, captions and image overlays; fades are composited in the preview and recorder output.
+- Pointer/touch scrubbing on the timeline ruler, and wider selected clip trim handles on phones.
 - Mobile Edit drawer with Open/Save Project, format selection and Delete selected clip; action feedback toast.
 - Export through browser MediaRecorder (MP4 when supported; WebM fallback), canvas composite and mixed browser audio.
 - Local IndexedDB media persistence (best effort) and JSON project manifest.
