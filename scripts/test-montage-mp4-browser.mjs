@@ -43,11 +43,28 @@ try{
   });
   recorder.stop();await finished;
   osc.stop();await ac.close();for(const track of stream.getTracks())track.stop();
-  return [...new Uint8Array(await new Blob(chunks,{type:mime}).arrayBuffer())];
+  // MediaRecorder WebM commonly reports Infinity duration. Remux the synthetic
+  // test source to a valid WebM with finite metadata before Montage imports it.
+  const mb=await import("https://cdn.jsdelivr.net/npm/mediabunny@1.62.1/+esm");
+  const input=new mb.Input({source:new mb.BlobSource(new Blob(chunks,{type:mime})),formats:mb.ALL_FORMATS});
+  const output=new mb.Output({format:new mb.WebMOutputFormat(),target:new mb.BufferTarget()});
+  const job=await mb.Conversion.init({input,output,tracks:"primary"});
+  if(!job.isValid)throw Error("Unable to finalize browser-generated source WebM");
+  await job.execute();
+  await input.close?.();
+  return [...new Uint8Array(output.target.buffer)];
  });
  assert.ok(videoData.length>2000,"Generated real WebM video+audio must not be empty");
  await page.locator("#vmFiles").setInputFiles({name:"test-video.webm",mimeType:"video/webm",buffer:Buffer.from(videoData)});
- await page.waitForFunction(()=>document.getElementById("vmCount")?.textContent.includes("1 clips"));
+ try{await page.waitForFunction(()=>document.getElementById("vmCount")?.textContent.includes("1 clips"),null,{timeout:12000});}
+ catch(error){
+  const diagnostics=await page.evaluate(()=>({
+   count:document.querySelector("#vmCount")?.textContent,
+   status:document.querySelector("#vmStatus")?.textContent,
+   error:document.querySelector("#toast")?.textContent
+  }));
+  throw Error("Montage input failed: "+JSON.stringify(diagnostics)+"; "+error.message);
+ }
  const captions="1\n00:00:00,100 --> 00:00:01,000\nSample dialogue\n";
  await page.locator("#vmCaptions").setInputFiles({name:"dialogue.srt",mimeType:"text/plain",buffer:Buffer.from(captions)});
  await page.locator("#vmTitle").fill("MP4 Montage Test");
