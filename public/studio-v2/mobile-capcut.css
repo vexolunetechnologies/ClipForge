@@ -1,6 +1,6 @@
 /* ClipForge Studio V2 mobile layout, authored against the user's 720x1570 CapCut reference.
    Presentation only. Entirely isolated under /studio-v2/ and < 761px. */
-.mobile-back,.mobile-search,.mobile-quality,.mobile-fullscreen,.mobile-undo,.mobile-redo,.mobile-caption-toggle,.mobile-timecode,.mobile-clip-extras{display:none}
+.mobile-back,.mobile-search,.mobile-quality,.mobile-fullscreen,.mobile-undo,.mobile-redo,.mobile-caption-toggle,.mobile-timecode,.mobile-clip-extras,.mobile-lane-decorations{display:none}
 @media screen and (max-width:760px){
  :root{
    --cc-preview-side:min(100vw,calc(100dvh - 400px));
