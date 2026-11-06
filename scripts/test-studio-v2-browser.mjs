@@ -57,6 +57,22 @@ try{
   assert.equal((await page.evaluate(()=>window.ClipForgeStudioV2.getState())).clips[0].kind,"video");
   await page.waitForFunction(()=>document.querySelectorAll("#videoLane .clip").length===1);
   await page.evaluate(()=>window.ClipForgeStudioV2.setTime(.8));
+  if(device.mobile){
+   const before=await page.evaluate(()=>window.ClipForgeStudioV2.getState());
+   await page.evaluate(()=>{
+    const timeline=document.querySelector("#timelineViewport");
+    const t=(id,x)=>new Touch({identifier:id,target:timeline,clientX:x,clientY:570});
+    const dispatch=(type,a,b)=>timeline.dispatchEvent(new TouchEvent(type,{bubbles:true,cancelable:true,
+      touches:[t(1,a),t(2,b)],targetTouches:[t(1,a),t(2,b)],changedTouches:[t(1,a),t(2,b)]}));
+    dispatch("touchstart",150,250);
+    dispatch("touchmove",125,275);
+    timeline.dispatchEvent(new TouchEvent("touchend",{bubbles:true,cancelable:true,touches:[],changedTouches:[t(1,125),t(2,275)]}));
+   });
+   const after=await page.evaluate(()=>window.ClipForgeStudioV2.getState());
+   assert.ok(after.zoom>before.zoom,"Pinch-out should zoom timeline without altering source media");
+   assert.ok(Math.abs(after.time-before.time)<.08,"Pinch zoom must keep the playhead anchored to same time");
+   assert.equal(after.clips.length,before.clips.length,"Pinch zoom must not change clip count");
+  }
   await page.locator("#splitBtn").click();
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.length===2);
   await page.locator(device.mobile?"#mobileUndo":"#undoBtn").click();
