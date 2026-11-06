@@ -22,6 +22,76 @@ async function importFiles(files){const accepted=[...files].filter(file=>/^(vide
 function insertClip(mediaId,automatic=false){const asset=media.get(mediaId);if(!asset)return null;remember();const kind=asset.kind==="audio"?"audio":"video";const start=kind==="video"?Math.max(0,...state.clips.filter(x=>x.kind==="video").map(x=>x.start+x.duration)):state.time;
 const clip={id:uid(),mediaId,kind,start,duration:asset.duration,sourceIn:0,volume:1,speed:1,brightness:100,contrast:100,saturation:100,scale:100};state.clips.push(clip);if(!automatic)state.selected=clip.id;return clip;}
 function addText(){const text=$("newText").value.trim()||"Your title";remember();const clip={id:uid(),kind:"text",start:state.time,duration:4,text,fontSize:62,color:"#ffffff",x:50,y:78};state.clips.push(clip);state.selected=clip.id;rebuild();closeSheets();log("Text added");}
+
+// Overlay clips share the text/graphics row, keeping the approved mobile layout unchanged.
+async function addOverlayFile(file){
+ if(!file||!file.type.startsWith("image/")){log("Choose a PNG, JPG or other browser-supported picture");return;}
+ const id=uid(),url=URL.createObjectURL(file);
+ const info={id,name:file.name,kind:"image",duration:5,size:file.size};
+ media.set(id,{...info,url,blob:file});
+ state.mediaInfo.push(info);
+ storeBlob(id,file).then(ok=>{if(!ok)log("Overlay imported. Keep your source file as browser storage may be limited.");});
+ remember();
+ const clip={id:uid(),kind:"overlay",mediaId:id,start:state.time,duration:5,scale:65,opacity:100,x:50,y:50};
+ state.clips.push(clip);state.selected=clip.id;
+ rebuild();closeSheets();log("Image overlay added");
+}
+function addCaption(){
+ const content=$("newCaption").value.trim();
+ if(!content){log("Enter caption text first");return;}
+ remember();
+ const clip={id:uid(),kind:"caption",start:state.time,duration:3,text:content,fontSize:40,
+ color:"#ffffff",x:50,y:87};
+ state.clips.push(clip);state.selected=clip.id;
+ rebuild();closeSheets();log("Editable caption added");
+}
+function parseCaptionTimestamp(value){
+ const parts=value.trim().replace(",",".").split(":").map(Number);
+ if(parts.length<2||parts.length>3||parts.some(x=>!Number.isFinite(x)||x<0))return NaN;
+ return parts.reduce((acc,part)=>acc*60+part,0);
+}
+function parseTimedCaptions(source){
+ const text=source.replace(/^\uFEFF/,"").replace(/\r\n?/g,"\n").replace(/^WEBVTT[^\n]*\n/,"");
+ const blocks=text.trim().split(/\n\s*\n/),result=[];
+ for(const block of blocks){
+  const lines=block.split("\n").map(s=>s.trim()).filter(Boolean);
+  const cue=lines.findIndex(line=>line.includes("-->"));
+  if(cue<0)continue;
+  const [startRaw,endRaw]=lines[cue].split(/\s*-->\s*/);
+  const start=parseCaptionTimestamp(startRaw);
+  const end=parseCaptionTimestamp((endRaw||"").split(/\s+/)[0]);
+  const words=lines.slice(cue+1).filter(line=>!/^<[^>]*>$/.test(line)).join("\n")
+   .replace(/<[^>]*>/g,"").trim();
+  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start||!words)continue;
+  result.push({id:uid(),kind:"caption",start,duration:Math.min(end-start,3600),
+   text:words,fontSize:40,color:"#ffffff",x:50,y:87});
+ }
+ return result.slice(0,1000);
+}
+async function importTimedCaptions(file){
+ if(!file)return;
+ const parsed=parseTimedCaptions(await file.text());
+ if(!parsed.length){log("No valid SRT/VTT captions found");return;}
+ remember();state.clips.push(...parsed);state.selected=parsed[0].id;rebuild();closeSheets();
+ log("Imported "+parsed.length+" timed captions");
+}
+function muteCurrentClip(){
+ const clip=getClip(state.selected)?.kind==="video"?getClip(state.selected):activeClip("video",state.time);
+ if(!clip){log("Select a video clip to mute it");return;}
+ remember();clip.volume=(clip.volume??1)>0?0:1;syncPlayers();renderInspector();persist();
+ log(clip.volume===0?"Video clip muted":"Video clip unmuted");
+}
+function saveCoverFrame(){
+ const clip=activeClip("video",state.time);
+ if(!clip){log("Move the playhead onto a video frame first");return;}
+ drawPreview();
+ const canvas=$("preview");
+ canvas.toBlob(blob=>{
+  if(!blob){log("Could not capture cover frame");return;}
+  download(blob,(state.name||"clipforge").replace(/[^\w-]+/g,"_")+"-cover.png","image/png");
+  log("Cover frame saved as PNG");
+ },"image/png");
+}
 function safeName(s){return String(s||"Clip").replace(/[<>]/g,"");}
 const getClip=id=>state.clips.find(c=>c.id===id),getAsset=c=>media.get(c?.mediaId);
 function renderMedia(){const grid=$("mediaGrid");grid.textContent="";for(const item of state.mediaInfo){const m=media.get(item.id);const button=document.createElement("button");button.className="media-card";button.title="Add "+item.name+" to timeline";button.dataset.mid=item.id;const thumb=document.createElement("div");thumb.className="media-thumb";const pic=document.createElement("img");if(m?.thumb){pic.src=m.thumb;thumb.append(pic);}else if(item.kind==="audio")thumb.textContent="♫";else thumb.textContent=item.kind==="image"?"▧":"▶";const name=document.createElement("span");name.textContent=item.name;const duration=document.createElement("small");duration.textContent=fmt(item.duration)+" · "+item.kind;button.append(thumb,name,duration);button.addEventListener("click",()=>{if(!media.has(item.id)){log("Missing media. Please re-import this file.");return;}const clip=insertClip(item.id);if(clip){rebuild();closeSheets();log("Added to timeline");}});grid.append(button);}
