@@ -50,3 +50,16 @@
  #app .timeline .clip.overlay,#app .timeline .clip.caption{height:31px}
  #app .timeline .mobile-clip-extras>button{height:48px}
 }
+
+/* Project controls live in the mobile inspector drawer, not on the approved canvas/timeline. */
+.mobile-project-panel{display:none}
+@media screen and (max-width:760px){
+ #app .mobile-project-panel{display:block;padding:15px 16px 24px;border-top:1px solid #303640}
+ #app .mobile-project-panel>strong{display:block;margin-bottom:11px;font-size:11px;letter-spacing:.08em;color:#b4bfca}
+ #app .mobile-project-panel .mobile-project-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ #app .mobile-project-panel button{min-height:39px}
+ #app .mobile-project-panel label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0;color:#cbd5df;font-size:12px}
+ #app .mobile-project-panel select{flex:0 0 51%;min-width:0}
+ #app #mobileDeleteClip{width:100%;border:1px solid #434954;background:#2b3038}
+ #app .mobile-project-panel p{color:#84909d;font-size:10px;line-height:1.55;margin-top:12px}
+}
