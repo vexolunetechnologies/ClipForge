@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id), clamp=(n,a,b)=>Math.max(a,Math.min(b,n)
 const uid=()=>crypto.randomUUID?.()||"cf-"+Math.random().toString(36).slice(2);
 const media=new Map(),videos=new Map(),images=new Map(),audioNodes=new Map();
 const state={clips:[],mediaInfo:[],captionStyle:"creator-yellow",aspect:"16:9",name:"Untitled Project",time:0,zoom:85,playing:false,selected:null,tool:"select",snap:true,markers:[],markIn:null,markOut:null,history:[],redo:[],exporting:false,rate:1};
-let lead=180,suppressScroll=false,lastTick=0,activeMedia=new Set(),audioCtx=null,audioBus=null,exportCanvas=null,recorder=null,recordChunks=[],exportTimer=0,exportCancel=false,inspectorSnapshot=false,drag=null,saveTimer=0;
+let lead=180,suppressScroll=false,lastTick=0,activeMedia=new Set(),audioCtx=null,audioBus=null,exportCanvas=null,recorder=null,recordChunks=[],exportTimer=0,exportCancel=false,exportFinalizing=false,inspectorSnapshot=false,drag=null,saveTimer=0;
 let toastTimeout=0;
 const log=s=>{
  $("status").textContent=s;
@@ -279,6 +279,7 @@ if(matchMedia("(max-width:760px)").matches&&!laneClips.length){
 for(const t of state.markers){const mark=document.createElement("span");mark.className="tick minor";mark.style.left=(lead+t*scale)+"px";mark.title="Marker "+fmt(t);ruler.append(mark);}updateClock();}
 function setTime(t,scroll=true){state.time=clamp(t,0,Math.max(maxEnd(),0));if(scroll){suppressScroll=true;$("timelineViewport").scrollLeft=state.time*state.zoom;requestAnimationFrame(()=>suppressScroll=false);}updateClock();syncPlayers();}
 function updateClock(){
+ if(state.exporting&&maxEnd()>0){$("exportProgress").value=Math.min(93,Math.round(state.time/maxEnd()*93));$("exportText").textContent="Recording video · "+Math.round(state.time/maxEnd()*93)+"%";}
  $("clock").textContent=fmt(state.time,true)+" / "+fmt(maxEnd(),true);
  const mobile=$("mobileTimelineTime");
  if(mobile){
@@ -421,11 +422,55 @@ async function openProject(file){try{const data=JSON.parse(await file.text());if
 async function restore(){try{const saved=JSON.parse(localStorage.getItem("cf-studio-v2")||"null");if(saved?.clips?.length){Object.assign(state,{clips:saved.clips,mediaInfo:saved.mediaInfo||[],aspect:saved.aspect||"16:9",captionStyle:saved.captionStyle||"creator-yellow",name:saved.name||"Untitled Project",markers:saved.markers||[]});for(const info of state.mediaInfo){const blob=await loadBlob(info.id);if(blob)media.set(info.id,{...info,blob,url:URL.createObjectURL(blob)});}log("Previous project recovered");}}catch(e){console.warn("Recovery unavailable",e);}rebuild();}
 function exportDimensions(){const res=Number($("exportResolution").value),[a,b]=state.aspect.split(":").map(Number);if(a>b)return [Math.round(res*a/b),res];if(a<b)return [res,Math.round(res*b/a)];return [res,res];}
 function stopExport(){if(!state.exporting)return;state.exporting=false;pause();if(recorder?.state==="recording"){try{recorder.stop();}catch(e){console.error(e);}}exportCanvas=null;$("startExport").disabled=false;$("exportText").textContent=exportCancel?"Export cancelled":"Finishing file…";}
-function startExport(){if(!maxEnd()){log("Add a video before exporting");return;}if(typeof MediaRecorder==="undefined"||!HTMLCanvasElement.prototype.captureStream){$("exportText").textContent="This browser does not support recording exports";return;}pause();const [w,h]=exportDimensions();exportCanvas=document.createElement("canvas");exportCanvas.width=w;exportCanvas.height=h;const stream=exportCanvas.captureStream(30);prepareAudio();if(audioBus){for(const track of audioBus.stream.getAudioTracks())stream.addTrack(track);}
-const types=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];const type=types.find(t=>MediaRecorder.isTypeSupported(t))||"";try{recorder=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:5_000_000});}catch(e){exportCanvas=null;$("exportText").textContent="Recorder failed: "+e.message;return;}
-recordChunks=[];exportCancel=false;recorder.ondataavailable=e=>{if(e.data.size)recordChunks.push(e.data);};recorder.onerror=e=>{log("Export failed");console.warn(e);};
-recorder.onstop=()=>{const result=new Blob(recordChunks,{type:recorder.mimeType||type||"video/webm"});for(const track of stream.getTracks())track.stop();if(!exportCancel&&result.size>500){const ext=(recorder.mimeType||type).includes("mp4")?"mp4":"webm";download(result,(state.name||"clipforge").replace(/[^\w-]+/g,"_")+"."+ext,result.type);$("exportText").textContent="Saved: "+(result.size/1048576).toFixed(1)+" MB";log("Video export completed");}else if(!exportCancel)log("Export returned an empty file");};
-$("startExport").disabled=true;$("exportText").textContent="Recording…";state.exporting=true;setTime(0);drawPreview();recorder.start(500);play();}
+function startExport(){
+ if(state.exporting||exportFinalizing)return;
+ if(!maxEnd()){log("Add a video before exporting");return;}
+ if(typeof MediaRecorder==="undefined"||!HTMLCanvasElement.prototype.captureStream){
+  $("exportText").textContent="This browser does not support recording exports";return;
+ }
+ pause();$("exportProgress").value=0;
+ const prefer=$("exportFormat").value,[w,h]=exportDimensions();
+ exportCanvas=document.createElement("canvas");
+ exportCanvas.width=w;exportCanvas.height=h;
+ const stream=exportCanvas.captureStream(30);
+ prepareAudio();
+ if(audioBus)for(const track of audioBus.stream.getAudioTracks())stream.addTrack(track);
+ const mp4Types=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4"];
+ const webmTypes=["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];
+ const types=prefer==="webm"?[...webmTypes,...mp4Types]:[...mp4Types,...webmTypes];
+ const type=types.find(t=>MediaRecorder.isTypeSupported(t))||"";
+ try{recorder=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:5_000_000});}
+ catch(error){exportCanvas=null;$("exportText").textContent="Recorder failed: "+error.message;return;}
+ recordChunks=[];exportCancel=false;
+ recorder.ondataavailable=e=>{if(e.data.size)recordChunks.push(e.data);};
+ recorder.onerror=e=>{log("Export recording failed");console.warn(e);};
+ recorder.onstop=async()=>{
+  const raw=new Blob(recordChunks,{type:recorder.mimeType||type||"video/webm"});
+  for(const track of stream.getTracks())track.stop();
+  if(exportCancel){$("exportText").textContent="Export cancelled";return;}
+  exportFinalizing=true;$("startExport").disabled=true;
+  try{
+   const finalizer=window.ClipForgeStudioExportFormat;
+   const formatted=finalizer
+    ?await finalizer.finalize(raw,{prefer,onProgress:text=>{$("exportText").textContent=text;$("exportProgress").value=95;}})
+    :{blob:raw,extension:raw.type.includes("mp4")?"mp4":"webm",note:"Browser recording"};
+   if(exportCancel){$("exportText").textContent="Export cancelled";return;}
+   if(formatted.blob.size<500)throw Error("No video data was created.");
+   const filename=(state.name||"clipforge").replace(/[^\w-]+/g,"_")+"."+formatted.extension;
+   download(formatted.blob,filename,formatted.blob.type);
+   $("exportProgress").value=100;
+   $("exportText").textContent="Saved "+formatted.extension.toUpperCase()+" · "+(formatted.blob.size/1048576).toFixed(1)+" MB";
+   log("Video export completed · "+formatted.note);
+  }catch(error){
+   $("exportText").textContent="Export failed: "+error.message;
+   log("Export failed: "+error.message);
+  }finally{exportFinalizing=false;$("startExport").disabled=false;}
+ };
+ $("startExport").disabled=true;$("exportText").textContent="Recording…";
+ state.exporting=true;setTime(0);drawPreview();
+ try{recorder.start(500);play();}
+ catch(error){state.exporting=false;exportCanvas=null;for(const track of stream.getTracks())track.stop();$("startExport").disabled=false;$("exportText").textContent="Recording failed: "+error.message;}
+}
 function keyboard(e){if(e.defaultPrevented||e.altKey)return;const tag=e.target.tagName;if(["INPUT","TEXTAREA","SELECT"].includes(tag)||e.target.isContentEditable)return;const mod=e.ctrlKey||e.metaKey,key=e.key.toLowerCase();if(mod){if(key==="z"){e.preventDefault();e.shiftKey?redo():undo();}else if(key==="y"){e.preventDefault();redo();}else if(key==="k"){e.preventDefault();splitAt(state.time);}else if(key==="s"){e.preventDefault();saveProject();}return;}
 if(e.key===" "){e.preventDefault();togglePlay();}else if(key==="v")chooseTool("select");else if(key==="c")chooseTool("razor");else if(key==="j"){state.rate=1;setTime(Math.max(0,state.time-.25));pause();}else if(key==="k")pause();else if(key==="l"){state.rate=1;play();}else if(key==="i"){state.markIn=state.time;log("In point "+fmt(state.time));}else if(key==="o"){state.markOut=state.time;log("Out point "+fmt(state.time));}else if(key==="m"){state.markers.push(state.time);renderTimeline();persist();log("Marker added");}else if(key==="s"){state.snap=!state.snap;$("snapBtn").classList.toggle("active",state.snap);$("snapStatus").textContent=state.snap?"Snapping on":"Snapping off";}else if(key==="arrowleft"){e.preventDefault();setTime(state.time-1/30);}else if(key==="arrowright"){e.preventDefault();setTime(state.time+1/30);}else if(key==="q")rippleTrim("start");else if(key==="w")rippleTrim("end");else if(key==="delete"||key==="backspace")deleteSelected();else if(key==="="||key==="+")changeZoom(15);else if(key==="-")changeZoom(-15);}
 function chooseTool(tool){state.tool=tool;for(const b of document.querySelectorAll("[data-tool]"))b.classList.toggle("active",b.dataset.tool===tool);log(tool==="razor"?"Razor: tap a clip to split":"Selection tool");}
@@ -469,7 +514,7 @@ $("mobileAspect").onchange=e=>{
  $("aspect").dispatchEvent(new Event("change",{bubbles:true}));
 };$("projectInput").onchange=e=>{if(e.target.files[0])openProject(e.target.files[0]);e.target.value="";};
 $("resetEffects").onclick=()=>{const c=getClip(state.selected);if(!c||c.kind!=="video"){log("Select a video clip first");return;}remember();Object.assign(c,{brightness:100,contrast:100,saturation:100,scale:100});rebuild();};
-$("exportBtn").onclick=()=>{$("exportModal").hidden=false;};$("closeExport").onclick=()=>{if(!state.exporting)$("exportModal").hidden=true;};$("cancelExport").onclick=()=>{if(state.exporting){exportCancel=true;stopExport();}else $("exportModal").hidden=true;};$("startExport").onclick=startExport;
+$("exportBtn").onclick=()=>{$("exportModal").hidden=false;};$("closeExport").onclick=()=>{if(!state.exporting)$("exportModal").hidden=true;};$("cancelExport").onclick=()=>{if(state.exporting){exportCancel=true;stopExport();}else if(exportFinalizing){exportCancel=true;$("exportText").textContent="Cancelling conversion…";}else $("exportModal").hidden=true;};$("startExport").onclick=startExport;
 $("timelineViewport").addEventListener("scroll",()=>{if(!suppressScroll){state.time=clamp($("timelineViewport").scrollLeft/state.zoom,0,maxEnd());updateClock();syncPlayers();}},{passive:true});
 $("timelineViewport").addEventListener("wheel",e=>{if(e.ctrlKey){e.preventDefault();changeZoom(e.deltaY<0?10:-10);}},{passive:false});
 // Premiere-style tap/drag scrub on the time ruler. Fixed gesture anchor prevents
