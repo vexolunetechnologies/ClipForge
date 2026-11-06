@@ -3,7 +3,7 @@
 const $=id=>document.getElementById(id), clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const uid=()=>crypto.randomUUID?.()||"cf-"+Math.random().toString(36).slice(2);
 const media=new Map(),videos=new Map(),images=new Map(),audioNodes=new Map();
-const state={clips:[],mediaInfo:[],aspect:"16:9",name:"Untitled Project",time:0,zoom:85,playing:false,selected:null,tool:"select",snap:true,markers:[],markIn:null,markOut:null,history:[],redo:[],exporting:false,rate:1};
+const state={clips:[],mediaInfo:[],captionStyle:"creator-yellow",aspect:"16:9",name:"Untitled Project",time:0,zoom:85,playing:false,selected:null,tool:"select",snap:true,markers:[],markIn:null,markOut:null,history:[],redo:[],exporting:false,rate:1};
 let lead=180,suppressScroll=false,lastTick=0,activeMedia=new Set(),audioCtx=null,audioBus=null,exportCanvas=null,recorder=null,recordChunks=[],exportTimer=0,exportCancel=false,inspectorSnapshot=false,drag=null,saveTimer=0;
 let toastTimeout=0;
 const log=s=>{
@@ -16,12 +16,12 @@ const log=s=>{
 };
 const maxEnd=()=>Math.max(0,...state.clips.map(c=>Number.isFinite(c.start+c.duration)?c.start+c.duration:0));
 const fmt=(t,frames=false)=>{t=Math.max(0,t||0);const h=Math.floor(t/3600),m=Math.floor(t/60)%60,s=Math.floor(t)%60,f=Math.floor((t%1)*30);const two=n=>String(n).padStart(2,"0");return frames?[h,m,s,f].map(two).join(":"):[m,s].map(two).join(":");};
-const snapshot=()=>JSON.stringify({clips:state.clips,aspect:state.aspect,name:state.name,markers:state.markers});
+const snapshot=()=>JSON.stringify({clips:state.clips,captionStyle:state.captionStyle,aspect:state.aspect,name:state.name,markers:state.markers});
 function remember(){state.history.push(snapshot());if(state.history.length>70)state.history.shift();state.redo=[];updateButtons();}
 function undo(){if(!state.history.length)return;state.redo.push(snapshot());Object.assign(state,JSON.parse(state.history.pop()));state.selected=null;rebuild();log("Undo");}
 function redo(){if(!state.redo.length)return;state.history.push(snapshot());Object.assign(state,JSON.parse(state.redo.pop()));state.selected=null;rebuild();log("Redo");}
 function updateButtons(){$("undoBtn").disabled=!state.history.length;$("redoBtn").disabled=!state.redo.length;}
-function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem("cf-studio-v2",JSON.stringify({clips:state.clips,mediaInfo:state.mediaInfo,aspect:state.aspect,name:state.name,markers:state.markers}));}catch(e){console.warn("Project save failed",e);}},450);}
+function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem("cf-studio-v2",JSON.stringify({clips:state.clips,mediaInfo:state.mediaInfo,captionStyle:state.captionStyle,aspect:state.aspect,name:state.name,markers:state.markers}));}catch(e){console.warn("Project save failed",e);}},450);}
 const dbReady=new Promise(resolve=>{if(!("indexedDB" in window)){resolve(null);return;}try{const req=indexedDB.open("clipforge-studio-v2",1);req.onupgradeneeded=()=>{req.result.createObjectStore("assets");};req.onsuccess=()=>resolve(req.result);req.onerror=()=>resolve(null);}catch(_){resolve(null);}});
 async function storeBlob(id,blob){const db=await dbReady;if(!db)return false;return new Promise(resolve=>{try{const tx=db.transaction("assets","readwrite");tx.objectStore("assets").put(blob,id);tx.oncomplete=()=>resolve(true);tx.onerror=()=>resolve(false);}catch(_){resolve(false);}});}
 async function loadBlob(id){const db=await dbReady;if(!db)return null;return new Promise(resolve=>{try{const tx=db.transaction("assets","readonly"),req=tx.objectStore("assets").get(id);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>resolve(null);}catch(_){resolve(null);}});}
@@ -44,12 +44,134 @@ async function addOverlayFile(file){
  state.clips.push(clip);state.selected=clip.id;
  rebuild();closeSheets();log("Image overlay added");
 }
+// Captions Studio's existing 55-style library is shared with V2, not copied.
+const captionStyles=()=>window.ClipForgeCaptionStyles;
+let captionCategory="trending",captionSearch="",autoCaptionAbort=null;
+function captionPresetOptions(current){
+ const lib=captionStyles();
+ if(!lib)return "";
+ return lib.list.map(([id,label])=>'<option value="'+id+'"'+(id===current?' selected':'')+'>'+label+'</option>').join("");
+}
+function selectedCaptionStyle(){
+ const clip=getClip(state.selected);
+ return clip?.kind==="caption"?clip.style||"classic":state.captionStyle;
+}
+function chooseCaptionStyle(style){
+ const lib=captionStyles();
+ if(!lib?.list.some(([id])=>id===style)){log("Caption style unavailable");return;}
+ const selected=getClip(state.selected);
+ if(selected?.kind==="caption"&&selected.style===style&&state.captionStyle===style)return;
+ remember();
+ state.captionStyle=style;
+ if(selected?.kind==="caption")selected.style=style;
+ persist();renderCaptionGallery();renderInspector();drawPreview();
+ log("Caption style selected: "+lib.list.find(([id])=>id===style)[1]);
+}
+function renderCaptionGallery(){
+ const lib=captionStyles(),host=$("captionStyleGallery"),categories=$("captionCategories"),counter=$("captionStyleCount");
+ if(!lib){counter.textContent="Caption style library unavailable; use manual captions.";return;}
+ if(!categories.childElementCount){
+  for(const group of lib.groups){
+   const button=document.createElement("button");button.type="button";
+   button.dataset.category=group.id;button.textContent=group.label;
+   button.onclick=()=>{captionCategory=group.id;captionSearch="";$("captionStyleSearch").value="";renderCaptionGallery();};
+   categories.append(button);
+  }
+ }
+ for(const button of categories.children){
+  const current=button.dataset.category===captionCategory;
+  button.classList.toggle("active",current);
+  button.setAttribute("aria-pressed",String(current));
+ }
+ const group=lib.groups.find(group=>group.id===(captionSearch?"all":captionCategory))||lib.groups.find(g=>g.id==="all");
+ const names=new Map(lib.list),selected=selectedCaptionStyle();
+ const ids=group.ids.filter(id=>!captionSearch||names.get(id)?.toLowerCase().includes(captionSearch)||id.includes(captionSearch));
+ const previousScroll=host.scrollTop;
+ host.replaceChildren();
+ for(const id of ids){
+  const card=document.createElement("button");card.type="button";card.dataset.style=id;
+  card.className="caption-style-card"+(id===selected?" active":"");
+  card.setAttribute("aria-pressed",String(id===selected));
+  const canvas=document.createElement("canvas");canvas.width=320;canvas.height=180;
+  const context=canvas.getContext("2d");
+  if(context){
+   context.fillStyle="#0d1520";context.fillRect(0,0,320,180);
+   const sample=/urdu|drama-white|cinema-gold/.test(id)?"یہ کہانی بدل گئی":"GO VIRAL TODAY";
+   try{lib.draw(context,sample,id,320,180,.8,2);}catch(e){console.warn("Style preview",id,e);}
+  }
+  const label=document.createElement("span");label.textContent=names.get(id)||id;
+  card.append(canvas,label);card.onclick=()=>chooseCaptionStyle(id);host.append(card);
+ }
+ host.scrollTop=previousScroll;
+ counter.textContent=ids.length+" of "+lib.list.length+" unique caption styles";
+}
+function applyCaptionStyleToAll(){
+ const lib=captionStyles();
+ if(!lib?.list.some(([id])=>id===state.captionStyle)){log("Select a caption style first");return;}
+ const cues=state.clips.filter(c=>c.kind==="caption");
+ if(!cues.length){log("Add or import captions first");return;}
+ remember();for(const clip of cues)clip.style=state.captionStyle;
+ rebuild();renderCaptionGallery();log("Applied style to "+cues.length+" captions");
+}
+function subtitleTimestamp(seconds,dot){
+ const ms=Math.max(0,Math.round((Number(seconds)||0)*1000)),two=x=>String(x).padStart(2,"0"),three=x=>String(x).padStart(3,"0");
+ return [two(Math.floor(ms/3600000)),two(Math.floor(ms/60000)%60),two(Math.floor(ms/1000)%60)].join(":")+(dot?".":",")+three(ms%1000);
+}
+function downloadSubtitles(format){
+ const cues=state.clips.filter(c=>c.kind==="caption"&&c.text?.trim()).slice().sort((a,b)=>a.start-b.start);
+ if(!cues.length){log("No captions to download");return;}
+ const vtt=format==="vtt",lines=cues.map((c,index)=>{
+  const range=subtitleTimestamp(c.start,vtt)+" --> "+subtitleTimestamp(c.start+c.duration,vtt);
+  return (vtt?"":index+1+"\n")+range+"\n"+c.text;
+ });
+ const data=(vtt?"WEBVTT\n\n":"")+lines.join("\n\n")+"\n";
+ download(data,(state.name||"clipforge").replace(/[^\w-]+/g,"_")+"."+(vtt?"vtt":"srt"),vtt?"text/vtt":"application/x-subrip");
+ log("Downloaded "+(vtt?"VTT":"SRT")+" captions");
+}
+async function autoCaptionSelected(){
+ if(autoCaptionAbort)return;
+ const selected=getClip(state.selected);
+ const clip=["video","audio"].includes(selected?.kind)?selected:activeClip("video",state.time)||activeClip("audio",state.time);
+ const asset=getAsset(clip);
+ if(!clip||!asset?.blob){log("Select an imported video/audio clip first");$("autoCaptionStatus").textContent="Select a video/audio clip whose original file is loaded.";return;}
+ if(!window.ClipForgeStudioAutoCaptions){log("Auto transcription module unavailable");return;}
+ const ctrl=new AbortController();autoCaptionAbort=ctrl;
+ const progress=$("autoCaptionProgress"),cancel=$("cancelAutoCaptions"),startBtn=$("autoCaptions"),status=$("autoCaptionStatus");
+ progress.hidden=false;progress.value=0;cancel.hidden=false;startBtn.disabled=true;
+ status.textContent="Preparing audio for transcription…";
+ try{
+  const speed=clip.speed||1,sourceIn=clip.sourceIn??0;
+  const cues=await window.ClipForgeStudioAutoCaptions.transcribe({
+   blob:asset.blob,start:sourceIn,end:sourceIn+clip.duration*speed,
+   language:$("autoCaptionLanguage").value,maxWords:Number($("autoCaptionWords").value),signal:ctrl.signal,
+   onProgress:(pct,part,total)=>{progress.value=pct;status.textContent="Transcribing audio "+part+"/"+total+" · "+pct+"%";}
+  });
+  const prepared=cues.map(cue=>{
+   const inTimeline=clip.start+(cue.start-sourceIn)/speed;
+   const endTimeline=clip.start+(cue.start+cue.duration-sourceIn)/speed;
+   const start=clamp(inTimeline,clip.start,clip.start+clip.duration);
+   const end=clamp(endTimeline,start,clip.start+clip.duration);
+   return {id:uid(),kind:"caption",start,duration:end-start,text:cue.text,fontSize:40,
+    color:"#ffffff",x:50,y:87,style:state.captionStyle};
+  }).filter(c=>c.duration>.02&&c.text.trim());
+  if(!prepared.length)throw Error("No caption segments detected.");
+  remember();state.clips.push(...prepared);state.selected=prepared[0].id;
+  rebuild();renderCaptionGallery();
+  status.textContent="Generated "+prepared.length+" editable caption clips. Review their timing and wording.";
+  log("Auto captions complete · "+prepared.length+" clips");
+ }catch(error){
+  const message=ctrl.signal.aborted?"Transcription cancelled":error.message;
+  status.textContent=message;log(message);
+ }finally{
+  autoCaptionAbort=null;startBtn.disabled=false;cancel.hidden=true;progress.hidden=true;
+ }
+}
 function addCaption(){
  const content=$("newCaption").value.trim();
  if(!content){log("Enter caption text first");return;}
  remember();
  const clip={id:uid(),kind:"caption",start:state.time,duration:3,text:content,fontSize:40,
- color:"#ffffff",x:50,y:87};
+ color:"#ffffff",x:50,y:87,style:state.captionStyle};
  state.clips.push(clip);state.selected=clip.id;
  rebuild();closeSheets();log("Editable caption added");
 }
@@ -72,7 +194,7 @@ function parseTimedCaptions(source){
    .replace(/<[^>]*>/g,"").trim();
   if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start||!words)continue;
   result.push({id:uid(),kind:"caption",start,duration:Math.min(end-start,3600),
-   text:words,fontSize:40,color:"#ffffff",x:50,y:87});
+   text:words,fontSize:40,color:"#ffffff",x:50,y:87,style:state.captionStyle});
  }
  return result.slice(0,1000);
 }
@@ -191,6 +313,11 @@ function drawComposite(ctx,width,height,time){
  for(const item of state.clips.filter(c=>["text","caption"].includes(c.kind)&&time>=c.start&&time<c.start+c.duration)){
   ctx.save();ctx.globalAlpha=fadeGain(item,time);
   const isCaption=item.kind==="caption";
+  const lib=window.ClipForgeCaptionStyles;
+  if(isCaption&&item.style&&lib?.list.some(([key])=>key===item.style)){
+   try{lib.draw(ctx,item.text,item.style,width,height,time-item.start,item.duration);ctx.restore();continue;}
+   catch(error){console.warn("Caption preset rendering failed",error);}
+  }
   const size=Math.max(12,(item.fontSize||(isCaption?40:62))*height/540);
   ctx.font="700 "+size+"px Arial, sans-serif";
   ctx.textAlign="center";ctx.textBaseline="middle";
@@ -236,6 +363,10 @@ if(c.kind==="text"||c.kind==="caption"){
  html+=inspectorLabel("Horizontal position %",c.x,"x","number",0,100);
  html+=inspectorLabel("Vertical position %",c.y,"y","number",0,100);
  html+=inspectorLabel("Color",c.color,"color","color");
+ if(c.kind==="caption"&&captionStyles()){
+  html+='<label>Caption preset<select data-field="style">'+captionPresetOptions(c.style||"classic")+'</select></label>';
+  html+='<p class="hint">Preset styles control their own typography, colors and animation.</p>';
+ }
 }else if(c.kind==="overlay"){
  html+=inspectorLabel("Overlay scale %",c.scale,"scale","range",10,250);
  html+=inspectorLabel("Opacity %",c.opacity,"opacity","range",0,100);
@@ -247,16 +378,16 @@ if(c.kind==="text"||c.kind==="caption"){
 }
 if(c.kind==="video"){html+="<hr><h3>Visual adjustments</h3>";html+=inspectorLabel("Brightness %",c.brightness,"brightness","range",0,200);html+=inspectorLabel("Contrast %",c.contrast,"contrast","range",0,200);html+=inspectorLabel("Saturation %",c.saturation,"saturation","range",0,200);html+=inspectorLabel("Scale %",c.scale,"scale","range",20,300);}
 html+='<button class="full" id="duplicateClip">Duplicate Clip</button>';body.innerHTML=html;
-for(const el of body.querySelectorAll("[data-field]")){el.oninput=()=>{const target=getClip(state.selected);if(!target)return;if(!inspectorSnapshot){remember();inspectorSnapshot=true;}const f=el.dataset.field;let v=el.type==="color"||f==="text"?el.value:Number(el.value);if(f==="start")v=Math.max(0,v||0);if(f==="duration")v=Math.max(.1,v||.1);if(f==="speed")v=clamp(v||1,.25,4);if(f==="volume")v=clamp(v,0,2);if(f==="fadeIn"||f==="fadeOut")v=clamp(Number.isFinite(v)?v:0,0,target.duration);if(f==="duration"&&target.mediaId){const a=getAsset(target);if(a)v=Math.min(v,Math.max(.1,(a.duration-(target.sourceIn??0))/(target.speed||1)));}
-target[f]=v;renderTimeline();syncPlayers();persist();};el.onchange=()=>{inspectorSnapshot=false;renderInspector();};}
+for(const el of body.querySelectorAll("[data-field]")){el.oninput=()=>{const target=getClip(state.selected);if(!target)return;if(!inspectorSnapshot){remember();inspectorSnapshot=true;}const f=el.dataset.field;let v=el.type==="color"||f==="text"||f==="style"?el.value:Number(el.value);if(f==="start")v=Math.max(0,v||0);if(f==="duration")v=Math.max(.1,v||.1);if(f==="speed")v=clamp(v||1,.25,4);if(f==="volume")v=clamp(v,0,2);if(f==="fadeIn"||f==="fadeOut")v=clamp(Number.isFinite(v)?v:0,0,target.duration);if(f==="duration"&&target.mediaId){const a=getAsset(target);if(a)v=Math.min(v,Math.max(.1,(a.duration-(target.sourceIn??0))/(target.speed||1)));}
+target[f]=v;if(f==="style")state.captionStyle=v;renderTimeline();syncPlayers();persist();if(f==="style")renderCaptionGallery();};el.onchange=()=>{inspectorSnapshot=false;renderInspector();};}
 $("duplicateClip").onclick=()=>{remember();const copy={...c,id:uid(),start:c.start+c.duration};state.clips.push(copy);state.selected=copy.id;rebuild();log("Clip duplicated");};}
-function chooseTab(tab){for(const b of document.querySelectorAll("[data-tab]"))b.classList.toggle("active",b.dataset.tab===tab);for(const section of document.querySelectorAll(".tab-content"))section.classList.toggle("active",section.id==="tab"+tab[0].toUpperCase()+tab.slice(1));}
+function chooseTab(tab){for(const b of document.querySelectorAll("[data-tab]"))b.classList.toggle("active",b.dataset.tab===tab);for(const section of document.querySelectorAll(".tab-content"))section.classList.toggle("active",section.id==="tab"+tab[0].toUpperCase()+tab.slice(1));if(tab==="captions")renderCaptionGallery();}
 function openSheet(which){closeSheets();if(matchMedia("(max-width:760px)").matches){if(which==="inspector")$("app").querySelector(".inspector").classList.add("sheet-open");else{$("app").querySelector(".assets").classList.add("sheet-open");chooseTab(which);} $("sheetBackdrop").hidden=false;}else if(which!=="inspector")chooseTab(which);for(const b of document.querySelectorAll("[data-action]"))b.classList.toggle("active",b.dataset.action===which);}
 function closeSheets(){document.querySelector(".assets").classList.remove("sheet-open");document.querySelector(".inspector").classList.remove("sheet-open");$("sheetBackdrop").hidden=true;}
 function download(content,name,type){const b=content instanceof Blob?content:new Blob([content],{type}),url=URL.createObjectURL(b),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),4000);}
-function saveProject(){download(JSON.stringify({version:2,name:state.name,aspect:state.aspect,clips:state.clips,mediaInfo:state.mediaInfo,markers:state.markers,note:"Media files are stored locally in this browser; this JSON does not contain video bytes."},null,2),(state.name||"project").replace(/[^\w-]+/g,"_")+".clipforge.json","application/json");log("Project JSON saved. Keep your original media files for transfer.");}
-async function openProject(file){try{const data=JSON.parse(await file.text());if(data.version!==2||!Array.isArray(data.clips))throw Error("Unsupported project");remember();pause();state.clips=data.clips;state.mediaInfo=data.mediaInfo||[];state.aspect=data.aspect||"16:9";state.name=data.name||"Imported Project";state.markers=data.markers||[];state.selected=null;for(const info of state.mediaInfo){if(!media.has(info.id)){const blob=await loadBlob(info.id);if(blob)media.set(info.id,{...info,blob,url:URL.createObjectURL(blob)});}}rebuild();log("Project opened. Missing files must be re-imported.");}catch(e){log("Cannot open project: "+e.message);}}
-async function restore(){try{const saved=JSON.parse(localStorage.getItem("cf-studio-v2")||"null");if(saved?.clips?.length){Object.assign(state,{clips:saved.clips,mediaInfo:saved.mediaInfo||[],aspect:saved.aspect||"16:9",name:saved.name||"Untitled Project",markers:saved.markers||[]});for(const info of state.mediaInfo){const blob=await loadBlob(info.id);if(blob)media.set(info.id,{...info,blob,url:URL.createObjectURL(blob)});}log("Previous project recovered");}}catch(e){console.warn("Recovery unavailable",e);}rebuild();}
+function saveProject(){download(JSON.stringify({version:2,name:state.name,aspect:state.aspect,captionStyle:state.captionStyle,clips:state.clips,mediaInfo:state.mediaInfo,markers:state.markers,note:"Media files are stored locally in this browser; this JSON does not contain video bytes."},null,2),(state.name||"project").replace(/[^\w-]+/g,"_")+".clipforge.json","application/json");log("Project JSON saved. Keep your original media files for transfer.");}
+async function openProject(file){try{const data=JSON.parse(await file.text());if(data.version!==2||!Array.isArray(data.clips))throw Error("Unsupported project");remember();pause();state.clips=data.clips;state.mediaInfo=data.mediaInfo||[];state.aspect=data.aspect||"16:9";state.captionStyle=data.captionStyle||"creator-yellow";state.name=data.name||"Imported Project";state.markers=data.markers||[];state.selected=null;for(const info of state.mediaInfo){if(!media.has(info.id)){const blob=await loadBlob(info.id);if(blob)media.set(info.id,{...info,blob,url:URL.createObjectURL(blob)});}}rebuild();log("Project opened. Missing files must be re-imported.");}catch(e){log("Cannot open project: "+e.message);}}
+async function restore(){try{const saved=JSON.parse(localStorage.getItem("cf-studio-v2")||"null");if(saved?.clips?.length){Object.assign(state,{clips:saved.clips,mediaInfo:saved.mediaInfo||[],aspect:saved.aspect||"16:9",captionStyle:saved.captionStyle||"creator-yellow",name:saved.name||"Untitled Project",markers:saved.markers||[]});for(const info of state.mediaInfo){const blob=await loadBlob(info.id);if(blob)media.set(info.id,{...info,blob,url:URL.createObjectURL(blob)});}log("Previous project recovered");}}catch(e){console.warn("Recovery unavailable",e);}rebuild();}
 function exportDimensions(){const res=Number($("exportResolution").value),[a,b]=state.aspect.split(":").map(Number);if(a>b)return [Math.round(res*a/b),res];if(a<b)return [res,Math.round(res*b/a)];return [res,res];}
 function stopExport(){if(!state.exporting)return;state.exporting=false;pause();if(recorder?.state==="recording"){try{recorder.stop();}catch(e){console.error(e);}}exportCanvas=null;$("startExport").disabled=false;$("exportText").textContent=exportCancel?"Export cancelled":"Finishing file…";}
 function startExport(){if(!maxEnd()){log("Add a video before exporting");return;}if(typeof MediaRecorder==="undefined"||!HTMLCanvasElement.prototype.captureStream){$("exportText").textContent="This browser does not support recording exports";return;}pause();const [w,h]=exportDimensions();exportCanvas=document.createElement("canvas");exportCanvas.width=w;exportCanvas.height=h;const stream=exportCanvas.captureStream(30);prepareAudio();if(audioBus){for(const track of audioBus.stream.getAudioTracks())stream.addTrack(track);}
@@ -285,6 +416,12 @@ $("addText").onclick=addText;
 $("addOverlay").onclick=()=>$("overlayInput").click();
 $("addCaption").onclick=addCaption;
 $("importCaptions").onclick=()=>$("captionInput").click();
+$("captionStyleSearch").oninput=e=>{captionSearch=e.target.value.trim().toLowerCase();renderCaptionGallery();};
+$("applyAllCaptionStyles").onclick=applyCaptionStyleToAll;
+$("exportCaptionSrt").onclick=()=>downloadSubtitles("srt");
+$("exportCaptionVtt").onclick=()=>downloadSubtitles("vtt");
+$("autoCaptions").onclick=autoCaptionSelected;
+$("cancelAutoCaptions").onclick=()=>autoCaptionAbort?.abort();
 $("mobileMuteClip").onclick=muteCurrentClip;
 $("mobileCover").onclick=saveCoverFrame;
 $("playBtn").onclick=togglePlay;$("jumpStart").onclick=()=>setTime(0);$("jumpEnd").onclick=()=>setTime(maxEnd());$("stepBack").onclick=()=>{pause();setTime(state.time-1/30);};$("stepForward").onclick=()=>{pause();setTime(state.time+1/30);};
@@ -362,6 +499,6 @@ for(const lane of document.querySelectorAll(".track-lane"))lane.addEventListener
 window.addEventListener("keydown",keyboard);window.addEventListener("resize",()=>{const at=state.time;renderTimeline();setTime(at);});
 window.addEventListener("pagehide",()=>{for(const el of videos.values())el.pause();});
 }
-wire();restore().then(()=>{requestAnimationFrame(tick);});
-window.ClipForgeStudioV2={getState:()=>({clips:structuredClone(state.clips),mediaInfo:structuredClone(state.mediaInfo),time:state.time,zoom:state.zoom,aspect:state.aspect}),importFiles,splitAt,undo,redo,setTime};
+wire();restore().then(()=>{renderCaptionGallery();requestAnimationFrame(tick);});
+window.ClipForgeStudioV2={getState:()=>({clips:structuredClone(state.clips),mediaInfo:structuredClone(state.mediaInfo),time:state.time,zoom:state.zoom,aspect:state.aspect,captionStyle:state.captionStyle}),importFiles,splitAt,undo,redo,setTime};
 })();
