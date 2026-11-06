@@ -56,9 +56,9 @@ try{
   await page.evaluate(()=>window.ClipForgeStudioV2.setTime(.8));
   await page.locator("#splitBtn").click();
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.length===2);
-  await page.locator("#undoBtn").click();
+  await page.locator(device.mobile?"#mobileUndo":"#undoBtn").click();
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.length===1);
-  await page.locator("#redoBtn").click();
+  await page.locator(device.mobile?"#mobileRedo":"#redoBtn").click();
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.length===2);
   await page.locator("#playBtn").click();
   await page.waitForTimeout(220);
