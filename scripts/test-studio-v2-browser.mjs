@@ -124,6 +124,18 @@ try{
    const cover=await coverDownload;
    assert.ok(cover.suggestedFilename().endsWith(".png"));
    assert.ok(readFileSync(await cover.path()).length>500);
+   await page.locator('[data-action="inspector"]').click();
+   assert.ok(await page.locator("#mobileSaveProject").isVisible());
+   const projectDownload=page.waitForEvent("download",{timeout:10000});
+   await page.locator("#mobileSaveProject").click();
+   const saved=await projectDownload;
+   const manifest=JSON.parse(readFileSync(await saved.path(),"utf8"));
+   assert.equal(manifest.version,2,"Mobile Save Project must output a V2 manifest");
+   assert.ok(manifest.clips.some(c=>c.kind==="overlay"));
+   await page.locator("#mobileAspect").selectOption("9:16");
+   assert.equal((await page.evaluate(()=>window.ClipForgeStudioV2.getState())).aspect,"9:16");
+   await page.locator("#mobileAspect").selectOption("16:9");
+   await page.locator("#sheetBackdrop").click();
   }
   mkdirSync("reports",{recursive:true});
   await page.waitForTimeout(280);
