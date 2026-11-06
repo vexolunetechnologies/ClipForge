@@ -14,7 +14,7 @@ const log=s=>{
  clearTimeout(toastTimeout);
  toastTimeout=setTimeout(()=>{toast.hidden=true;},2600);
 };
-const maxEnd=()=>Math.max(0,...state.clips.map(c=>c.start+c.duration));
+const maxEnd=()=>Math.max(0,...state.clips.map(c=>Number.isFinite(c.start+c.duration)?c.start+c.duration:0));
 const fmt=(t,frames=false)=>{t=Math.max(0,t||0);const h=Math.floor(t/3600),m=Math.floor(t/60)%60,s=Math.floor(t)%60,f=Math.floor((t%1)*30);const two=n=>String(n).padStart(2,"0");return frames?[h,m,s,f].map(two).join(":"):[m,s].map(two).join(":");};
 const snapshot=()=>JSON.stringify({clips:state.clips,aspect:state.aspect,name:state.name,markers:state.markers});
 function remember(){state.history.push(snapshot());if(state.history.length>70)state.history.shift();state.redo=[];updateButtons();}
@@ -233,7 +233,7 @@ if(c.kind==="text"||c.kind==="caption"){
 }
 if(c.kind==="video"){html+="<hr><h3>Visual adjustments</h3>";html+=inspectorLabel("Brightness %",c.brightness,"brightness","range",0,200);html+=inspectorLabel("Contrast %",c.contrast,"contrast","range",0,200);html+=inspectorLabel("Saturation %",c.saturation,"saturation","range",0,200);html+=inspectorLabel("Scale %",c.scale,"scale","range",20,300);}
 html+='<button class="full" id="duplicateClip">Duplicate Clip</button>';body.innerHTML=html;
-for(const el of body.querySelectorAll("[data-field]")){el.oninput=()=>{const target=getClip(state.selected);if(!target)return;if(!inspectorSnapshot){remember();inspectorSnapshot=true;}const f=el.dataset.field;let v=el.type==="color"||f==="text"?el.value:Number(el.value);if(f==="start")v=Math.max(0,v||0);if(f==="duration")v=Math.max(.1,v||.1);if(f==="speed")v=clamp(v||1,.25,4);if(f==="volume")v=clamp(v,0,2);if(f==="duration"&&target.mediaId){const a=getAsset(target);if(a)v=Math.min(v,Math.max(.1,(a.duration-target.sourceIn)/(target.speed||1)));}
+for(const el of body.querySelectorAll("[data-field]")){el.oninput=()=>{const target=getClip(state.selected);if(!target)return;if(!inspectorSnapshot){remember();inspectorSnapshot=true;}const f=el.dataset.field;let v=el.type==="color"||f==="text"?el.value:Number(el.value);if(f==="start")v=Math.max(0,v||0);if(f==="duration")v=Math.max(.1,v||.1);if(f==="speed")v=clamp(v||1,.25,4);if(f==="volume")v=clamp(v,0,2);if(f==="duration"&&target.mediaId){const a=getAsset(target);if(a)v=Math.min(v,Math.max(.1,(a.duration-(target.sourceIn??0))/(target.speed||1)));}
 target[f]=v;renderTimeline();syncPlayers();persist();};el.onchange=()=>{inspectorSnapshot=false;renderInspector();};}
 $("duplicateClip").onclick=()=>{remember();const copy={...c,id:uid(),start:c.start+c.duration};state.clips.push(copy);state.selected=copy.id;rebuild();log("Clip duplicated");};}
 function chooseTab(tab){for(const b of document.querySelectorAll("[data-tab]"))b.classList.toggle("active",b.dataset.tab===tab);for(const section of document.querySelectorAll(".tab-content"))section.classList.toggle("active",section.id==="tab"+tab[0].toUpperCase()+tab.slice(1));}
