@@ -128,6 +128,8 @@ try{
    // Export real video from canvas, verify downloadable media has a valid duration.
    const field=page.locator('#inspectorContent [data-field="duration"]');
    await field.fill("1");await field.dispatchEvent("change");
+   const editedOverlay=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.find(c=>c.kind==="overlay"));
+   assert.equal(editedOverlay.duration,1,"Overlay duration must not become NaN when edited in inspector");
    const downloading=page.waitForEvent("download",{timeout:30000});
    await page.locator("#exportBtn").click();
    await page.locator("#startExport").click();
