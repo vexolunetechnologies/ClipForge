@@ -5,7 +5,15 @@ const uid=()=>crypto.randomUUID?.()||"cf-"+Math.random().toString(36).slice(2);
 const media=new Map(),videos=new Map(),images=new Map(),audioNodes=new Map();
 const state={clips:[],mediaInfo:[],aspect:"16:9",name:"Untitled Project",time:0,zoom:85,playing:false,selected:null,tool:"select",snap:true,markers:[],markIn:null,markOut:null,history:[],redo:[],exporting:false,rate:1};
 let lead=180,suppressScroll=false,lastTick=0,activeMedia=new Set(),audioCtx=null,audioBus=null,exportCanvas=null,recorder=null,recordChunks=[],exportTimer=0,exportCancel=false,inspectorSnapshot=false,drag=null,saveTimer=0;
-const log=(s)=>{$("status").textContent=s;};
+let toastTimeout=0;
+const log=s=>{
+ $("status").textContent=s;
+ const toast=$("mobileToast");
+ if(!toast||!matchMedia("(max-width:760px)").matches)return;
+ toast.textContent=s;toast.hidden=false;
+ clearTimeout(toastTimeout);
+ toastTimeout=setTimeout(()=>{toast.hidden=true;},2600);
+};
 const maxEnd=()=>Math.max(0,...state.clips.map(c=>c.start+c.duration));
 const fmt=(t,frames=false)=>{t=Math.max(0,t||0);const h=Math.floor(t/3600),m=Math.floor(t/60)%60,s=Math.floor(t)%60,f=Math.floor((t%1)*30);const two=n=>String(n).padStart(2,"0");return frames?[h,m,s,f].map(two).join(":"):[m,s].map(two).join(":");};
 const snapshot=()=>JSON.stringify({clips:state.clips,aspect:state.aspect,name:state.name,markers:state.markers});
