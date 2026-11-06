@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0d10"><title>ClipForge Studio V2 | Preview</title><link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./mobile-capcut.css?v=layout-1"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0d10"><title>ClipForge Studio V2 | Preview</title><link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./mobile-capcut.css?v=layout-1"><link rel="stylesheet" href="./editing-controls.css?v=1"></head>
 <body>
 <div id="app">
   <header class="topbar">
@@ -17,7 +17,7 @@
   <main class="workspace">
     <aside class="assets panel">
       <div class="panel-head"><strong>Media & Tools</strong><button id="importBtn" class="small primary">+ Import</button></div>
-      <nav id="assetTabs" class="tabs" aria-label="Asset categories"><button data-tab="media" class="active">Media</button><button data-tab="text">Text</button><button data-tab="audio">Audio</button><button data-tab="effects">Effects</button></nav>
+      <nav id="assetTabs" class="tabs" aria-label="Asset categories"><button data-tab="media" class="active">Media</button><button data-tab="text">Text</button><button data-tab="audio">Audio</button><button data-tab="effects">Effects</button><button data-tab="overlay">Overlay</button><button data-tab="captions">Captions</button></nav>
       <section id="tabMedia" class="tab-content active">
         <div id="dropzone" class="dropzone" tabindex="0"><span class="drop-icon">⇧</span><b>Drop videos, photos or audio</b><small>or select Import · Files stay on your device</small></div>
         <div id="mediaGrid" class="media-grid"></div>
@@ -59,7 +59,7 @@
   </main>
   <nav id="mobileDock" class="mobile-dock" aria-label="Studio tools"><button data-action="inspector"><i>✂</i>Edit</button><button data-action="audio"><i>♫</i>Audio</button><button data-action="text"><i>T</i>Text</button><button data-action="effects"><i>✧</i>Effects</button><button data-action="overlay"><i>▧</i>Overlay</button><button data-action="captions"><i>▤</i>Captions</button></nav>
   <input id="fileInput" type="file" multiple accept="video/*,audio/*,image/*" hidden><input id="overlayInput" type="file" accept="image/*" hidden><input id="captionInput" type="file" accept=".srt,.vtt,text/plain,text/vtt" hidden><input id="projectInput" type="file" accept="application/json,.json" hidden>
-  <div id="sheetBackdrop" class="sheet-backdrop" hidden></div>
+  <div id="sheetBackdrop" class="sheet-backdrop" hidden></div><div id="mobileToast" role="status" aria-live="polite" hidden></div>
   <div id="exportModal" class="dialog-backdrop" hidden><div class="dialog" role="dialog" aria-modal="true" aria-label="Export"><div class="dialog-head"><h2>Export video</h2><button id="closeExport" aria-label="Close">✕</button></div><p>Exports from your browser. WebM is used when MP4 recording isn't supported.</p><label>Resolution <select id="exportResolution"><option value="720">720p</option><option value="1080">1080p</option></select></label><div class="export-progress"><progress id="exportProgress" max="100" value="0"></progress><span id="exportText">Ready</span></div><button id="startExport" class="primary full">Start export</button><button id="cancelExport" class="full">Cancel / Close</button></div></div>
 </div>
 <script src="./app.js" defer></script></body></html>
