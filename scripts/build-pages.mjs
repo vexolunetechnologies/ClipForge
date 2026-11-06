@@ -24,7 +24,7 @@ const copy = (from, to = from) => {
 
 for (const file of [
   "_worker.js", "about.html", "contact.html", "privacy.html", "terms.html",
-  "cookies.html", "copyright.html", "styles.css", "app.js", "navigation.js",
+  "cookies.html", "copyright.html", "styles.css", "editor-mobile-layout.css", "app.js", "navigation.js",
   "caption-style-library.js", "captions-studio.js", "highlights-studio.js", "transcription-queue.js",
   "editor-loader.js", "animator-idle.js",
   "dist/editor/layout.js", "dist/editor/timeline.js",
