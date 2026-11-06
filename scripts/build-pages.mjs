@@ -40,7 +40,7 @@ for (const file of [
   "_worker.js", "about.html", "contact.html", "privacy.html", "terms.html",
   "cookies.html", "copyright.html", "styles.css", "editor-mobile-layout.css", "app.js", "navigation.js",
   "caption-style-library.js", "captions-studio.js", "highlights-studio.js", "transcription-queue.js",
-  "editor-loader.js", "editor-mobile-thumbnails.js", "animator-idle.js",
+  "editor-loader.js", "editor-mobile-thumbnails.js", "animator-idle.js", "montage-mp4.js",
   "dist/editor/layout.js", "dist/editor/timeline.js",
   "dist/editor/studio-ui.js", "dist/editor/types.js"
 ]) copy(file);
