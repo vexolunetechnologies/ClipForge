@@ -38,7 +38,7 @@ try{
    assert.deepEqual(layout.tabs,["Edit","Audio","Text","Effects","Overlay","Captions"]);
    assert.ok(layout.dock.bottom<=device.height+2,JSON.stringify(layout));
    const hiddenDrawerTops=await page.evaluate(()=>[...document.querySelectorAll(".assets,.inspector")].map(el=>el.getBoundingClientRect().top));
-   assert.ok(hiddenDrawerTops.every(top=>top>=innerHeight-1),
+   assert.ok(hiddenDrawerTops.every(top=>top>=device.height-1),
     "Closed mobile drawers must not cover the bottom dock: "+JSON.stringify(hiddenDrawerTops));
    assert.ok(await page.locator("#videoLane .empty-lane-action").isVisible(),"Add video should be visible when timeline is empty");
    assert.ok(await page.locator("#audioLane .empty-lane-action").isVisible(),"Add audio should be visible when timeline is empty");
