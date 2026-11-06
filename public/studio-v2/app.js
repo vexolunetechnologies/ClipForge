@@ -45,7 +45,7 @@ function clipPointerMove(e){if(!drag||e.pointerId!==drag.pointer)return;const cl
 if(drag.mode==="move")clip.start=snapTime(Math.max(0,o.start+delta),clip.id);
 if(drag.mode==="left"){const limit=Math.max(-o.sourceIn/(clip.speed||1),-(o.start));let dt=clamp(delta,limit,o.duration-.12);clip.start=snapTime(o.start+dt,clip.id);dt=clip.start-o.start;clip.duration=o.duration-dt;clip.sourceIn=o.sourceIn+dt*(clip.speed||1);}
 if(drag.mode==="right"){const asset=getAsset(clip),maxDuration=asset?Math.max(.12,(asset.duration-o.sourceIn)/(clip.speed||1)):7200;clip.duration=clamp(o.duration+delta,.12,Math.max(.12,maxDuration));}
-renderTimeline();renderInspector();}
+e.currentTarget.style.left=(lead+clip.start*state.zoom)+"px";e.currentTarget.style.width=Math.max(8,clip.duration*state.zoom)+"px";renderInspector();persist();}
 function clipPointerUp(e){e.currentTarget.removeEventListener("pointermove",clipPointerMove);if(!drag)return;const changed=drag.changed;drag=null;if(changed){persist();log("Clip edited");}else{state.history.pop();updateButtons();}renderTimeline();}
 function splitAt(t,clip){clip=clip||getClip(state.selected)||state.clips.find(c=>c.kind==="video"&&t>c.start+.04&&t<c.start+c.duration-.04);if(!clip||t<=clip.start+.04||t>=clip.start+clip.duration-.04){log("Place the playhead inside a clip to split");return;}remember();const offset=t-clip.start,copy={...clip,id:uid(),start:t,duration:clip.duration-offset,sourceIn:(clip.sourceIn||0)+offset*(clip.speed||1)};clip.duration=offset;state.clips.push(copy);state.selected=copy.id;rebuild();log("Clip split at "+fmt(t));}
 function deleteSelected(){if(!state.selected)return;remember();state.clips=state.clips.filter(x=>x.id!==state.selected);state.selected=null;rebuild();log("Clip deleted");}
