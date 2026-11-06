@@ -1605,7 +1605,7 @@ if(typeof window.projOffer==='function')window.projOffer=function(){};
 const addWorkspace=(id,html)=>{let el=document.getElementById(id);if(!el){el=document.createElement('section');el.id=id;el.className='cf-workspace';el.style.display='none';const home=$('.wrap');const tools=$('#tools');if(home&&tools&&tools.parentNode===home)tools.insertAdjacentElement('afterend',el);else if(home)home.append(el);else document.body.append(el)}el.innerHTML=html;return el};
 const shell=(title,desc,tag)=>'<a class="cf-back" href="#tools">← All creative tools</a><div class="cf-page-head"><div><div class="cf-kicker">'+tag+'</div><h2>'+title+'</h2><p>'+desc+'</p></div><span class="cf-badge">● Local browser session</span></div>';
 const montageHTML=shell('Video Montage Maker','Bring multiple clips together, refine the order and create a clean montage with optional music and title text.','CLIPFORGE / MONTAGE')+
-'<div class="cf-grid"><div class="cf-panel"><div class="cf-field"><label>ADD VIDEO CLIPS</label><input id="vmFiles" type="file" accept="video/*" multiple></div><div id="vmEmpty" class="cf-empty">Choose two or more video clips to start your montage.</div><div id="vmTimeline" class="cf-timeline"></div><video id="vmPreview" class="cf-preview" controls playsinline></video><div class="cf-row" style="margin-top:12px"><button class="sm" id="vmPreviewBtn">Preview selected clip</button><button class="sm" id="vmClear">Clear clips</button></div></div><div class="cf-panel"><div class="cf-kicker">OUTPUT SETTINGS</div><div class="cf-field"><label>VIDEO FORMAT</label><select id="vmRatio"><option value="9:16">9:16 · Reels / Shorts</option><option value="16:9" selected>16:9 · YouTube</option><option value="1:1">1:1 · Square</option></select></div><div class="cf-field"><label>TRANSITION</label><select id="vmTransition"><option value="fade">Fade between clips</option><option value="cut">Straight cuts</option></select></div><div class="cf-field"><label>VIDEO TITLE (OPTIONAL)</label><input id="vmTitle" maxlength="90" placeholder="Your montage title"></div><div class="cf-field"><label>BACKGROUND MUSIC (OPTIONAL)</label><input id="vmMusic" type="file" accept="audio/*"></div><div class="cf-field"><label>CAPTIONS (OPTIONAL · SRT / VTT)</label><input id="vmCaptions" type="file" accept=".srt,.vtt,text/vtt,application/x-subrip"><select id="vmCaptionStyle"><option value="classic">Classic</option><option value="box">Box</option><option value="news">News bar</option><option value="minimal">Minimal</option></select><button class="sm" id="vmCaptionClear" type="button">No captions / Clear</button><small id="vmCaptionStatus" class="cf-muted">No captions added. Export remains unchanged.</small></div><div class="cf-stat"><b id="vmCount">0 clips</b><span id="vmDuration">Add media to calculate duration</span></div><button class="main" id="vmExport">Render montage</button><button class="sm" id="vmStop" style="display:none;margin-top:8px">Stop rendering</button><div class="cf-progress"><i id="vmProgress"></i></div><div id="vmStatus" class="cf-status" role="status"></div><div id="vmOutput" class="cf-output"></div></div></div>';
+'<div class="cf-grid"><div class="cf-panel"><div class="cf-field"><label>ADD VIDEO CLIPS</label><input id="vmFiles" type="file" accept="video/*" multiple></div><div id="vmEmpty" class="cf-empty">Choose two or more video clips to start your montage.</div><div id="vmTimeline" class="cf-timeline"></div><video id="vmPreview" class="cf-preview" controls playsinline></video><div class="cf-row" style="margin-top:12px"><button class="sm" id="vmPreviewBtn">Preview selected clip</button><button class="sm" id="vmClear">Clear clips</button></div></div><div class="cf-panel"><div class="cf-kicker">OUTPUT SETTINGS</div><div class="cf-field"><label>VIDEO FORMAT</label><select id="vmRatio"><option value="9:16">9:16 · Reels / Shorts</option><option value="16:9" selected>16:9 · YouTube</option><option value="1:1">1:1 · Square</option></select></div><div class="cf-field"><label>EXPORT RESOLUTION</label><select id="vmQuality"><option value="720" selected>720p · HD</option><option value="1080">1080p · Full HD</option></select></div><div class="cf-field"><label>OUTPUT FILE</label><strong>MP4 · H.264 / AAC</strong></div><div class="cf-field"><label>TRANSITION</label><select id="vmTransition"><option value="fade">Fade between clips</option><option value="cut">Straight cuts</option></select></div><div class="cf-field"><label>VIDEO TITLE (OPTIONAL)</label><input id="vmTitle" maxlength="90" placeholder="Your montage title"></div><div class="cf-field"><label>BACKGROUND MUSIC (OPTIONAL)</label><input id="vmMusic" type="file" accept="audio/*"></div><div class="cf-field"><label>CAPTIONS (OPTIONAL · SRT / VTT)</label><input id="vmCaptions" type="file" accept=".srt,.vtt,text/vtt,application/x-subrip"><select id="vmCaptionStyle"><option value="classic">Classic</option><option value="box">Box</option><option value="news">News bar</option><option value="minimal">Minimal</option></select><button class="sm" id="vmCaptionClear" type="button">No captions / Clear</button><small id="vmCaptionStatus" class="cf-muted">No captions added. Export remains unchanged.</small></div><div class="cf-stat"><b id="vmCount">0 clips</b><span id="vmDuration">Add media to calculate duration</span></div><button class="main" id="vmExport">Render montage</button><button class="sm" id="vmStop" style="display:none;margin-top:8px">Stop rendering</button><div class="cf-progress"><i id="vmProgress"></i></div><div id="vmStatus" class="cf-status" role="status"></div><div id="vmOutput" class="cf-output"></div></div></div>';
 const editorHTML='<div class="cf-studio-topbar"><a class="cf-studio-brand" href="#top" aria-label="Back to ClipForge home"><span class="cf-studio-mark">▶</span><span>CLIPFORGE <b>STUDIO</b></span></a><span class="cf-studio-mode">VIDEO EDITOR</span><a class="cf-studio-exit" href="#top">← Exit Studio</a></div>'+shell('Editor','A focused editing workspace with a clip timeline, trim controls, split and reorder tools, visual treatments, titles and export.','CLIPFORGE / EDITOR')+
 '<div class="cf-panel"><div class="cf-row cf-toolbar"><label class="sm" for="edFiles" style="cursor:pointer">＋ Import videos</label><input id="edFiles" type="file" accept="video/*" multiple style="display:none"><button class="sm" id="edSplit">Split selected</button><button class="sm" id="edRemove">Remove selected</button><button class="sm" id="edClear">Clear timeline</button><span class="cf-muted" id="edCount">0 clips</span></div><div id="edEmpty" class="cf-empty" style="margin-top:12px">Import videos to build your editing timeline.</div><div id="edTimeline" class="cf-timeline"></div></div>'+
 '<div class="cf-grid"><div class="cf-panel"><video id="edPreview" class="cf-preview" controls playsinline></video><div class="cf-row" style="margin-top:12px"><button class="sm" id="edPlay">Preview selected</button><span class="cf-muted" id="edPreviewInfo">Select a clip to inspect it.</span></div></div><div class="cf-panel"><div class="cf-kicker">CLIP CONTROLS</div><div class="cf-field"><label>TRIM START (SECONDS)</label><input id="edStart" type="number" min="0" step=".1" value="0"></div><div class="cf-field"><label>TRIM END (SECONDS)</label><input id="edEnd" type="number" min="0" step=".1" value="0"></div><button class="sm p" id="edApply">Apply trim</button><div class="cf-field"><label>CANVAS RATIO</label><select id="edRatio"><option value="9:16">9:16 · Vertical</option><option value="16:9" selected>16:9 · Landscape</option><option value="1:1">1:1 · Square</option></select></div><div class="cf-field"><label>VISUAL LOOK</label><select id="edFilter"><option value="none">Original</option><option value="cinema">Cinematic</option><option value="mono">Black &amp; white</option><option value="warm">Warm</option></select></div><div class="cf-field"><label>TITLE / TEXT OVERLAY</label><input id="edTitle" maxlength="100" placeholder="Add a title to your video"></div><div class="cf-field"><label>BACKGROUND MUSIC (OPTIONAL)</label><input id="edMusic" type="file" accept="audio/*"></div><div class="cf-field"><label>CAPTIONS (OPTIONAL · SRT / VTT)</label><input id="edCaptions" type="file" accept=".srt,.vtt,text/vtt,application/x-subrip"><select id="edCaptionStyle"><option value="classic">Classic</option><option value="box">Box</option><option value="news">News bar</option><option value="minimal">Minimal</option></select><button class="sm" id="edCaptionClear" type="button">No captions / Clear</button><small id="edCaptionStatus" class="cf-muted">No captions added. Export remains unchanged.</small></div><div class="cf-stat"><b id="edDuration">0:00</b><span>Timeline duration</span></div><button class="main" id="edExport">Export edited video</button><button class="sm" id="edStop" style="display:none;margin-top:8px">Stop export</button><div class="cf-progress"><i id="edProgress"></i></div><div id="edStatus" class="cf-status" role="status"></div><div id="edOutput" class="cf-output"></div></div></div>'+
@@ -1684,8 +1684,17 @@ function mountTimeline(prefix,mode){
  if(captionStyleInput)captionStyleInput.addEventListener('change',()=>{state.captionStyle=captionStyleInput.value||'classic'});
  if(captionClear)captionClear.addEventListener('click',()=>{state.captions=[];if(captionStatus)captionStatus.textContent='No captions added. Export remains unchanged.';setStatus('Captions cleared. Export will have no subtitles.')});
  function dimensions(){
-  const r=ratio(),long=isEditor?1080:1080;
-  if(r==='9:16')return[720,1280];if(r==='1:1')return[1080,1080];return[1280,720];
+  const r=ratio();
+  // Existing Editor resolution is intentionally unchanged.
+  if(isEditor){
+    if(r==='9:16')return[720,1280];
+    if(r==='1:1')return[1080,1080];
+    return[1280,720];
+  }
+  const quality=Number(el('Quality').value)===1080?1080:720;
+  if(r==='9:16')return[quality,Math.round(quality*16/9/2)*2];
+  if(r==='1:1')return[quality,quality];
+  return[Math.round(quality*16/9/2)*2,quality];
  }
  const waitEvent=(target,event,timeout=15000)=>new Promise((res,rej)=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);target.removeEventListener(event,finish);target.removeEventListener('error',bad);res()};const bad=()=>{if(done)return;done=true;clearTimeout(timer);rej(new Error('The selected video could not be decoded.'))};const timer=setTimeout(()=>{if(done)return;done=true;target.removeEventListener(event,finish);target.removeEventListener('error',bad);rej(new Error('Timed out while opening a video.'))},timeout);target.addEventListener(event,finish,{once:true});target.addEventListener('error',bad,{once:true})});
  function drawFrame(ctx,v,w,h,title,filter,alpha,caption){
@@ -1706,8 +1715,18 @@ function mountTimeline(prefix,mode){
   try{
    const [w,h]=dimensions(),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d',{alpha:false});
    stream=canvas.captureStream(30);
-   const mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t));
+   const mp4Types=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4'];
+   const webmTypes=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+   const mime=(isEditor?[...mp4Types,...webmTypes]:[mp4Types[0],...webmTypes,mp4Types[1]]).find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t));
    if(!mime)throw new Error('This browser cannot export video. Try the latest Chrome or Edge.');
+   // Montage always downloads a genuine MP4. WebM is only a temporary,
+   // internal browser recording format when direct MP4 recording is missing.
+   if(!isEditor&&!mime.includes('mp4')){
+     setStatus('Checking H.264/AAC MP4 support…');
+     const {preflightMontageMp4}=await import('/montage-mp4.js');
+     await preflightMontageMp4();
+     if(state.cancel)throw new Error('Export stopped.');
+   }
    let audioDest=null,source=null;
    try{
     audioCtx=new(window.AudioContext||window.webkitAudioContext)();audioDest=audioCtx.createMediaStreamDestination();
@@ -1739,10 +1758,22 @@ function mountTimeline(prefix,mode){
     video.pause();elapsed+=clipDur;
    }
    if(recorder.state!=='inactive')recorder.stop();await finished;
-   const blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<2000)throw new Error('The exported video is empty. Please try again.');
-   state.outUrl=URL.createObjectURL(blob);const ext=mime.includes('mp4')?'mp4':'webm';
+   let blob=new Blob(chunks,{type:mime.split(';')[0]});
+   if(blob.size<2000)throw new Error('The exported video is empty. Please try again.');
+   let ext=mime.includes('mp4')?'mp4':'webm';
+   if(!isEditor){
+     const {finalizeMontageMp4}=await import('/montage-mp4.js');
+     setStatus('Finalizing genuine MP4 · please keep this tab open…');
+     blob=await finalizeMontageMp4(blob,{
+       isCancelled:()=>state.cancel,
+       onProgress:percent=>{bar.style.width=Math.min(99,80+percent*.19)+'%';setStatus('Finalizing MP4 · '+percent+'%');}
+     });
+     if(state.cancel)throw new Error('Export stopped.');
+     ext='mp4';
+   }
+   state.outUrl=URL.createObjectURL(blob);
    output.innerHTML='<video controls playsinline src="'+state.outUrl+'"></video><div class="cf-row" style="margin-top:10px"><a class="sm p" style="text-decoration:none;padding:10px 14px" download="clipforge-'+mode+'-'+Date.now()+'.'+ext+'" href="'+state.outUrl+'">Download '+ext.toUpperCase()+'</a><span class="cf-muted">'+(blob.size/1048576).toFixed(1)+' MB</span></div>';
-   bar.style.width='100%';setStatus('Export complete. Your file is ready to download. This session will not be saved.');
+   bar.style.width='100%';setStatus('Export complete. Your MP4 file is ready to download. This session will not be saved.');
   }catch(e){if(recorder&&recorder.state!=='inactive'){try{recorder.stop()}catch(x){}}setStatus(e.message||'Export failed.');}
   finally{
    cancelAnimationFrame(raf);if(video){video.pause();video.removeAttribute('src');video.load()}
