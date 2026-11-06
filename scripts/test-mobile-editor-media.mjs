@@ -26,7 +26,10 @@ try {
  const editor=page.locator("#editorTool");
  await editor.locator("#stImport").setInputFiles({name:"clipforge-smoke.mp4",mimeType:"video/mp4",buffer:bytes});
  await page.waitForFunction(()=>document.querySelectorAll("#stMedia [data-mid]").length===1);
+ // The media bin is a mobile bottom sheet. Open it before clicking the file.
+ await editor.locator(".st-mobile-import").click();
  await editor.locator("#stMedia [data-mid]").first().click();
+ await editor.locator(".st-assets .st-mobile-sheet-close").click();
  await page.waitForFunction(()=>document.querySelectorAll('#stInner .st-pro-lane[data-lane-kind="video"] .st-clip-block').length===1);
  const before=await editor.locator('#stInner .st-pro-lane[data-lane-kind="video"] .st-clip-block').count();
  assert.equal(before,1);
