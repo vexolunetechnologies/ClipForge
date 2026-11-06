@@ -8,12 +8,12 @@ import {serveLocalSite} from "./test-http-server.mjs";
 
 // Runs against the deployed public/ layout using a real video, not a mocked timeline.
 const temp=mkdtempSync(join(tmpdir(),"clipforge-mobile-media-"));
-const videoPath=join(temp,"clipforge-smoke.mp4");
+const videoPath=join(temp,"clipforge-smoke.webm");
 let browser,site;
 try {
  execFileSync("ffmpeg",["-hide_banner","-loglevel","error","-y","-f","lavfi",
   "-i","testsrc2=size=320x180:rate=12","-t","2.4",
-  "-c:v","libx264","-pix_fmt","yuv420p","-movflags","+faststart",videoPath],{timeout:30000});
+  "-c:v","libvpx","-deadline","realtime","-cpu-used","8","-b:v","320k","-an",videoPath],{timeout:30000});
  const bytes=readFileSync(videoPath);
  assert.ok(bytes.length>1000);
  site=await serveLocalSite({rootDir:"public"});
@@ -24,7 +24,7 @@ try {
  await page.goto(site.origin+"/tools/editor/",{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>document.querySelector("#editorTool")?.dataset.proUiReady==="1");
  const editor=page.locator("#editorTool");
- await editor.locator("#stImport").setInputFiles({name:"clipforge-smoke.mp4",mimeType:"video/mp4",buffer:bytes});
+ await editor.locator("#stImport").setInputFiles({name:"clipforge-smoke.webm",mimeType:"video/webm",buffer:bytes});
  await page.waitForFunction(()=>document.querySelectorAll("#stMedia [data-mid]").length===1);
  // The media bin is a mobile bottom sheet. Open it before clicking the file.
  await editor.locator(".st-mobile-import").click();
@@ -53,7 +53,7 @@ try {
  mkdirSync("reports",{recursive:true});
  await page.screenshot({path:"reports/mobile-studio-imported-video.png",fullPage:false});
  assert.deepEqual(errors,[],"Editor should not throw on import, playback, split or undo");
- console.log("Mobile Studio real-media test passed: import, preview, play/pause, split, undo, export button visible.");
+ console.log("Mobile Studio real WebM test passed: import, preview, play/pause, split, undo, export button visible.");
 } finally {
  if(browser)await browser.close();
  if(site)await site.close();
