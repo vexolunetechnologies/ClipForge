@@ -139,7 +139,7 @@ const mode=e.target.dataset.trim||"move";
 if(state.tool==="razor"&&mode==="move"){const rect=el.getBoundingClientRect(),at=clip.start+(e.clientX-rect.left)/state.zoom;splitAt(at,clip);return;}
 state.selected=clip.id;renderInspector();for(const n of document.querySelectorAll(".clip"))n.classList.toggle("selected",n.dataset.clipId===clip.id);
 remember();drag={pointer:e.pointerId,client:e.clientX,original:{start:clip.start,duration:clip.duration,sourceIn:clip.sourceIn??0},mode,id:clip.id,changed:false};el.setPointerCapture(e.pointerId);el.addEventListener("pointermove",clipPointerMove);el.addEventListener("pointerup",clipPointerUp,{once:true});el.addEventListener("pointercancel",clipPointerUp,{once:true});e.stopPropagation();}
-function clipPointerMove(e){if(!drag||e.pointerId!==drag.pointer)return;const clip=getClip(drag.id);if(!clip)return;const delta=(e.clientX-drag.client)/state.zoom;if(Math.abs(delta)<.005)return;drag.changed=true;const o=drag.original;
+function clipPointerMove(e){if(!drag||e.pointerId!==drag.pointer)return;if(e.cancelable)e.preventDefault();const clip=getClip(drag.id);if(!clip)return;const delta=(e.clientX-drag.client)/state.zoom;if(Math.abs(delta)<.005)return;drag.changed=true;const o=drag.original;
 if(drag.mode==="move")clip.start=snapTime(Math.max(0,o.start+delta),clip.id);
 if(drag.mode==="left"){const limit=Math.max(-o.sourceIn/(clip.speed||1),-o.start);let dt=clamp(delta,limit,o.duration-.12);clip.start=snapTime(o.start+dt,clip.id);dt=clip.start-o.start;clip.duration=o.duration-dt;clip.sourceIn=o.sourceIn+dt*(clip.speed||1);}
 if(drag.mode==="right"){const asset=getAsset(clip),maxDuration=asset?Math.max(.12,(asset.duration-o.sourceIn)/(clip.speed||1)):7200;clip.duration=clamp(o.duration+delta,.12,Math.max(.12,maxDuration));}
@@ -304,6 +304,33 @@ $("resetEffects").onclick=()=>{const c=getClip(state.selected);if(!c||c.kind!=="
 $("exportBtn").onclick=()=>{$("exportModal").hidden=false;};$("closeExport").onclick=()=>{if(!state.exporting)$("exportModal").hidden=true;};$("cancelExport").onclick=()=>{if(state.exporting){exportCancel=true;stopExport();}else $("exportModal").hidden=true;};$("startExport").onclick=startExport;
 $("timelineViewport").addEventListener("scroll",()=>{if(!suppressScroll){state.time=clamp($("timelineViewport").scrollLeft/state.zoom,0,maxEnd());updateClock();syncPlayers();}},{passive:true});
 $("timelineViewport").addEventListener("wheel",e=>{if(e.ctrlKey){e.preventDefault();changeZoom(e.deltaY<0?10:-10);}},{passive:false});
+// Premiere-style tap/drag scrub on the time ruler. Fixed gesture anchor prevents
+// the scrollable timeline moving out from under the pointer while scrubbing.
+const ruler=$("ruler");
+let rulerDrag=null;
+ruler.addEventListener("pointerdown",e=>{
+ if(e.button!==0||rulerDrag)return;
+ pause();
+ const rect=ruler.getBoundingClientRect();
+ const initial=clamp((e.clientX-rect.left-lead)/state.zoom,0,maxEnd());
+ rulerDrag={pointer:e.pointerId,clientX:e.clientX,time:initial,scale:state.zoom};
+ try{ruler.setPointerCapture(e.pointerId);}catch(_){}
+ setTime(initial);
+ e.preventDefault();
+});
+ruler.addEventListener("pointermove",e=>{
+ if(!rulerDrag||e.pointerId!==rulerDrag.pointer)return;
+ const desired=rulerDrag.time+(e.clientX-rulerDrag.clientX)/rulerDrag.scale;
+ setTime(desired);
+ if(e.cancelable)e.preventDefault();
+});
+function stopRulerDrag(e){
+ if(!rulerDrag||e.pointerId!==rulerDrag.pointer)return;
+ rulerDrag=null;
+ try{ruler.releasePointerCapture(e.pointerId);}catch(_){}
+}
+ruler.addEventListener("pointerup",stopRulerDrag);
+ruler.addEventListener("pointercancel",stopRulerDrag);
 // Two-finger timeline zoom for phones. This does not change the video itself,
 // clips, source media, or desktop keyboard shortcuts.
 const pinchDistance=touches=>Math.hypot(
