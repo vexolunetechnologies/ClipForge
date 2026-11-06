@@ -55,6 +55,11 @@ try{
   return [...new Uint8Array(output.target.buffer)];
  });
  assert.ok(videoData.length>2000,"Generated real WebM video+audio must not be empty");
+ const moduleCheck=await page.evaluate(async()=>{
+  try{return {exports:Object.keys(await import('/montage-mp4.js'))};}
+  catch(e){return {error:String(e),stack:String(e.stack||"")};}
+ });
+ assert.ok(moduleCheck.exports?.includes("finalizeMontageMp4"),"Montage MP4 module failed to load: "+JSON.stringify(moduleCheck));
  await page.locator("#vmFiles").setInputFiles({name:"test-video.webm",mimeType:"video/webm",buffer:Buffer.from(videoData)});
  try{await page.waitForFunction(()=>document.getElementById("vmCount")?.textContent.includes("1 clips"),null,{timeout:12000});}
  catch(error){
@@ -74,7 +79,14 @@ try{
   await page.locator("#vmQuality").selectOption(quality);
   await page.locator("#vmRatio").selectOption(ratio);
   await page.locator("#vmExport").click();
-  try{await page.locator('#vmOutput a[download$=".mp4"]').waitFor({timeout:120000});}
+  try{
+   await page.waitForFunction(()=>{
+    const status=document.getElementById("vmStatus")?.textContent||"";
+    return !!document.querySelector('#vmOutput a[download$=".mp4"]')||
+       (/failed|unavailable|unsupported|missing \)|could not/i.test(status));
+   },null,{timeout:40000});
+   if(!await page.locator('#vmOutput a[download$=".mp4"]').count())throw Error("UI reported export error");
+  }
   catch(error){
    const details=await page.evaluate(()=>({
     status:document.getElementById("vmStatus")?.textContent,
