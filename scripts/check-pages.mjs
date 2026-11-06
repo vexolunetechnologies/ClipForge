@@ -42,7 +42,7 @@ for (const tool of tools) {
   assert.ok(html.includes("https://clipforgestudio.pages.dev/tools/" + tool + "/"), "Missing clean canonical URL");
   assert.match(html, /\/assets\/css\/styles\.css/);
   assert.match(html, /\/editor-mobile-layout\.css\?v=capcut-reference-1/, "CapCut-inspired editor stylesheet must load on tool pages");
-  assert.match(html, /src="\/assets\/js\/core\/editor-loader\.js"/);
+  assert.match(html, /src="\/assets\/js\/core\/editor-loader\.js(?:\?[^"]*)?"/);
   assert.doesNotMatch(html, /<script[^>]+src="\/dist\/editor\/(?:timeline|studio-ui)\.js"/);
   assert.match(html, /src="\/assets\/js\/core\/navigation\.js"/);
 }
