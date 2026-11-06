@@ -90,6 +90,54 @@ try{
   await page.locator("#addText").click();
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.some(c=>c.kind==="text"));
   assert.equal((await page.evaluate(()=>window.ClipForgeStudioV2.getState())).clips.length,3);
+  // Caption creation works independently of the existing text tool.
+  if(device.mobile)await page.locator('[data-action="captions"]').click();
+  else await page.locator('[data-tab="captions"]').click();
+  await page.locator("#newCaption").fill("سلام ClipForge");
+  await page.locator("#addCaption").click();
+  await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.some(c=>c.kind==="caption"&&c.text.includes("سلام")));
+  // Import real SRT timestamps, preserve cue timing and content.
+  const srt=["1","00:00:00,500 --> 00:00:01,700","SRT test caption","","2","00:00:02,000 --> 00:00:03,000","Next caption"].join("\n");
+  await page.locator("#captionInput").setInputFiles({name:"captions.srt",mimeType:"text/plain",buffer:Buffer.from(srt)});
+  await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.filter(c=>c.kind==="caption").length===3);
+  const cues=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.filter(c=>c.kind==="caption"));
+  assert.ok(cues.some(c=>Math.abs(c.start-.5)<.001&&Math.abs(c.duration-1.2)<.001));
+  // Place a real PNG overlay on the timeline and confirm it is selectable.
+  const png=Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLttAAAAABJRU5ErkJggg==","base64");
+  if(device.mobile)await page.locator('[data-action="overlay"]').click();
+  else await page.locator('[data-tab="overlay"]').click();
+  await page.locator("#overlayInput").setInputFiles({name:"overlay.png",mimeType:"image/png",buffer:png});
+  await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.some(c=>c.kind==="overlay"));
+  assert.equal(await page.locator("#textLane .clip.overlay").count(),1);
+  assert.equal(await page.locator("#textLane .clip.caption").count(),3);
+  if(device.mobile){
+   const activeVideoVolume=()=>page.evaluate(()=>{
+    const s=window.ClipForgeStudioV2.getState();
+    return s.clips.find(c=>c.kind==="video"&&s.time>=c.start&&s.time<c.start+c.duration)?.volume;
+   });
+   const videoBefore=await activeVideoVolume();
+   await page.locator("#mobileMuteClip").click();
+   const videoAfter=await activeVideoVolume();
+   assert.notEqual(videoBefore,videoAfter,"Mobile Mute Clip button must change real video volume");
+   const coverDownload=page.waitForEvent("download",{timeout:15000});
+   await page.locator("#mobileCover").click();
+   const cover=await coverDownload;
+   assert.ok(cover.suggestedFilename().endsWith(".png"));
+   assert.ok(readFileSync(await cover.path()).length>500);
+   await page.locator('[data-action="inspector"]').click();
+   assert.ok(await page.locator("#mobileSaveProject").isVisible());
+   const projectDownload=page.waitForEvent("download",{timeout:10000});
+   await page.locator("#mobileSaveProject").click();
+   const saved=await projectDownload;
+   const manifest=JSON.parse(readFileSync(await saved.path(),"utf8"));
+   assert.equal(manifest.version,2,"Mobile Save Project must output a V2 manifest");
+   assert.ok(manifest.clips.some(c=>c.kind==="overlay"));
+   await page.locator("#mobileAspect").selectOption("9:16");
+   assert.equal((await page.evaluate(()=>window.ClipForgeStudioV2.getState())).aspect,"9:16");
+   await page.locator("#mobileAspect").selectOption("16:9");
+   await page.locator("#closeMobileInspector").click();
+   assert.equal(await page.locator(".inspector.sheet-open").count(),0,"Done should close Edit sheet");
+  }
   mkdirSync("reports",{recursive:true});
   await page.waitForTimeout(280);
   await page.screenshot({path:"reports/studio-v2-"+device.name+".png"});
@@ -97,10 +145,23 @@ try{
    // Export real video from canvas, verify downloadable media has a valid duration.
    const field=page.locator('#inspectorContent [data-field="duration"]');
    await field.fill("1");await field.dispatchEvent("change");
+   const editedOverlay=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.find(c=>c.kind==="overlay"));
+   assert.equal(editedOverlay.duration,1,"Overlay duration must not become NaN when edited in inspector");
    const downloading=page.waitForEvent("download",{timeout:30000});
    await page.locator("#exportBtn").click();
    await page.locator("#startExport").click();
-   const downloaded=await downloading;
+   let downloaded;
+   try{downloaded=await downloading;}catch(error){
+    const debug=await page.evaluate(()=>({
+      status:document.querySelector("#status")?.textContent,
+      exportText:document.querySelector("#exportText")?.textContent,
+      exportDisabled:document.querySelector("#startExport")?.disabled,
+      modalHidden:document.querySelector("#exportModal")?.hidden,
+      state:window.ClipForgeStudioV2.getState(),
+    }));
+    console.error("V2 export diagnostics",JSON.stringify(debug),"page errors",JSON.stringify(errors));
+    throw error;
+   }
    const output=await downloaded.path();
    const bytes=readFileSync(output);
    assert.ok(bytes.length>2000,"Export must produce a real media file");

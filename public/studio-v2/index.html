@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0d10"><title>ClipForge Studio V2 | Preview</title><link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./mobile-capcut.css?v=layout-1"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0d10"><title>ClipForge Studio V2 | Preview</title><link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./mobile-capcut.css?v=layout-1"><link rel="stylesheet" href="./editing-controls.css?v=1"></head>
 <body>
 <div id="app">
   <header class="topbar">
@@ -16,8 +16,8 @@
   </header>
   <main class="workspace">
     <aside class="assets panel">
-      <div class="panel-head"><strong>Media & Tools</strong><button id="importBtn" class="small primary">+ Import</button></div>
-      <nav id="assetTabs" class="tabs" aria-label="Asset categories"><button data-tab="media" class="active">Media</button><button data-tab="text">Text</button><button data-tab="audio">Audio</button><button data-tab="effects">Effects</button></nav>
+      <div class="panel-head"><strong>Media & Tools</strong><button id="importBtn" class="small primary">+ Import</button><button id="closeMobileAssets" class="mobile-sheet-close" type="button">Done</button></div>
+      <nav id="assetTabs" class="tabs" aria-label="Asset categories"><button data-tab="media" class="active">Media</button><button data-tab="text">Text</button><button data-tab="audio">Audio</button><button data-tab="effects">Effects</button><button data-tab="overlay">Overlay</button><button data-tab="captions">Captions</button></nav>
       <section id="tabMedia" class="tab-content active">
         <div id="dropzone" class="dropzone" tabindex="0"><span class="drop-icon">⇧</span><b>Drop videos, photos or audio</b><small>or select Import · Files stay on your device</small></div>
         <div id="mediaGrid" class="media-grid"></div>
@@ -25,8 +25,8 @@
       <section id="tabText" class="tab-content"><p class="help">Add editable text at the playhead.</p><textarea id="newText" rows="3" placeholder="Type your title or caption">Your title</textarea><button id="addText" class="full primary">+ Add Text</button></section>
       <section id="tabAudio" class="tab-content"><p class="help">Import an audio file to add a separate soundtrack. Select an audio clip on the timeline to change volume.</p><button id="importAudio" class="full">+ Import Audio</button></section>
       <section id="tabEffects" class="tab-content"><p class="help">Select a video clip to edit brightness, saturation and contrast. Effects render in the preview and export.</p><button id="resetEffects" class="full">Reset selected effects</button></section>
-      <section id="tabOverlay" class="tab-content"><p class="help">Overlay tools are planned for V2. Video clip overlays will be added after the layout review.</p></section>
-      <section id="tabCaptions" class="tab-content"><p class="help">Caption editing is planned for V2. This sheet is a visual placeholder only.</p></section>
+      <section id="tabOverlay" class="tab-content"><p class="help">Place a picture above the video at the playhead. Select the overlay in the timeline to adjust size, position and transparency.</p><button id="addOverlay" class="full primary">+ Add Image Overlay</button></section>
+      <section id="tabCaptions" class="tab-content"><p class="help">Add editable captions or import timed SRT/VTT subtitles. Captions appear in the preview and exported video.</p><textarea id="newCaption" rows="3" placeholder="Type a caption in Urdu, Hindi or English">Your caption</textarea><button id="addCaption" class="full primary">+ Add Caption</button><button id="importCaptions" class="full">Import SRT / VTT</button></section>
     </aside>
     <section class="stage panel">
       <div class="panel-head desktop-head"><strong>Program Monitor</strong><span id="monitorLabel">16:9 · Live Preview</span></div>
@@ -34,8 +34,15 @@
       <div class="transport"><button id="mobileFullscreen" class="mobile-fullscreen" title="Fullscreen preview" aria-label="Fullscreen preview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6"/></svg></button><button id="jumpStart" title="Go to beginning">⏮</button><button id="stepBack" title="Back one frame">❮</button><button id="playBtn" class="play" title="Play/Pause (Space)">▶</button><button id="stepForward" title="Forward one frame">❯</button><button id="jumpEnd" title="Go to end">⏭</button><span class="clock" id="clock">00:00:00:00 / 00:00:00:00</span><span class="mobile-caption-toggle" aria-hidden="true">▣<small>ON</small></span><button id="mobileUndo" class="mobile-undo" title="Undo" aria-label="Undo">↶</button><button id="mobileRedo" class="mobile-redo" title="Redo" aria-label="Redo">↷</button></div>
     </section>
     <aside class="inspector panel">
-      <div class="panel-head"><strong>Inspector</strong><span id="selectionHint">No selection</span></div>
+      <div class="panel-head"><strong>Inspector</strong><span id="selectionHint">No selection</span><button id="closeMobileInspector" class="mobile-sheet-close" type="button">Done</button></div>
       <div id="inspectorContent" class="inspector-body"><div class="placeholder">Select a clip or title to edit its settings.</div></div>
+      <div class="mobile-project-panel">
+        <strong>PROJECT TOOLS</strong>
+        <div class="mobile-project-row"><button id="mobileOpenProject" type="button">Open Project</button><button id="mobileSaveProject" type="button">Save Project</button></div>
+        <label>Video format <select id="mobileAspect"><option value="16:9">Landscape 16:9</option><option value="9:16">Portrait 9:16</option><option value="1:1">Square 1:1</option></select></label>
+        <button id="mobileDeleteClip" type="button">Delete selected clip</button>
+        <p>Project file saves the edit instructions. Keep original media files for transferring to another device.</p>
+      </div>
     </aside>
     <section class="timeline panel">
       <div class="timeline-top">
@@ -52,14 +59,14 @@
       </div>
       <div class="timeline-grid">
         <div class="track-headers"><div class="ruler-label">TRACKS</div><div class="track-name video-track">▣ <span>Video 1</span></div><div class="track-name audio-track">♫ <span>Audio 1</span></div><div class="track-name text-track">T <span>Text</span></div></div>
-        <div class="timeline-shell"><div id="timelineViewport" class="timeline-viewport"><div id="timelineContent" class="timeline-content"><div id="ruler" class="ruler"></div><div id="videoLane" class="track-lane video-track" data-kind="video"></div><div id="audioLane" class="track-lane audio-track" data-kind="audio"></div><div id="textLane" class="track-lane text-track" data-kind="text"></div></div></div><div class="mobile-clip-extras" aria-hidden="true"><div class="mobile-mute-decoration"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l6 5V4L7 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/></svg><span>Mute<br>clip</span></div><div class="mobile-ai-decoration"><span class="mini-new">New</span><svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="3"/><circle cx="15" cy="17" r="3"/><path d="M8.5 15L20 3M13 15L7 5"/></svg><span>AI clipper</span></div><div class="mobile-cover-decoration"><svg viewBox="0 0 24 24"><path d="M4 20l1-4L17 4l3 3L8 19z"/></svg><span>Cover</span></div></div><div class="mobile-lane-decorations" aria-hidden="true"><span class="audio-tile">♫</span><span class="text-tile">T</span></div><div id="playhead" class="playhead"><span></span></div></div>
+        <div class="timeline-shell"><div id="timelineViewport" class="timeline-viewport"><div id="timelineContent" class="timeline-content"><div id="ruler" class="ruler"></div><div id="videoLane" class="track-lane video-track" data-kind="video"></div><div id="audioLane" class="track-lane audio-track" data-kind="audio"></div><div id="textLane" class="track-lane text-track" data-kind="text"></div></div></div><div class="mobile-clip-extras"><button id="mobileMuteClip" type="button" class="mobile-mute-decoration" title="Mute or unmute current video clip" aria-label="Mute or unmute current video clip"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l6 5V4L7 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/></svg><span>Mute clip</span></button><div class="mobile-ai-decoration" aria-label="AI clipper coming later"><span class="mini-new">New</span><svg viewBox="0 0 24 24"><circle cx="6" cy="17" r="3"/><circle cx="15" cy="17" r="3"/><path d="M8.5 15L20 3M13 15L7 5"/></svg><span>AI clipper</span></div><button id="mobileCover" type="button" class="mobile-cover-decoration" title="Save video cover frame" aria-label="Save video cover frame"><svg viewBox="0 0 24 24"><path d="M4 20l1-4L17 4l3 3L8 19z"/></svg><span>Cover</span></button></div><div class="mobile-lane-decorations" aria-hidden="true"><span class="audio-tile">♫</span><span class="text-tile">T</span></div><div id="playhead" class="playhead"><span></span></div></div>
       </div>
       <div class="timeline-bottom"><div id="status" role="status">Ready · Import your first clip</div><div><span id="snapStatus">Snapping on</span><span class="separator">·</span><span id="mediaStatus">0 media files</span></div></div>
     </section>
   </main>
   <nav id="mobileDock" class="mobile-dock" aria-label="Studio tools"><button data-action="inspector"><i>✂</i>Edit</button><button data-action="audio"><i>♫</i>Audio</button><button data-action="text"><i>T</i>Text</button><button data-action="effects"><i>✧</i>Effects</button><button data-action="overlay"><i>▧</i>Overlay</button><button data-action="captions"><i>▤</i>Captions</button></nav>
-  <input id="fileInput" type="file" multiple accept="video/*,audio/*,image/*" hidden><input id="projectInput" type="file" accept="application/json,.json" hidden>
-  <div id="sheetBackdrop" class="sheet-backdrop" hidden></div>
+  <input id="fileInput" type="file" multiple accept="video/*,audio/*,image/*" hidden><input id="overlayInput" type="file" accept="image/*" hidden><input id="captionInput" type="file" accept=".srt,.vtt,text/plain,text/vtt" hidden><input id="projectInput" type="file" accept="application/json,.json" hidden>
+  <div id="sheetBackdrop" class="sheet-backdrop" hidden></div><div id="mobileToast" role="status" aria-live="polite" hidden></div>
   <div id="exportModal" class="dialog-backdrop" hidden><div class="dialog" role="dialog" aria-modal="true" aria-label="Export"><div class="dialog-head"><h2>Export video</h2><button id="closeExport" aria-label="Close">✕</button></div><p>Exports from your browser. WebM is used when MP4 recording isn't supported.</p><label>Resolution <select id="exportResolution"><option value="720">720p</option><option value="1080">1080p</option></select></label><div class="export-progress"><progress id="exportProgress" max="100" value="0"></progress><span id="exportText">Ready</span></div><button id="startExport" class="primary full">Start export</button><button id="cancelExport" class="full">Cancel / Close</button></div></div>
 </div>
 <script src="./app.js" defer></script></body></html>

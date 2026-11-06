@@ -17,13 +17,17 @@ Then visit http://localhost:8080/studio-v2/
 - Centered fixed playhead and scrollable timeline, thumbnail filmstrips, three content lanes, zoom and snapping.
 - Drag/reposition, trim handles, split, undo/redo, duplicate, delete, manual text overlays, basic color adjustments.
 - Live canvas preview, 30 fps timeline clock, in/out marks and markers.
+- Editable picture overlays with position, scale, opacity and separate timeline clips.
+- Editable captions with text styling and timed SRT/VTT import, rendered in preview and export.
+- Mobile Mute Clip and PNG Cover Frame controls.
+- Mobile Edit drawer with Open/Save Project, format selection and Delete selected clip; action feedback toast.
 - Export through browser MediaRecorder (MP4 when supported; WebM fallback), canvas composite and mixed browser audio.
 - Local IndexedDB media persistence (best effort) and JSON project manifest.
 - Keyboard shortcuts: Space, V, C, Ctrl/Cmd+K, Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, I/O, M, S, left/right arrows, J/K/L, Q/W, +/-.
 
 ## Important limitations
 - This is **not** a finished Premiere/CapCut replacement. Browser codec support, very long source videos, memory/storage quotas and export duration must be validated on target devices.
-- This prototype has one main video lane, one audio lane and a text lane. Complex compositing, multi-camera, advanced audio mixing, GPU effects, time remapping, and customizable shortcut dialog are planned, not implemented.
+- This prototype has one main video lane, one audio lane and a shared text/graphics lane for titles, captions and image overlays. Video-on-video overlays, AI clipper, AI UHD enhancement, multi-camera, advanced audio mixing, GPU effects, time remapping and customizable shortcut dialog are planned, not implemented.
 - Project JSON alone does **not** embed source media. IndexedDB autosave stays in one browser profile only. Keep original files.
 - A WebM exported by MediaRecorder may have duration metadata limitations in some gallery players; this remains an open issue for a later muxer-based exporter.
 - No existing ClipForge card is connected to V2. "Edit in Studio" handoff is a later separate integration with approval.
