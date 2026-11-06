@@ -8,6 +8,10 @@
   pending=(async()=>{
    await import('/dist/editor/timeline.js');
    await import('/dist/editor/studio-ui.js');
+   // Decorative thumbnails are optional and cannot block editing tools.
+   if(window.matchMedia('(max-width:760px)').matches){
+     import('/editor-mobile-thumbnails.js').catch(error=>console.warn('Optional filmstrip unavailable',error));
+   }
   })().catch(error=>{
    pending=null;
    const status=document.getElementById('stStatus');

@@ -3,7 +3,7 @@ import {chromium} from "playwright";
 import {mkdirSync} from "node:fs";
 import {serveLocalSite} from "./test-http-server.mjs";
 
-const site=await serveLocalSite();
+const site=await serveLocalSite({rootDir:"public"});
 let browser;
 try{
  browser=await chromium.launch({headless:true,args:["--no-sandbox"]});
@@ -15,6 +15,15 @@ try{
  page.on("pageerror",e=>errors.push(e.message));
  await page.goto(site.origin+"/tools/editor/",{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>document.querySelector("#editorTool")?.dataset.proUiReady==="1");
+ // Regression: the standalone mobile design CSS previously never reached public/.
+ const mobileStyle=await page.evaluate(async()=>{
+  const href=document.querySelector('link[href*="editor-mobile-layout.css"]')?.getAttribute('href');
+  if(!href)return {href:null,status:0,applied:false};
+  const response=await fetch(href);
+  return {href,status:response.status,applied:[...document.styleSheets].some(s=>s.href?.includes("editor-mobile-layout.css"))};
+ });
+ assert.ok(mobileStyle.href&&mobileStyle.status===200&&mobileStyle.applied,
+  "Mobile layout CSS must be deployed and applied: "+JSON.stringify(mobileStyle));
  const editor=page.locator("#editorTool");
  assert.equal(await page.evaluate(()=>document.body.dataset.tool),"editor");
  assert.ok(await editor.locator(".st-pro-main").count(),"Professional editor must remain mounted");
@@ -35,6 +44,24 @@ try{
   };
  });
  assert.ok(geometry.header.h>=45&&geometry.header.h<=75,JSON.stringify(geometry));
+ assert.ok(geometry.monitor.w>=380&&geometry.monitor.x>=-2&&geometry.monitor.x<=4,
+  "Program monitor must be full-width, not trapped in old desktop grid: "+JSON.stringify(geometry));
+ assert.ok(geometry.timeline.w>=380,
+  "Timeline must use full mobile viewport width: "+JSON.stringify(geometry));
+ const headerLayout=await page.evaluate(()=>{
+  const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {left:r.left,right:r.right,width:r.width}};
+  return {brand:rect(".st-appbrand"),project:rect("#stProjectName"),export:rect("#stAppExport")};
+ });
+ assert.ok(headerLayout.brand.right<=headerLayout.project.left+2 &&
+  headerLayout.project.right<=headerLayout.export.left+2,
+  "Project title must not overlap brand or Export button: "+JSON.stringify(headerLayout));
+ const lanes=await page.evaluate(()=>[...document.querySelectorAll("#stInner .st-pro-lane")].map(e=>({
+  kind:e.dataset.laneKind,label:e.querySelector(".st-track-label")?.textContent?.trim()
+ })));
+ assert.equal(lanes.filter(x=>x.kind==="video").length,1,
+  "Exactly one video lane should be rendered: "+JSON.stringify(lanes));
+ assert.deepEqual(lanes.slice(0,3).map(x=>x.kind),["video","audio","caption"],
+  "Timeline order should be Video, Audio, Text: "+JSON.stringify(lanes));
  assert.ok(geometry.monitor.h>=165&&geometry.monitor.h<=geometry.viewport*.56,JSON.stringify(geometry));
  assert.ok(geometry.canvas.h>=100,JSON.stringify(geometry));
  assert.ok(geometry.timeline.y>=geometry.monitor.bottom-4,
@@ -59,6 +86,13 @@ try{
    action+" should select original tool category "+tab);
   assert.ok(await editor.locator(".st-assets").isVisible());
  }
+ // Click the timeline audio row itself: it must open the existing Audio tools.
+ await editor.locator('#stInner .st-pro-lane[data-lane-kind="audio"] .st-lane-action').click();
+ assert.ok(await editor.evaluate(e=>e.classList.contains("st-mobile-media-open")),
+  "Add audio lane must open real audio tools");
+ assert.ok(await editor.locator('.st-assets [data-st-tab="audio"].active').count(),
+  "Audio lane must activate audio tools");
+ await editor.locator(".st-assets .st-mobile-sheet-close").click();
  await open("effects","effects");
  await editor.locator(".st-assets .st-mobile-sheet-close").click();
  assert.equal(await editor.evaluate(e=>e.classList.contains("st-mobile-media-open")),false);
