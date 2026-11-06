@@ -22,3 +22,6 @@ button,input,textarea,select{font:inherit}button{border:1px solid transparent;ba
  .assets,.inspector{display:block;position:fixed;left:0;right:0;bottom:calc(67px + env(safe-area-inset-bottom));height:min(64dvh,550px);max-height:64dvh;z-index:40;transform:translateY(110%);transition:transform .22s ease;background:#171b21;box-shadow:0 -10px 40px #0009;border-radius:17px 17px 0 0;overflow-y:auto}.assets.sheet-open,.inspector.sheet-open{transform:translateY(0)}.assets .panel-head,.inspector .panel-head{height:53px}.assets .tab-content{padding:10px 14px}.media-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.media-thumb{height:84px}.dropzone{min-height:110px}.inspector-body{padding:16px}.sheet-backdrop:not([hidden]){display:block;z-index:31}.dialog-backdrop{z-index:60}
 }
 @media(max-width:360px){.topbar #projectName{font-size:11px}.top-actions select{display:none}.timeline-zoom input{width:36px}.transport button{padding:4px}.clock{font-size:8px}.mobile-dock button{min-width:47px}}
+
+/* Ensure native hidden attribute wins over authored flex layouts. */
+[hidden]{display:none!important}
