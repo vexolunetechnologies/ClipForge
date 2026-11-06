@@ -131,7 +131,18 @@ try{
    const downloading=page.waitForEvent("download",{timeout:30000});
    await page.locator("#exportBtn").click();
    await page.locator("#startExport").click();
-   const downloaded=await downloading;
+   let downloaded;
+   try{downloaded=await downloading;}catch(error){
+    const debug=await page.evaluate(()=>({
+      status:document.querySelector("#status")?.textContent,
+      exportText:document.querySelector("#exportText")?.textContent,
+      exportDisabled:document.querySelector("#startExport")?.disabled,
+      modalHidden:document.querySelector("#exportModal")?.hidden,
+      state:window.ClipForgeStudioV2.getState(),
+    }));
+    console.error("V2 export diagnostics",JSON.stringify(debug),"page errors",JSON.stringify(errors));
+    throw error;
+   }
    const output=await downloaded.path();
    const bytes=readFileSync(output);
    assert.ok(bytes.length>2000,"Export must produce a real media file");
