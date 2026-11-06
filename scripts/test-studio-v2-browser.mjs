@@ -23,7 +23,31 @@ try{
   assert.ok(await page.locator("#preview").isVisible());
   const widths=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+2,monitor:document.querySelector(".monitor").getBoundingClientRect().width,preview:document.querySelector("#preview").getBoundingClientRect().width}));
   assert.equal(widths.overflow,false,JSON.stringify(widths));assert.ok(widths.preview>=200,JSON.stringify(widths));
-  if(device.mobile){assert.ok(await page.locator(".mobile-dock").isVisible());await page.locator('[data-action="text"]').click();assert.ok(await page.locator(".assets.sheet-open").isVisible());await page.locator("#sheetBackdrop").click();}
+  if(device.mobile){
+   const layout=await page.evaluate(()=>{
+    const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,bottom:r.bottom};};
+    return {header:rect(".topbar"),monitor:rect(".monitor"),transport:rect(".transport"),timeline:rect(".timeline"),dock:rect(".mobile-dock"),playhead:rect("#playhead"),tabs:[...document.querySelectorAll(".mobile-dock button")].map(b=>b.textContent.trim()),css:[...document.styleSheets].some(s=>s.href?.includes("mobile-capcut.css"))};
+   });
+   assert.ok(layout.css,"CapCut reference layout sheet must be loaded");
+   assert.ok(Math.abs(layout.monitor.w-device.width)<3,JSON.stringify(layout));
+   assert.ok(layout.monitor.h>=220&&layout.monitor.h<=device.width+2,JSON.stringify(layout));
+   assert.ok(layout.transport.y>=layout.monitor.bottom-2,JSON.stringify(layout));
+   assert.ok(layout.timeline.y>=layout.transport.bottom-2,JSON.stringify(layout));
+   assert.ok(layout.timeline.h>=190,JSON.stringify(layout));
+   assert.ok(Math.abs(layout.playhead.x-device.width/2)<3,JSON.stringify(layout));
+   assert.deepEqual(layout.tabs,["Edit","Audio","Text","Effects","Overlay","Captions"]);
+   assert.ok(layout.dock.bottom<=device.height+2,JSON.stringify(layout));
+   assert.ok(await page.locator("#videoLane .empty-lane-action").isVisible(),"Add video should be visible when timeline is empty");
+   assert.ok(await page.locator("#audioLane .empty-lane-action").isVisible(),"Add audio should be visible when timeline is empty");
+   assert.ok(await page.locator("#textLane .empty-lane-action").isVisible(),"Add text should be visible when timeline is empty");
+   mkdirSync("reports",{recursive:true});
+   await page.screenshot({path:"reports/studio-v2-mobile-reference-empty.png"});
+   await page.locator('[data-action="overlay"]').click();
+   assert.ok(await page.locator("#tabOverlay.active").isVisible());
+   await page.locator("#sheetBackdrop").click();
+   assert.ok(await page.locator(".mobile-dock").isVisible());
+   await page.locator('[data-action="text"]').click();assert.ok(await page.locator(".assets.sheet-open").isVisible());await page.locator("#sheetBackdrop").click();
+  }
   else{assert.ok(await page.locator(".inspector").isVisible());assert.ok(await page.locator(".assets").isVisible());}
   await page.locator("#fileInput").setInputFiles({name:"sample.webm",mimeType:"video/webm",buffer});
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.length===1);
