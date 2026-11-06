@@ -77,4 +77,39 @@ const css = from("styles.css");
 assert.match(css, /body\[data-page="workspace"\]\[data-tool="animator"\] #top\.wrap/);
 assert.match(css, /body\[data-page="workspace"\]\[data-tool="reverse"\] #top\.wrap/);
 assert.match(css, /display:none!important;/);
+// Search crawlability & original content checks. No AdSense ID is fabricated.
+has("public/robots.txt");
+has("public/sitemap.xml");
+has("public/guides.css");
+has("public/guides/index.html");
+const robots = from("public/robots.txt");
+assert.ok(robots.includes("User-agent: *\nAllow: /\nSitemap: https://clipforgestudio.pages.dev/sitemap.xml\n"),
+  "Crawler directives should contain real newlines and a public sitemap URL");
+const sitemap = from("public/sitemap.xml");
+assert.match(sitemap, /^<\?xml version="1\.0"/);
+assert.ok(sitemap.includes("<urlset xmlns="));
+assert.equal((sitemap.match(/<loc>/g)||[]).length, 20, "Every guide, legal page and tool should have a discoverable URL");
+const guides = ["long-video-to-shorts","urdu-hindi-captions","export-video-formats","browser-video-privacy"];
+const pageGuide = from("public/guides/index.html");
+for(const slug of guides){
+ const location = "/guides/" + slug + "/";
+ has("public/guides/" + slug + "/index.html");
+ assert.ok(sitemap.includes("https://clipforgestudio.pages.dev" + location));
+ assert.ok(pageGuide.includes('href="' + location + '"'),"Learning Center must link to " + slug);
+ const article = from("public/guides/" + slug + "/index.html");
+ assert.ok(article.includes('<link rel="canonical" href="https://clipforgestudio.pages.dev' + location + '">'));
+ assert.ok(article.includes("<h1>")&&article.includes("<h2>"));
+ assert.ok((article.match(/<p/g)||[]).length>=8,"Guides should contain substantive text: " + slug);
+}
+assert.match(page, /href="\/guides\/"/);
+assert.match(page, /id="learning-center"/);
+assert.match(page, /<meta name="description" content="[^"]{30,}"/);
+assert.ok(page.includes('<link rel="canonical" href="https://clipforgestudio.pages.dev/">'));
+for(const tool of tools){
+ const html=from("public/tools/" + tool + "/index.html");
+ assert.equal((html.match(/rel="canonical"/g)||[]).length,1,"Exactly one canonical for "+tool);
+ assert.ok(html.includes('href="https://clipforgestudio.pages.dev/tools/' + tool + '/"'));
+ assert.ok(html.includes('<meta name="description"'),"Tool needs a unique summary: "+tool);
+}
+assert.ok(!sitemap.includes("ca-pub-"),"Do not invent an AdSense publisher ID");
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");
