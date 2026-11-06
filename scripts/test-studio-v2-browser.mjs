@@ -90,6 +90,37 @@ try{
   await page.locator("#addText").click();
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.some(c=>c.kind==="text"));
   assert.equal((await page.evaluate(()=>window.ClipForgeStudioV2.getState())).clips.length,3);
+  // Caption creation works independently of the existing text tool.
+  if(device.mobile)await page.locator('[data-action="captions"]').click();
+  else await page.locator('[data-tab="captions"]').click();
+  await page.locator("#newCaption").fill("سلام ClipForge");
+  await page.locator("#addCaption").click();
+  await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.some(c=>c.kind==="caption"&&c.text.includes("سلام")));
+  // Import real SRT timestamps, preserve cue timing and content.
+  const srt="1\\n00:00:00,500 --> 00:00:01,700\\nSRT test caption\\n\\n2\\n00:00:02,000 --> 00:00:03,000\\nNext caption";
+  await page.locator("#captionInput").setInputFiles({name:"captions.srt",mimeType:"text/plain",buffer:Buffer.from(srt.replaceAll("\\\\n","\\n"))});
+  await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.filter(c=>c.kind==="caption").length===3);
+  const cues=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.filter(c=>c.kind==="caption"));
+  assert.ok(cues.some(c=>Math.abs(c.start-.5)<.001&&Math.abs(c.duration-1.2)<.001));
+  // Place a real PNG overlay on the timeline and confirm it is selectable.
+  const png=Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLttAAAAABJRU5ErkJggg==","base64");
+  if(device.mobile)await page.locator('[data-action="overlay"]').click();
+  else await page.locator('[data-tab="overlay"]').click();
+  await page.locator("#overlayInput").setInputFiles({name:"overlay.png",mimeType:"image/png",buffer:png});
+  await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.some(c=>c.kind==="overlay"));
+  assert.equal(await page.locator("#textLane .clip.overlay").count(),1);
+  assert.equal(await page.locator("#textLane .clip.caption").count(),3);
+  if(device.mobile){
+   const videoBefore=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.find(c=>c.kind==="video").volume);
+   await page.locator("#mobileMuteClip").click();
+   const videoAfter=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.find(c=>c.kind==="video").volume);
+   assert.notEqual(videoBefore,videoAfter,"Mobile Mute Clip button must change real video volume");
+   const coverDownload=page.waitForEvent("download",{timeout:15000});
+   await page.locator("#mobileCover").click();
+   const cover=await coverDownload;
+   assert.ok(cover.suggestedFilename().endsWith(".png"));
+   assert.ok(readFileSync(await cover.path()).length>500);
+  }
   mkdirSync("reports",{recursive:true});
   await page.waitForTimeout(280);
   await page.screenshot({path:"reports/studio-v2-"+device.name+".png"});
