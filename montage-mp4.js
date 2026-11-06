@@ -88,7 +88,7 @@ export async function finalizeMontageMp4(recording,{onProgress=()=>{},isCancelle
     // If native MediaRecorder already created MP4, keep the native file when
     // only the optional remux pass fails. Never serve WebM as MP4.
     if(nativeIsCompatible&&await validMp4Blob(recording))return recording;
-    throw new Error("MP4 conversion failed: +(error.message||String(error))+" Try a shorter montage or another browser.");
+    throw new Error("MP4 conversion failed: "+(error.message||String(error))+". Try a shorter montage or another browser.");
   }finally{
     try{await input.close?.();}catch(_){}
   }
