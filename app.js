@@ -1717,7 +1717,7 @@ function mountTimeline(prefix,mode){
    stream=canvas.captureStream(30);
    const mp4Types=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4'];
    const webmTypes=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
-   const mime=[...mp4Types,...webmTypes].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t));
+   const mime=(isEditor?[...mp4Types,...webmTypes]:[mp4Types[0],...webmTypes,mp4Types[1]]).find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t));
    if(!mime)throw new Error('This browser cannot export video. Try the latest Chrome or Edge.');
    // Montage always downloads a genuine MP4. WebM is only a temporary,
    // internal browser recording format when direct MP4 recording is missing.
