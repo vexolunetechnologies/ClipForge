@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0d10"><title>ClipForge Studio V2 | Preview</title><link rel="stylesheet" href="./styles.css"></head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="mark">▶</span><div class="brand-text">CLIPFORGE <b>STUDIO</b><small>V2 PREVIEW</small></div></div>
+    <input id="projectName" aria-label="Project name" value="Untitled Project" maxlength="70">
+    <div class="top-actions">
+      <button id="openProject" title="Open saved project">Open</button><button id="saveProject" title="Save project">Save</button>
+      <select id="aspect" aria-label="Canvas ratio"><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="1:1">1:1</option></select>
+      <button id="exportBtn" class="primary">↗ Export</button>
+    </div>
+  </header>
+  <main class="workspace">
+    <aside class="assets panel">
+      <div class="panel-head"><strong>Media & Tools</strong><button id="importBtn" class="small primary">+ Import</button></div>
+      <nav id="assetTabs" class="tabs" aria-label="Asset categories"><button data-tab="media" class="active">Media</button><button data-tab="text">Text</button><button data-tab="audio">Audio</button><button data-tab="effects">Effects</button></nav>
+      <section id="tabMedia" class="tab-content active">
+        <div id="dropzone" class="dropzone" tabindex="0"><span class="drop-icon">⇧</span><b>Drop videos, photos or audio</b><small>or select Import · Files stay on your device</small></div>
+        <div id="mediaGrid" class="media-grid"></div>
+      </section>
+      <section id="tabText" class="tab-content"><p class="help">Add editable text at the playhead.</p><textarea id="newText" rows="3" placeholder="Type your title or caption">Your title</textarea><button id="addText" class="full primary">+ Add Text</button></section>
+      <section id="tabAudio" class="tab-content"><p class="help">Import an audio file to add a separate soundtrack. Select an audio clip on the timeline to change volume.</p><button id="importAudio" class="full">+ Import Audio</button></section>
+      <section id="tabEffects" class="tab-content"><p class="help">Select a video clip to edit brightness, saturation and contrast. Effects render in the preview and export.</p><button id="resetEffects" class="full">Reset selected effects</button></section>
+    </aside>
+    <section class="stage panel">
+      <div class="panel-head desktop-head"><strong>Program Monitor</strong><span id="monitorLabel">16:9 · Live Preview</span></div>
+      <div class="monitor"><canvas id="preview" width="960" height="540" aria-label="Video preview"></canvas><div id="emptyState" class="empty-state"><div class="empty-icon">▶</div><b>Your next edit starts here</b><span>Import a video or image to begin</span><button id="emptyImport">Import Media</button></div></div>
+      <div class="transport"><button id="jumpStart" title="Go to beginning">⏮</button><button id="stepBack" title="Back one frame">❮</button><button id="playBtn" class="play" title="Play/Pause (Space)">▶</button><button id="stepForward" title="Forward one frame">❯</button><button id="jumpEnd" title="Go to end">⏭</button><span class="clock" id="clock">00:00:00:00 / 00:00:00:00</span></div>
+    </section>
+    <aside class="inspector panel">
+      <div class="panel-head"><strong>Inspector</strong><span id="selectionHint">No selection</span></div>
+      <div id="inspectorContent" class="inspector-body"><div class="placeholder">Select a clip or title to edit its settings.</div></div>
+    </aside>
+    <section class="timeline panel">
+      <div class="timeline-top">
+        <div class="timeline-tools">
+          <button id="selectTool" data-tool="select" class="active" title="Selection (V)">↖ <span>Select</span></button>
+          <button id="razorTool" data-tool="razor" title="Razor (C)">✂ <span>Razor</span></button>
+          <button id="splitBtn" title="Split at playhead (Ctrl/Cmd+K)">⫶ <span>Split</span></button>
+          <button id="deleteBtn" title="Delete selected clip">⌫</button>
+          <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)">↶</button><button id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">↷</button>
+          <button id="snapBtn" class="active" title="Toggle snapping (S)">⌁ <span>Snap</span></button>
+        </div>
+        <div class="timeline-zoom"><button id="zoomOut" aria-label="Zoom out">−</button><input id="zoom" type="range" min="25" max="180" value="85" aria-label="Timeline zoom"><button id="zoomIn" aria-label="Zoom in">+</button></div>
+      </div>
+      <div class="timeline-grid">
+        <div class="track-headers"><div class="ruler-label">TRACKS</div><div class="track-name video-track">▣ <span>Video 1</span></div><div class="track-name text-track">T <span>Text</span></div><div class="track-name audio-track">♫ <span>Audio 1</span></div></div>
+        <div class="timeline-shell"><div id="timelineViewport" class="timeline-viewport"><div id="timelineContent" class="timeline-content"><div id="ruler" class="ruler"></div><div id="videoLane" class="track-lane video-track" data-kind="video"></div><div id="textLane" class="track-lane text-track" data-kind="text"></div><div id="audioLane" class="track-lane audio-track" data-kind="audio"></div></div></div><div id="playhead" class="playhead"><span></span></div></div>
+      </div>
+      <div class="timeline-bottom"><div id="status" role="status">Ready · Import your first clip</div><div><span id="snapStatus">Snapping on</span><span class="separator">·</span><span id="mediaStatus">0 media files</span></div></div>
+    </section>
+  </main>
+  <nav id="mobileDock" class="mobile-dock" aria-label="Studio tools"><button data-action="media" class="active"><i>▣</i>Media</button><button data-action="text"><i>T</i>Text</button><button data-action="audio"><i>♫</i>Audio</button><button data-action="effects"><i>✧</i>Effects</button><button data-action="inspector"><i>⚙</i>Edit</button></nav>
+  <input id="fileInput" type="file" multiple accept="video/*,audio/*,image/*" hidden><input id="projectInput" type="file" accept="application/json,.json" hidden>
+  <div id="sheetBackdrop" class="sheet-backdrop" hidden></div>
+  <div id="exportModal" class="dialog-backdrop" hidden><div class="dialog" role="dialog" aria-modal="true" aria-label="Export"><div class="dialog-head"><h2>Export video</h2><button id="closeExport" aria-label="Close">✕</button></div><p>Exports from your browser. WebM is used when MP4 recording isn't supported.</p><label>Resolution <select id="exportResolution"><option value="720">720p</option><option value="1080">1080p</option></select></label><div class="export-progress"><progress id="exportProgress" max="100" value="0"></progress><span id="exportText">Ready</span></div><button id="startExport" class="primary full">Start export</button><button id="cancelExport" class="full">Cancel / Close</button></div></div>
+</div>
+<script src="./app.js" defer></script></body></html>
