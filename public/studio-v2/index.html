@@ -16,7 +16,7 @@
   </header>
   <main class="workspace">
     <aside class="assets panel">
-      <div class="panel-head"><strong>Media & Tools</strong><button id="importBtn" class="small primary">+ Import</button></div>
+      <div class="panel-head"><strong>Media & Tools</strong><button id="importBtn" class="small primary">+ Import</button><button id="closeMobileAssets" class="mobile-sheet-close" type="button">Done</button></div>
       <nav id="assetTabs" class="tabs" aria-label="Asset categories"><button data-tab="media" class="active">Media</button><button data-tab="text">Text</button><button data-tab="audio">Audio</button><button data-tab="effects">Effects</button><button data-tab="overlay">Overlay</button><button data-tab="captions">Captions</button></nav>
       <section id="tabMedia" class="tab-content active">
         <div id="dropzone" class="dropzone" tabindex="0"><span class="drop-icon">⇧</span><b>Drop videos, photos or audio</b><small>or select Import · Files stay on your device</small></div>
@@ -34,7 +34,7 @@
       <div class="transport"><button id="mobileFullscreen" class="mobile-fullscreen" title="Fullscreen preview" aria-label="Fullscreen preview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6"/></svg></button><button id="jumpStart" title="Go to beginning">⏮</button><button id="stepBack" title="Back one frame">❮</button><button id="playBtn" class="play" title="Play/Pause (Space)">▶</button><button id="stepForward" title="Forward one frame">❯</button><button id="jumpEnd" title="Go to end">⏭</button><span class="clock" id="clock">00:00:00:00 / 00:00:00:00</span><span class="mobile-caption-toggle" aria-hidden="true">▣<small>ON</small></span><button id="mobileUndo" class="mobile-undo" title="Undo" aria-label="Undo">↶</button><button id="mobileRedo" class="mobile-redo" title="Redo" aria-label="Redo">↷</button></div>
     </section>
     <aside class="inspector panel">
-      <div class="panel-head"><strong>Inspector</strong><span id="selectionHint">No selection</span></div>
+      <div class="panel-head"><strong>Inspector</strong><span id="selectionHint">No selection</span><button id="closeMobileInspector" class="mobile-sheet-close" type="button">Done</button></div>
       <div id="inspectorContent" class="inspector-body"><div class="placeholder">Select a clip or title to edit its settings.</div></div>
       <div class="mobile-project-panel">
         <strong>PROJECT TOOLS</strong>
