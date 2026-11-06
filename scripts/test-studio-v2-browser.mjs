@@ -97,8 +97,8 @@ try{
   await page.locator("#addCaption").click();
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.some(c=>c.kind==="caption"&&c.text.includes("سلام")));
   // Import real SRT timestamps, preserve cue timing and content.
-  const srt="1\\n00:00:00,500 --> 00:00:01,700\\nSRT test caption\\n\\n2\\n00:00:02,000 --> 00:00:03,000\\nNext caption";
-  await page.locator("#captionInput").setInputFiles({name:"captions.srt",mimeType:"text/plain",buffer:Buffer.from(srt.replaceAll("\\\\n","\\n"))});
+  const srt=["1","00:00:00,500 --> 00:00:01,700","SRT test caption","","2","00:00:02,000 --> 00:00:03,000","Next caption"].join("\n");
+  await page.locator("#captionInput").setInputFiles({name:"captions.srt",mimeType:"text/plain",buffer:Buffer.from(srt)});
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.filter(c=>c.kind==="caption").length===3);
   const cues=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.filter(c=>c.kind==="caption"));
   assert.ok(cues.some(c=>Math.abs(c.start-.5)<.001&&Math.abs(c.duration-1.2)<.001));
