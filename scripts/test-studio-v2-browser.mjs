@@ -40,6 +40,7 @@ try{
   await page.waitForTimeout(220);
   await page.locator("#playBtn").click();
   assert.ok((await page.evaluate(()=>window.ClipForgeStudioV2.getState())).time>=0);
+  if(device.mobile){await page.waitForTimeout(270);mkdirSync("reports",{recursive:true});await page.screenshot({path:"reports/studio-v2-mobile-timeline.png"});}
   if(device.mobile)await page.locator('[data-action="text"]').click();
   else await page.locator('[data-tab="text"]').click();
   await page.locator("#newText").fill("Hello ClipForge");
@@ -47,7 +48,23 @@ try{
   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.some(c=>c.kind==="text"));
   assert.equal((await page.evaluate(()=>window.ClipForgeStudioV2.getState())).clips.length,3);
   mkdirSync("reports",{recursive:true});
+  await page.waitForTimeout(280);
   await page.screenshot({path:"reports/studio-v2-"+device.name+".png"});
+  if(!device.mobile){
+   // Export real video from canvas, verify downloadable media has a valid duration.
+   const field=page.locator('#inspectorContent [data-field="duration"]');
+   await field.fill("1");await field.dispatchEvent("change");
+   const downloading=page.waitForEvent("download",{timeout:30000});
+   await page.locator("#exportBtn").click();
+   await page.locator("#startExport").click();
+   const downloaded=await downloading;
+   const output=await downloaded.path();
+   const bytes=readFileSync(output);
+   assert.ok(bytes.length>2000,"Export must produce a real media file");
+   const probe=JSON.parse(execFileSync("ffprobe",["-v","error","-show_format","-show_streams","-of","json",output],{encoding:"utf8",timeout:20000}));
+   assert.ok(probe.streams.some(s=>s.codec_type==="video"),"Video track required in export");
+   assert.ok(Number(probe.format?.duration)>1,"Export duration metadata must be valid: "+JSON.stringify(probe.format));
+  }
   assert.deepEqual(errors,[],device.name+" uncaught JS errors");
   await page.close();
  }
