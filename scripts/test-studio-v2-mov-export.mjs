@@ -17,7 +17,8 @@ try{
  const bytes=readFileSync(mov);
  assert.ok(bytes.length>2000);
  site=await serveLocalSite({rootDir:"public"});
- browser=await chromium.launch({headless:true,args:["--no-sandbox"]});
+ try{browser=await chromium.launch({channel:"chrome",headless:true,args:["--no-sandbox"]});}
+ catch(error){console.warn("Chrome not available; testing Chromium codec fallback:",error.message);browser=await chromium.launch({headless:true,args:["--no-sandbox"]});}
  for(const device of [
   {name:"desktop",width:1440,height:900,mobile:false},
   {name:"mobile",width:390,height:844,mobile:true}
@@ -33,7 +34,18 @@ try{
   }));
   assert.ok(capabilities.emptyMime&&capabilities.quickTime,".mov extension must work even when OS omits MIME type");
   await page.locator("#fileInput").setInputFiles({name:"quicktime.mov",mimeType:"video/quicktime",buffer:bytes});
-  await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.length===1,{timeout:20000});
+  try{
+   await page.waitForFunction(()=>window.ClipForgeStudioV2.getState().clips.length===1,null,{timeout:18000});
+  }catch(error){
+   const debug=await page.evaluate(()=>({
+    log:document.querySelector("#status")?.textContent,
+    mediaCount:document.querySelectorAll("#mediaGrid .media-card").length,
+    browser:navigator.userAgent,
+    canPlayMov:document.createElement("video").canPlayType("video/quicktime"),
+    canPlayMp4:document.createElement("video").canPlayType('video/mp4; codecs="avc1.42E01E"')
+   }));
+   throw Error("Real MOV import diagnostics: "+JSON.stringify(debug)+"; "+error.message);
+  }
   const state=await page.evaluate(()=>window.ClipForgeStudioV2.getState());
   assert.equal(state.mediaInfo[0].name,"quicktime.mov");
   assert.equal(state.mediaInfo[0].kind,"video");
