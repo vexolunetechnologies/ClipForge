@@ -135,7 +135,8 @@ try{
    await page.locator("#mobileAspect").selectOption("9:16");
    assert.equal((await page.evaluate(()=>window.ClipForgeStudioV2.getState())).aspect,"9:16");
    await page.locator("#mobileAspect").selectOption("16:9");
-   await page.locator("#sheetBackdrop").click();
+   await page.locator("#closeMobileInspector").click();
+   assert.equal(await page.locator(".inspector.sheet-open").count(),0,"Done should close Edit sheet");
   }
   mkdirSync("reports",{recursive:true});
   await page.waitForTimeout(280);
