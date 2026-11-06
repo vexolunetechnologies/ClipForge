@@ -1,0 +1,31 @@
+name: Studio V2 isolated browser checks
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'public/studio-v2/**'
+      - 'scripts/test-studio-v2-browser.mjs'
+      - '.github/workflows/studio-v2.yml'
+  workflow_dispatch:
+
+jobs:
+  studio-v2-browser:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: node --check public/studio-v2/app.js
+      - run: npx playwright install chromium
+      - run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Test V2 mobile and desktop with a real video
+        run: node scripts/test-studio-v2-browser.mjs
+      - name: Upload browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-v2-layout-previews
+          path: reports/studio-v2-*.png
+          if-no-files-found: ignore
