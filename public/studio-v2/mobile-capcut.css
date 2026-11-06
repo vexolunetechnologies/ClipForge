@@ -238,3 +238,11 @@
  #app .timeline .clip.video{height:48px}
  #app .timeline .clip.audio,#app .timeline .clip.text{height:31px}
 }
+
+/* A closed mobile drawer must sit completely BELOW the dock, not peek into the screen. */
+@media screen and (max-width:760px){
+ #app .assets:not(.sheet-open),#app .inspector:not(.sheet-open){
+   transform:translateY(calc(100% + var(--cc-dock-height) + env(safe-area-inset-bottom) + 22px));
+   pointer-events:none;
+ }
+}
