@@ -88,10 +88,10 @@ async function transcribe({blob,start=0,end=null,language="urdu",maxWords=5,onPr
    for(const s of result.segments){
     const start=Number(s.start),end=Number(s.end);
     if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)continue;
-    const relativeWords=(Array.isArray(s.words)?s.words:[]).map(w=>({
-     word:w.word||w.text,start:Number(w.start),end:Number(w.end)
+    const timedWords=(Array.isArray(s.words)?s.words:[]).map(w=>({
+     word:w.word||w.text,start:Number(w.start??w.s)+a,end:Number(w.end??w.e)+a
     }));
-    parts.push({start:start+a,end:end+a,text:s.text,words:relativeWords});
+    parts.push({start:start+a,end:end+a,text:s.text,words:timedWords});
    }
   }else if(result?.text){
    parts.push({start:a,end:b,text:result.text,words:[]});
