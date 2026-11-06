@@ -6,6 +6,7 @@ on:
       - 'public/studio-v2/**'
       - 'scripts/test-studio-v2-browser.mjs'
       - 'scripts/test-studio-v2-captions.mjs'
+      - 'scripts/test-studio-v2-mov-export.mjs'
       - '.github/workflows/studio-v2.yml'
   workflow_dispatch:
 
@@ -18,7 +19,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - run: node --check public/studio-v2/app.js && node --check public/studio-v2/auto-captions.js
+      - run: node --check public/studio-v2/app.js && node --check public/studio-v2/auto-captions.js && node --check public/studio-v2/mov-import.js && node --check public/studio-v2/export-format.js
       - name: Build static shared caption library for Studio V2
         run: node scripts/build-pages.mjs
       - run: npx playwright install chromium
@@ -27,6 +28,8 @@ jobs:
         run: node scripts/test-studio-v2-browser.mjs
       - name: Test V2 caption library and mocked Urdu transcription in a real browser
         run: node scripts/test-studio-v2-captions.mjs
+      - name: Test MOV import and MP4 preferred export with real QuickTime media
+        run: node scripts/test-studio-v2-mov-export.mjs
       - name: Upload browser screenshots
         if: always()
         uses: actions/upload-artifact@v4
