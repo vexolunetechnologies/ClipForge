@@ -63,3 +63,9 @@
  #app #mobileDeleteClip{width:100%;border:1px solid #434954;background:#2b3038}
  #app .mobile-project-panel p{color:#84909d;font-size:10px;line-height:1.55;margin-top:12px}
 }
+
+.mobile-sheet-close{display:none}
+@media screen and (max-width:760px){
+ #app .mobile-sheet-close{display:block;margin-left:7px;background:#343b43;border:1px solid #48535e;border-radius:8px;min-height:33px;padding:4px 11px;font-size:11px;color:#e6eef5}
+ #app .inspector .panel-head #selectionHint{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
