@@ -86,6 +86,7 @@ function renderCaptionGallery(){
  const group=lib.groups.find(group=>group.id===(captionSearch?"all":captionCategory))||lib.groups.find(g=>g.id==="all");
  const names=new Map(lib.list),selected=selectedCaptionStyle();
  const ids=group.ids.filter(id=>!captionSearch||names.get(id)?.toLowerCase().includes(captionSearch)||id.includes(captionSearch));
+ const previousScroll=host.scrollTop;
  host.replaceChildren();
  for(const id of ids){
   const card=document.createElement("button");card.type="button";card.dataset.style=id;
@@ -101,6 +102,7 @@ function renderCaptionGallery(){
   const label=document.createElement("span");label.textContent=names.get(id)||id;
   card.append(canvas,label);card.onclick=()=>chooseCaptionStyle(id);host.append(card);
  }
+ host.scrollTop=previousScroll;
  counter.textContent=ids.length+" of "+lib.list.length+" unique caption styles";
 }
 function applyCaptionStyleToAll(){
@@ -377,7 +379,7 @@ if(c.kind==="text"||c.kind==="caption"){
 if(c.kind==="video"){html+="<hr><h3>Visual adjustments</h3>";html+=inspectorLabel("Brightness %",c.brightness,"brightness","range",0,200);html+=inspectorLabel("Contrast %",c.contrast,"contrast","range",0,200);html+=inspectorLabel("Saturation %",c.saturation,"saturation","range",0,200);html+=inspectorLabel("Scale %",c.scale,"scale","range",20,300);}
 html+='<button class="full" id="duplicateClip">Duplicate Clip</button>';body.innerHTML=html;
 for(const el of body.querySelectorAll("[data-field]")){el.oninput=()=>{const target=getClip(state.selected);if(!target)return;if(!inspectorSnapshot){remember();inspectorSnapshot=true;}const f=el.dataset.field;let v=el.type==="color"||f==="text"||f==="style"?el.value:Number(el.value);if(f==="start")v=Math.max(0,v||0);if(f==="duration")v=Math.max(.1,v||.1);if(f==="speed")v=clamp(v||1,.25,4);if(f==="volume")v=clamp(v,0,2);if(f==="fadeIn"||f==="fadeOut")v=clamp(Number.isFinite(v)?v:0,0,target.duration);if(f==="duration"&&target.mediaId){const a=getAsset(target);if(a)v=Math.min(v,Math.max(.1,(a.duration-(target.sourceIn??0))/(target.speed||1)));}
-target[f]=v;renderTimeline();syncPlayers();persist();if(f==="style")renderCaptionGallery();};el.onchange=()=>{inspectorSnapshot=false;renderInspector();};}
+target[f]=v;if(f==="style")state.captionStyle=v;renderTimeline();syncPlayers();persist();if(f==="style")renderCaptionGallery();};el.onchange=()=>{inspectorSnapshot=false;renderInspector();};}
 $("duplicateClip").onclick=()=>{remember();const copy={...c,id:uid(),start:c.start+c.duration};state.clips.push(copy);state.selected=copy.id;rebuild();log("Clip duplicated");};}
 function chooseTab(tab){for(const b of document.querySelectorAll("[data-tab]"))b.classList.toggle("active",b.dataset.tab===tab);for(const section of document.querySelectorAll(".tab-content"))section.classList.toggle("active",section.id==="tab"+tab[0].toUpperCase()+tab.slice(1));if(tab==="captions")renderCaptionGallery();}
 function openSheet(which){closeSheets();if(matchMedia("(max-width:760px)").matches){if(which==="inspector")$("app").querySelector(".inspector").classList.add("sheet-open");else{$("app").querySelector(".assets").classList.add("sheet-open");chooseTab(which);} $("sheetBackdrop").hidden=false;}else if(which!=="inspector")chooseTab(which);for(const b of document.querySelectorAll("[data-action]"))b.classList.toggle("active",b.dataset.action===which);}
