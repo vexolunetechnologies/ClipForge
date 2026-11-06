@@ -26,7 +26,38 @@ const dbReady=new Promise(resolve=>{if(!("indexedDB" in window)){resolve(null);r
 async function storeBlob(id,blob){const db=await dbReady;if(!db)return false;return new Promise(resolve=>{try{const tx=db.transaction("assets","readwrite");tx.objectStore("assets").put(blob,id);tx.oncomplete=()=>resolve(true);tx.onerror=()=>resolve(false);}catch(_){resolve(false);}});}
 async function loadBlob(id){const db=await dbReady;if(!db)return null;return new Promise(resolve=>{try{const tx=db.transaction("assets","readonly"),req=tx.objectStore("assets").get(id);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>resolve(null);}catch(_){resolve(null);}});}
 function durationOf(file,url,kind){if(kind==="image")return Promise.resolve(5);return new Promise(resolve=>{const el=document.createElement(kind==="video"?"video":"audio");el.preload="metadata";let finished=false;const done=v=>{if(finished)return;finished=true;el.removeAttribute("src");el.load();resolve(v);};el.onloadedmetadata=()=>done(Number.isFinite(el.duration)&&el.duration>0?el.duration:8);el.onerror=()=>done(8);el.src=url;setTimeout(()=>done(8),5000);});}
-async function importFiles(files){const accepted=[...files].filter(file=>/^(video|audio|image)\//.test(file.type));if(!accepted.length){log("Choose a supported video, image or audio file");return;}for(const file of accepted){const kind=file.type.split("/")[0],id=uid(),url=URL.createObjectURL(file),dur=await durationOf(file,url,kind);const info={id,name:file.name,kind,duration:kind==="image"?5:dur,size:file.size};media.set(id,{...info,url,blob:file});state.mediaInfo.push(info);storeBlob(id,file).then(ok=>{if(!ok)log("Media imported. Browser storage may be unavailable, so keep your source files.");});const clip=insertClip(id,true);if(clip)state.selected=clip.id;}renderMedia();rebuild();log(accepted.length+" media file(s) imported");}
+async function importFiles(files){
+ const adapter=window.ClipForgeStudioMov;
+ const accepted=[...files].filter(file=>/^(video|audio|image)\//.test(file.type)||adapter?.isMov(file)||/\.mov$/i.test(file.name));
+ if(!accepted.length){log("Choose a supported MP4, MOV, WebM, image or audio file");return;}
+ let imported=0,failed=0;
+ for(const file of accepted){
+  let url;
+  try{
+   const mov=adapter?.isMov(file)||/\.mov$/i.test(file.name);
+   if(mov&&!adapter)throw Error("MOV import engine could not load. Refresh the Studio page.");
+   const prepared=mov?await adapter.convert(file,{onProgress:message=>log(message)}):null;
+   const actual=prepared?.blob||file;
+   const kind=mov?"video":file.type.split("/")[0];
+   url=URL.createObjectURL(actual);
+   const dur=prepared?.duration||await durationOf(actual,url,kind);
+   if(mov&&(!Number.isFinite(dur)||dur<=0))throw Error("Cannot read MOV duration on this device.");
+   const id=uid();
+   const info={id,name:file.name,kind,duration:kind==="image"?5:dur,size:file.size,
+    format:prepared?.container||file.type||"video",converted:!!prepared?.converted};
+   media.set(id,{...info,url,blob:actual});url=null;
+   state.mediaInfo.push(info);
+   storeBlob(id,actual).then(ok=>{if(!ok)log("Media loaded. Browser storage unavailable, so keep original files.");});
+   const clip=insertClip(id,true);if(clip)state.selected=clip.id;
+   imported++;
+  }catch(error){
+   failed++;if(url)URL.revokeObjectURL(url);
+   log(file.name+": "+(error?.message||"Import failed"));
+  }
+ }
+ renderMedia();rebuild();
+ if(imported)log(imported+" media imported"+(failed?" · "+failed+" unsupported file(s)":""));
+}
 function insertClip(mediaId,automatic=false){const asset=media.get(mediaId);if(!asset)return null;remember();const kind=asset.kind==="audio"?"audio":"video";const start=kind==="video"?Math.max(0,...state.clips.filter(x=>x.kind==="video").map(x=>x.start+x.duration)):state.time;
 const clip={id:uid(),mediaId,kind,start,duration:asset.duration,sourceIn:0,volume:1,speed:1,brightness:100,contrast:100,saturation:100,scale:100};state.clips.push(clip);if(!automatic)state.selected=clip.id;return clip;}
 function addText(){const text=$("newText").value.trim()||"Your title";remember();const clip={id:uid(),kind:"text",start:state.time,duration:4,text,fontSize:62,color:"#ffffff",x:50,y:78};state.clips.push(clip);state.selected=clip.id;rebuild();closeSheets();log("Text added");}
@@ -239,7 +270,7 @@ if(matchMedia("(max-width:760px)").matches&&!laneClips.length){
  action.append(add,label);action.style.left=(lead+7)+"px";
  action.addEventListener("pointerdown",e=>e.stopPropagation());
  action.onclick=()=>{
-  if(kind==="video"){$("fileInput").accept="video/*,image/*";$("fileInput").click();}
+  if(kind==="video"){$("fileInput").accept="video/*,.mov,video/quicktime,image/*";$("fileInput").click();}
   else openSheet(kind);
  };
  lane.append(action);
@@ -403,7 +434,7 @@ function wire(){
 $("fileInput").onchange=e=>{importFiles(e.target.files);e.target.value="";};
 $("overlayInput").onchange=e=>{const file=e.target.files?.[0];e.target.value="";if(file)addOverlayFile(file);};
 $("captionInput").onchange=e=>{const file=e.target.files?.[0];e.target.value="";if(file)importTimedCaptions(file).catch(error=>log("Subtitle import failed: "+error.message));};
-for(const id of ["importBtn","emptyImport"])$(id).onclick=()=>{$("fileInput").accept="video/*,audio/*,image/*";$("fileInput").click();};
+for(const id of ["importBtn","emptyImport"])$(id).onclick=()=>{$("fileInput").accept="video/*,.mov,video/quicktime,audio/*,image/*";$("fileInput").click();};
 $("importAudio").onclick=()=>{$("fileInput").accept="audio/*";$("fileInput").click();};
 $("dropzone").onclick=()=>$("importBtn").click();$("dropzone").onkeydown=e=>{if(e.key==="Enter")$("importBtn").click();};for(const name of ["dragover","dragenter"])$("dropzone").addEventListener(name,e=>{e.preventDefault();e.currentTarget.classList.add("dragging");});$("dropzone").ondragleave=e=>e.currentTarget.classList.remove("dragging");$("dropzone").ondrop=e=>{e.preventDefault();e.currentTarget.classList.remove("dragging");importFiles(e.dataTransfer.files);};
 for(const b of document.querySelectorAll("[data-tab]"))b.onclick=()=>chooseTab(b.dataset.tab);for(const b of document.querySelectorAll("[data-action]"))b.onclick=()=>openSheet(b.dataset.action);$("sheetBackdrop").onclick=closeSheets;
