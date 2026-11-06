@@ -5,6 +5,7 @@ on:
     paths:
       - 'public/studio-v2/**'
       - 'scripts/test-studio-v2-browser.mjs'
+      - 'scripts/test-studio-v2-captions.mjs'
       - '.github/workflows/studio-v2.yml'
   workflow_dispatch:
 
@@ -17,11 +18,15 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - run: node --check public/studio-v2/app.js
+      - run: node --check public/studio-v2/app.js && node --check public/studio-v2/auto-captions.js
+      - name: Build static shared caption library for Studio V2
+        run: node scripts/build-pages.mjs
       - run: npx playwright install chromium
       - run: ffmpeg -version || (sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg)
       - name: Test V2 mobile and desktop with a real video
         run: node scripts/test-studio-v2-browser.mjs
+      - name: Test V2 caption library and mocked Urdu transcription in a real browser
+        run: node scripts/test-studio-v2-captions.mjs
       - name: Upload browser screenshots
         if: always()
         uses: actions/upload-artifact@v4
