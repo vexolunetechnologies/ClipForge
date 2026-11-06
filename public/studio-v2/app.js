@@ -263,6 +263,8 @@ $("importAudio").onclick=()=>{$("fileInput").accept="audio/*";$("fileInput").cli
 $("dropzone").onclick=()=>$("importBtn").click();$("dropzone").onkeydown=e=>{if(e.key==="Enter")$("importBtn").click();};for(const name of ["dragover","dragenter"])$("dropzone").addEventListener(name,e=>{e.preventDefault();e.currentTarget.classList.add("dragging");});$("dropzone").ondragleave=e=>e.currentTarget.classList.remove("dragging");$("dropzone").ondrop=e=>{e.preventDefault();e.currentTarget.classList.remove("dragging");importFiles(e.dataTransfer.files);};
 for(const b of document.querySelectorAll("[data-tab]"))b.onclick=()=>chooseTab(b.dataset.tab);for(const b of document.querySelectorAll("[data-action]"))b.onclick=()=>openSheet(b.dataset.action);$("sheetBackdrop").onclick=closeSheets;
 $("mobileSearch").onclick=()=>openSheet("media");
+$("closeMobileAssets").onclick=closeSheets;
+$("closeMobileInspector").onclick=closeSheets;
 $("mobileUndo").onclick=undo;$("mobileRedo").onclick=redo;
 $("mobileFullscreen").onclick=()=>{const el=document.querySelector(".monitor");if(document.fullscreenElement)document.exitFullscreen?.();else el?.requestFullscreen?.().catch(()=>log("Fullscreen not available in this browser"));};
 $("addText").onclick=addText;
