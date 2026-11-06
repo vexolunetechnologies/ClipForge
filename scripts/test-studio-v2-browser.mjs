@@ -111,9 +111,13 @@ try{
   assert.equal(await page.locator("#textLane .clip.overlay").count(),1);
   assert.equal(await page.locator("#textLane .clip.caption").count(),3);
   if(device.mobile){
-   const videoBefore=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.find(c=>c.kind==="video").volume);
+   const activeVideoVolume=()=>page.evaluate(()=>{
+    const s=window.ClipForgeStudioV2.getState();
+    return s.clips.find(c=>c.kind==="video"&&s.time>=c.start&&s.time<c.start+c.duration)?.volume;
+   });
+   const videoBefore=await activeVideoVolume();
    await page.locator("#mobileMuteClip").click();
-   const videoAfter=await page.evaluate(()=>window.ClipForgeStudioV2.getState().clips.find(c=>c.kind==="video").volume);
+   const videoAfter=await activeVideoVolume();
    assert.notEqual(videoBefore,videoAfter,"Mobile Mute Clip button must change real video volume");
    const coverDownload=page.waitForEvent("download",{timeout:15000});
    await page.locator("#mobileCover").click();
