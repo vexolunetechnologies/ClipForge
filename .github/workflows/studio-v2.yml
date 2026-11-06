@@ -19,7 +19,7 @@ jobs:
       - run: npm install
       - run: node --check public/studio-v2/app.js
       - run: npx playwright install chromium
-      - run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: ffmpeg -version || (sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg)
       - name: Test V2 mobile and desktop with a real video
         run: node scripts/test-studio-v2-browser.mjs
       - name: Upload browser screenshots
