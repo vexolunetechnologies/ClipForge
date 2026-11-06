@@ -137,10 +137,37 @@ $("resetEffects").onclick=()=>{const c=getClip(state.selected);if(!c||c.kind!=="
 $("exportBtn").onclick=()=>{$("exportModal").hidden=false;};$("closeExport").onclick=()=>{if(!state.exporting)$("exportModal").hidden=true;};$("cancelExport").onclick=()=>{if(state.exporting){exportCancel=true;stopExport();}else $("exportModal").hidden=true;};$("startExport").onclick=startExport;
 $("timelineViewport").addEventListener("scroll",()=>{if(!suppressScroll){state.time=clamp($("timelineViewport").scrollLeft/state.zoom,0,maxEnd());updateClock();syncPlayers();}},{passive:true});
 $("timelineViewport").addEventListener("wheel",e=>{if(e.ctrlKey){e.preventDefault();changeZoom(e.deltaY<0?10:-10);}},{passive:false});
+// Two-finger timeline zoom for phones. This does not change the video itself,
+// clips, source media, or desktop keyboard shortcuts.
+const pinchDistance=touches=>Math.hypot(
+ touches[0].clientX-touches[1].clientX,
+ touches[0].clientY-touches[1].clientY
+);
+let pinch=null;
+$("timelineViewport").addEventListener("touchstart",e=>{
+ if(e.touches.length===2){
+  pinch={distance:Math.max(1,pinchDistance(e.touches)),zoom:state.zoom,time:state.time};
+ }
+},{passive:true});
+$("timelineViewport").addEventListener("touchmove",e=>{
+ if(!pinch||e.touches.length!==2)return;
+ if(e.cancelable)e.preventDefault();
+ const zoom=clamp(Math.round(pinch.zoom*pinchDistance(e.touches)/pinch.distance),25,180);
+ if(zoom===state.zoom)return;
+ state.zoom=zoom;
+ $("zoom").value=zoom;
+ renderTimeline();
+ setTime(pinch.time);
+},{passive:false});
+for(const eventName of ["touchend","touchcancel"]){
+ $("timelineViewport").addEventListener(eventName,e=>{
+  if(e.touches.length!==2)pinch=null;
+ },{passive:true});
+}
 for(const lane of document.querySelectorAll(".track-lane"))lane.addEventListener("pointerdown",e=>{if(e.target===lane){const rect=lane.getBoundingClientRect();const x=e.clientX-rect.left+$("timelineViewport").scrollLeft-lead;setTime(x/state.zoom);state.selected=null;renderTimeline();renderInspector();}});
 window.addEventListener("keydown",keyboard);window.addEventListener("resize",()=>{const at=state.time;renderTimeline();setTime(at);});
 window.addEventListener("pagehide",()=>{for(const el of videos.values())el.pause();});
 }
 wire();restore().then(()=>{requestAnimationFrame(tick);});
-window.ClipForgeStudioV2={getState:()=>({clips:structuredClone(state.clips),mediaInfo:structuredClone(state.mediaInfo),time:state.time,aspect:state.aspect}),importFiles,splitAt,undo,redo,setTime};
+window.ClipForgeStudioV2={getState:()=>({clips:structuredClone(state.clips),mediaInfo:structuredClone(state.mediaInfo),time:state.time,zoom:state.zoom,aspect:state.aspect}),importFiles,splitAt,undo,redo,setTime};
 })();
