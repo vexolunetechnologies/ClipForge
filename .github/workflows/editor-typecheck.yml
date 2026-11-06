@@ -78,6 +78,15 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version
           ffprobe -version
+      - name: Test mobile editor with real MP4 import, playback, split and undo
+        run: node scripts/test-mobile-editor-media.mjs
+      - name: Upload imported-video mobile Studio screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipforge-mobile-editor-real-media
+          path: reports/mobile-studio-imported-video.png
+          if-no-files-found: ignore
       - name: Test Highlights with real WebM/Opus and mocked AI
         run: npm run test:media
 
