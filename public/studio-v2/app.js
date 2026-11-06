@@ -205,11 +205,24 @@ function togglePlay(){state.playing?pause():play();}
 function tick(now){if(state.playing){if(lastTick){const next=state.time+Math.min(.1,(now-lastTick)/1000)*state.rate;if(next>=maxEnd()){setTime(maxEnd());pause();if(state.exporting)stopExport();}else setTime(next);}lastTick=now;}drawPreview();requestAnimationFrame(tick);}
 function inspectorLabel(name,value,id,type="number",min="",max=""){return '<label>'+name+'<input data-field="'+id+'" type="'+type+'" value="'+String(value??"").replace(/"/g,"&quot;")+'" '+(min!==""?'min="'+min+'"':'')+' '+(max!==""?'max="'+max+'"':'')+' step="'+(type==="number"?"0.1":"1")+'"></label>';}
 function renderInspector(){const c=getClip(state.selected),body=$("inspectorContent");$("selectionHint").textContent=c?c.kind.toUpperCase():"No selection";if(!c){body.innerHTML='<div class="placeholder">Select a video, soundtrack or title on the timeline to inspect and edit it.<br><br>Keyboard: V select · C razor · Space play · Ctrl/Cmd+K split · I/O marks · J/K/L playback.</div>';return;}
-const asset=getAsset(c);let html="<h3>"+safeName(asset?.name||(c.kind==="text"?"Text overlay":"Clip"))+"</h3><p class=\"hint\">"+c.kind.toUpperCase()+" CLIP</p>";
+const asset=getAsset(c);let html="<h3>"+safeName(asset?.name||(c.kind==="text"?"Text":c.kind==="caption"?"Caption":c.kind==="overlay"?"Image overlay":"Clip"))+"</h3><p class=\"hint\">"+c.kind.toUpperCase()+" CLIP</p>";
 html+=inspectorLabel("Start (seconds)",c.start,"start","number",0);
 html+=inspectorLabel("Duration (seconds)",c.duration,"duration","number",.1);
-if(c.kind==="text"){html+='<label>Text<textarea data-field="text" rows="3">'+safeName(c.text)+'</textarea></label>';html+=inspectorLabel("Font size",c.fontSize,"fontSize","number",10,180);html+=inspectorLabel("Horizontal position %",c.x,"x","number",0,100);html+=inspectorLabel("Vertical position %",c.y,"y","number",0,100);html+=inspectorLabel("Color",c.color,"color","color");}
-else {html+=inspectorLabel("Speed",c.speed,"speed","number",.25,4);html+=inspectorLabel("Volume",c.volume,"volume","number",0,2);}
+if(c.kind==="text"||c.kind==="caption"){
+ html+='<label>'+(c.kind==="caption"?"Caption":"Text")+'<textarea data-field="text" rows="3">'+safeName(c.text)+'</textarea></label>';
+ html+=inspectorLabel("Font size",c.fontSize,"fontSize","number",10,180);
+ html+=inspectorLabel("Horizontal position %",c.x,"x","number",0,100);
+ html+=inspectorLabel("Vertical position %",c.y,"y","number",0,100);
+ html+=inspectorLabel("Color",c.color,"color","color");
+}else if(c.kind==="overlay"){
+ html+=inspectorLabel("Overlay scale %",c.scale,"scale","range",10,250);
+ html+=inspectorLabel("Opacity %",c.opacity,"opacity","range",0,100);
+ html+=inspectorLabel("Horizontal position %",c.x,"x","range",0,100);
+ html+=inspectorLabel("Vertical position %",c.y,"y","range",0,100);
+}else {
+ html+=inspectorLabel("Speed",c.speed,"speed","number",.25,4);
+ html+=inspectorLabel("Volume",c.volume,"volume","number",0,2);
+}
 if(c.kind==="video"){html+="<hr><h3>Visual adjustments</h3>";html+=inspectorLabel("Brightness %",c.brightness,"brightness","range",0,200);html+=inspectorLabel("Contrast %",c.contrast,"contrast","range",0,200);html+=inspectorLabel("Saturation %",c.saturation,"saturation","range",0,200);html+=inspectorLabel("Scale %",c.scale,"scale","range",20,300);}
 html+='<button class="full" id="duplicateClip">Duplicate Clip</button>';body.innerHTML=html;
 for(const el of body.querySelectorAll("[data-field]")){el.oninput=()=>{const target=getClip(state.selected);if(!target)return;if(!inspectorSnapshot){remember();inspectorSnapshot=true;}const f=el.dataset.field;let v=el.type==="color"||f==="text"?el.value:Number(el.value);if(f==="start")v=Math.max(0,v||0);if(f==="duration")v=Math.max(.1,v||.1);if(f==="speed")v=clamp(v||1,.25,4);if(f==="volume")v=clamp(v,0,2);if(f==="duration"&&target.mediaId){const a=getAsset(target);if(a)v=Math.min(v,Math.max(.1,(a.duration-target.sourceIn)/(target.speed||1)));}
