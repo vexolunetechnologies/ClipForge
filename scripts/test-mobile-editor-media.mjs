@@ -31,6 +31,11 @@ try {
  await editor.locator("#stMedia [data-mid]").first().click();
  await editor.locator(".st-assets .st-mobile-sheet-close").click();
  await page.waitForFunction(()=>document.querySelectorAll('#stInner .st-pro-lane[data-lane-kind="video"] .st-clip-block').length===1);
+ // Decorative thumbnails must load without replacing the actual clip buttons.
+ await page.waitForFunction(()=>{
+  const strip=document.querySelector('#stInner .st-pro-lane[data-lane-kind="video"] .cf-mobile-filmstrip');
+  return strip&&strip.style.backgroundImage.includes("data:image/jpeg");
+ },{timeout:12000});
  const before=await editor.locator('#stInner .st-pro-lane[data-lane-kind="video"] .st-clip-block').count();
  assert.equal(before,1);
  assert.ok(await editor.locator("#stAppExport").isVisible());
