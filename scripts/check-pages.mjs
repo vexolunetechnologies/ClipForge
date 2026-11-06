@@ -11,6 +11,7 @@ const files = [
   ["_worker.js", "public/_worker.js"],
   ["styles.css", "public/assets/css/styles.css"],
   ["editor-mobile-layout.css", "public/editor-mobile-layout.css"],
+  ["editor-mobile-thumbnails.js", "public/editor-mobile-thumbnails.js"],
   ["app.js", "public/assets/js/core/app.js"],
   ["navigation.js", "public/navigation.js"],
   ["navigation.js", "public/assets/js/core/navigation.js"],
