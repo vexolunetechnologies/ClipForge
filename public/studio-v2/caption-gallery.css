@@ -1,0 +1,30 @@
+/* Studio V2 caption workspace only. No global caption/card overrides. */
+#tabCaptions .caption-controls{border-top:1px solid #343b46;padding-top:13px;margin-top:16px}
+#tabCaptions .caption-controls h3{margin:0 0 7px;color:#ebf1f7;font-size:13px;font-weight:700}
+#tabCaptions .caption-auto-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:9px 0}
+#tabCaptions .caption-auto-options label{display:flex;flex-direction:column;gap:4px;font-size:10px;color:#aab7c4}
+#tabCaptions .caption-auto-options select{width:100%;min-width:0;padding:7px 4px;font-size:11px}
+#tabCaptions #autoCaptionProgress{display:block;width:100%;height:9px;margin-top:11px;accent-color:#21d2e7}
+#tabCaptions #autoCaptionStatus{line-height:1.55;overflow-wrap:anywhere}
+#tabCaptions #captionStyleSearch{width:100%;padding:8px;margin:11px 0 9px}
+#tabCaptions .caption-categories{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:3px 0 7px}
+#tabCaptions .caption-categories button{min-height:30px;flex:0 0 auto;padding:5px 9px;white-space:nowrap;font-size:10px}
+#tabCaptions .caption-categories button.active{border-color:#0cc9e4;color:#b6f5fe;background:#15424b}
+#tabCaptions .caption-style-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;max-height:285px;overflow-y:auto;overscroll-behavior:contain;padding:3px}
+#tabCaptions .caption-style-card{display:flex;flex-direction:column;padding:0;min-width:0;border:1px solid #414852;border-radius:8px;text-align:left;background:#20272f;overflow:hidden}
+#tabCaptions .caption-style-card.active{outline:2px solid #1ecde6;outline-offset:-2px;border-color:#1ecde6}
+#tabCaptions .caption-style-card canvas{display:block;max-width:100%;width:100%;height:auto;aspect-ratio:16/9;background:#111923}
+#tabCaptions .caption-style-card span{font-size:10px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:6px}
+#tabCaptions .caption-style-footer{display:flex;flex-direction:column;gap:8px;margin-top:9px}
+#tabCaptions .caption-style-footer button{background:#273f47;border-color:#286779;font-size:11px}
+#tabCaptions .caption-style-footer span{font-size:10px;color:#a9b2c0}
+#tabCaptions .caption-export-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#tabCaptions .caption-export-row button{font-size:11px;min-width:0}
+#tabCaptions .help{margin:8px 0;font-size:11px}
+@media(max-width:760px){
+ #app #tabCaptions .caption-style-gallery{max-height:37dvh}
+ #app #tabCaptions .caption-style-card canvas{aspect-ratio:16/9}
+ #app #tabCaptions .caption-style-footer button{min-height:40px}
+ #app #tabCaptions .caption-auto-options select{min-height:37px}
+ #app #tabCaptions .caption-export-row button{min-height:40px}
+}
