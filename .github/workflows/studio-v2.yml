@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm install
       - run: node --check public/studio-v2/app.js
       - run: npx playwright install chromium
       - run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg
