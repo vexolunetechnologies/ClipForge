@@ -3,7 +3,7 @@ import {chromium} from "playwright";
 import {mkdirSync} from "node:fs";
 import {serveLocalSite} from "./test-http-server.mjs";
 
-const site=await serveLocalSite();
+const site=await serveLocalSite({rootDir:"public"});
 let browser;
 try{
  browser=await chromium.launch({headless:true,args:["--no-sandbox"]});
