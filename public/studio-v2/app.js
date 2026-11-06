@@ -44,6 +44,126 @@ async function addOverlayFile(file){
  state.clips.push(clip);state.selected=clip.id;
  rebuild();closeSheets();log("Image overlay added");
 }
+// Captions Studio's existing 55-style library is shared with V2, not copied.
+const captionStyles=()=>window.ClipForgeCaptionStyles;
+let captionCategory="trending",captionSearch="",autoCaptionAbort=null;
+function captionPresetOptions(current){
+ const lib=captionStyles();
+ if(!lib)return "";
+ return lib.list.map(([id,label])=>'<option value="'+id+'"'+(id===current?' selected':'')+'>'+label+'</option>').join("");
+}
+function selectedCaptionStyle(){
+ const clip=getClip(state.selected);
+ return clip?.kind==="caption"?clip.style||"classic":state.captionStyle;
+}
+function chooseCaptionStyle(style){
+ const lib=captionStyles();
+ if(!lib?.list.some(([id])=>id===style)){log("Caption style unavailable");return;}
+ const selected=getClip(state.selected);
+ if(selected?.kind==="caption"&&selected.style===style&&state.captionStyle===style)return;
+ remember();
+ state.captionStyle=style;
+ if(selected?.kind==="caption")selected.style=style;
+ persist();renderCaptionGallery();renderInspector();drawPreview();
+ log("Caption style selected: "+lib.list.find(([id])=>id===style)[1]);
+}
+function renderCaptionGallery(){
+ const lib=captionStyles(),host=$("captionStyleGallery"),categories=$("captionCategories"),counter=$("captionStyleCount");
+ if(!lib){counter.textContent="Caption style library unavailable; use manual captions.";return;}
+ if(!categories.childElementCount){
+  for(const group of lib.groups){
+   const button=document.createElement("button");button.type="button";
+   button.dataset.category=group.id;button.textContent=group.label;
+   button.onclick=()=>{captionCategory=group.id;captionSearch="";$("captionStyleSearch").value="";renderCaptionGallery();};
+   categories.append(button);
+  }
+ }
+ for(const button of categories.children){
+  const current=button.dataset.category===captionCategory;
+  button.classList.toggle("active",current);
+  button.setAttribute("aria-pressed",String(current));
+ }
+ const group=lib.groups.find(group=>group.id===(captionSearch?"all":captionCategory))||lib.groups.find(g=>g.id==="all");
+ const names=new Map(lib.list),selected=selectedCaptionStyle();
+ const ids=group.ids.filter(id=>!captionSearch||names.get(id)?.toLowerCase().includes(captionSearch)||id.includes(captionSearch));
+ host.replaceChildren();
+ for(const id of ids){
+  const card=document.createElement("button");card.type="button";card.dataset.style=id;
+  card.className="caption-style-card"+(id===selected?" active":"");
+  card.setAttribute("aria-pressed",String(id===selected));
+  const canvas=document.createElement("canvas");canvas.width=320;canvas.height=180;
+  const context=canvas.getContext("2d");
+  if(context){
+   context.fillStyle="#0d1520";context.fillRect(0,0,320,180);
+   const sample=/urdu|drama-white|cinema-gold/.test(id)?"یہ کہانی بدل گئی":"GO VIRAL TODAY";
+   try{lib.draw(context,sample,id,320,180,.8,2);}catch(e){console.warn("Style preview",id,e);}
+  }
+  const label=document.createElement("span");label.textContent=names.get(id)||id;
+  card.append(canvas,label);card.onclick=()=>chooseCaptionStyle(id);host.append(card);
+ }
+ counter.textContent=ids.length+" of "+lib.list.length+" unique caption styles";
+}
+function applyCaptionStyleToAll(){
+ const lib=captionStyles();
+ if(!lib?.list.some(([id])=>id===state.captionStyle)){log("Select a caption style first");return;}
+ const cues=state.clips.filter(c=>c.kind==="caption");
+ if(!cues.length){log("Add or import captions first");return;}
+ remember();for(const clip of cues)clip.style=state.captionStyle;
+ rebuild();renderCaptionGallery();log("Applied style to "+cues.length+" captions");
+}
+function subtitleTimestamp(seconds,dot){
+ const ms=Math.max(0,Math.round((Number(seconds)||0)*1000)),two=x=>String(x).padStart(2,"0"),three=x=>String(x).padStart(3,"0");
+ return [two(Math.floor(ms/3600000)),two(Math.floor(ms/60000)%60),two(Math.floor(ms/1000)%60)].join(":")+(dot?".":",")+three(ms%1000);
+}
+function downloadSubtitles(format){
+ const cues=state.clips.filter(c=>c.kind==="caption"&&c.text?.trim()).slice().sort((a,b)=>a.start-b.start);
+ if(!cues.length){log("No captions to download");return;}
+ const vtt=format==="vtt",lines=cues.map((c,index)=>{
+  const range=subtitleTimestamp(c.start,vtt)+" --> "+subtitleTimestamp(c.start+c.duration,vtt);
+  return (vtt?"":index+1+"\n")+range+"\n"+c.text;
+ });
+ const data=(vtt?"WEBVTT\n\n":"")+lines.join("\n\n")+"\n";
+ download(data,(state.name||"clipforge").replace(/[^\w-]+/g,"_")+"."+(vtt?"vtt":"srt"),vtt?"text/vtt":"application/x-subrip");
+ log("Downloaded "+(vtt?"VTT":"SRT")+" captions");
+}
+async function autoCaptionSelected(){
+ if(autoCaptionAbort)return;
+ const selected=getClip(state.selected);
+ const clip=["video","audio"].includes(selected?.kind)?selected:activeClip("video",state.time)||activeClip("audio",state.time);
+ const asset=getAsset(clip);
+ if(!clip||!asset?.blob){log("Select an imported video/audio clip first");$("autoCaptionStatus").textContent="Select a video/audio clip whose original file is loaded.";return;}
+ if(!window.ClipForgeStudioAutoCaptions){log("Auto transcription module unavailable");return;}
+ const ctrl=new AbortController();autoCaptionAbort=ctrl;
+ const progress=$("autoCaptionProgress"),cancel=$("cancelAutoCaptions"),startBtn=$("autoCaptions"),status=$("autoCaptionStatus");
+ progress.hidden=false;progress.value=0;cancel.hidden=false;startBtn.disabled=true;
+ status.textContent="Preparing audio for transcription…";
+ try{
+  const speed=clip.speed||1,sourceIn=clip.sourceIn??0;
+  const cues=await window.ClipForgeStudioAutoCaptions.transcribe({
+   blob:asset.blob,start:sourceIn,end:sourceIn+clip.duration*speed,
+   language:$("autoCaptionLanguage").value,maxWords:Number($("autoCaptionWords").value),signal:ctrl.signal,
+   onProgress:(pct,part,total)=>{progress.value=pct;status.textContent="Transcribing audio "+part+"/"+total+" · "+pct+"%";}
+  });
+  const prepared=cues.map(cue=>{
+   const inTimeline=clip.start+(cue.start-sourceIn)/speed;
+   const endTimeline=clip.start+(cue.start+cue.duration-sourceIn)/speed;
+   const start=clamp(inTimeline,clip.start,clip.start+clip.duration);
+   const end=clamp(endTimeline,start,clip.start+clip.duration);
+   return {id:uid(),kind:"caption",start,duration:end-start,text:cue.text,fontSize:40,
+    color:"#ffffff",x:50,y:87,style:state.captionStyle};
+  }).filter(c=>c.duration>.02&&c.text.trim());
+  if(!prepared.length)throw Error("No caption segments detected.");
+  remember();state.clips.push(...prepared);state.selected=prepared[0].id;
+  rebuild();renderCaptionGallery();
+  status.textContent="Generated "+prepared.length+" editable caption clips. Review their timing and wording.";
+  log("Auto captions complete · "+prepared.length+" clips");
+ }catch(error){
+  const message=ctrl.signal.aborted?"Transcription cancelled":error.message;
+  status.textContent=message;log(message);
+ }finally{
+  autoCaptionAbort=null;startBtn.disabled=false;cancel.hidden=true;progress.hidden=true;
+ }
+}
 function addCaption(){
  const content=$("newCaption").value.trim();
  if(!content){log("Enter caption text first");return;}
