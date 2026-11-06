@@ -44,17 +44,18 @@ export async function finalizeMontageMp4(recording,{onProgress=()=>{},isCancelle
   let mb;
   try{mb=await bunny();}
   catch(error){
-    // Safari and some Chrome builds can record valid MP4 directly.
-    if(isMp4(recording)&&await validMp4Blob(recording))return recording;
     throw error;
   }
   const input=new mb.Input({formats:mb.ALL_FORMATS,source:new mb.BlobSource(recording)});
-  let conversion=null;
+  let conversion=null,nativeIsCompatible=false;
   try{
     const videoTrack=await input.getPrimaryVideoTrack(),audioTrack=await input.getPrimaryAudioTrack();
     if(!videoTrack)throw new Error("The recording does not contain a video track.");
     const sourceIsMp4=isMp4(recording);
-    if(!sourceIsMp4){
+    const videoCodec=await videoTrack.getCodec();
+    const audioCodec=audioTrack?await audioTrack.getCodec():null;
+    nativeIsCompatible=sourceIsMp4&&videoCodec==="avc"&&(!audioTrack||audioCodec==="aac");
+    if(!nativeIsCompatible){
       if(!await mb.canEncode("avc"))throw new Error("H.264 encoding is unavailable on this device.");
       if(audioTrack)await ensureAac(mb);
     }
@@ -63,8 +64,8 @@ export async function finalizeMontageMp4(recording,{onProgress=()=>{},isCancelle
     conversion=await mb.Conversion.init({
       input,output,tracks:"primary",
       // Explicit H.264 and AAC avoids mislabeled MP4 and silent audio loss.
-      video:{codec:"avc"},
-      audio:{codec:"aac"},
+      video:{codec:"avc",forceTranscode:!nativeIsCompatible},
+      audio:{codec:"aac",forceTranscode:!nativeIsCompatible},
     });
     if(!conversion.isValid||
        !conversion.utilizedTracks.includes(videoTrack)||
@@ -86,8 +87,8 @@ export async function finalizeMontageMp4(recording,{onProgress=()=>{},isCancelle
     if(isCancelled())throw cancelledError();
     // If native MediaRecorder already created MP4, keep the native file when
     // only the optional remux pass fails. Never serve WebM as MP4.
-    if(isMp4(recording)&&await validMp4Blob(recording))return recording;
-    throw new Error("MP4 conversion failed: "+(error.message||String(error))+" Try a shorter montage or another browser.");
+    if(nativeIsCompatible&&await validMp4Blob(recording))return recording;
+    throw new Error("MP4 conversion failed: +(error.message||String(error))+" Try a shorter montage or another browser.");
   }finally{
     try{await input.close?.();}catch(_){}
   }
