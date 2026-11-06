@@ -26,7 +26,7 @@ try{
   if(device.mobile){
    const layout=await page.evaluate(()=>{
     const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,bottom:r.bottom};};
-    return {header:rect(".topbar"),monitor:rect(".monitor"),transport:rect(".transport"),timeline:rect(".timeline"),dock:rect(".mobile-dock"),playhead:rect("#playhead"),tabs:[...document.querySelectorAll(".mobile-dock button")].map(b=>b.textContent.trim()),css:[...document.styleSheets].some(s=>s.href?.includes("mobile-capcut.css"))};
+    return {header:rect(".topbar"),monitor:rect(".monitor"),transport:rect(".transport"),timeline:rect(".timeline"),dock:rect(".mobile-dock"),playhead:rect("#playhead"),tabs:[...document.querySelectorAll(".mobile-dock button")].map(b=>b.lastChild?.textContent.trim()),css:[...document.styleSheets].some(s=>s.href?.includes("mobile-capcut.css"))};
    });
    assert.ok(layout.css,"CapCut reference layout sheet must be loaded");
    assert.ok(Math.abs(layout.monitor.w-device.width)<3,JSON.stringify(layout));
