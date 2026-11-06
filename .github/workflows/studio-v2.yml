@@ -29,3 +29,13 @@ jobs:
           name: studio-v2-layout-previews
           path: reports/studio-v2-*.png
           if-no-files-found: ignore
+      - name: Package isolated V2 preview
+        if: always()
+        run: cd public && zip -q -r ../studio-v2-preview.zip studio-v2
+      - name: Upload runnable V2 preview ZIP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipforge-studio-v2-preview
+          path: studio-v2-preview.zip
+          if-no-files-found: ignore
