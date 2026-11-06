@@ -74,6 +74,8 @@ function page(tool = null) {
     ["/transcription-queue.js", "/assets/js/shared/transcription-queue.js"]
   ]);
   for (const [oldPath, newPath] of paths) {
+    // Preserve cache-busting query strings in versioned asset URLs.
+    html = html.split('"' + oldPath + '?').join('"' + newPath + '?');
     html = html.split('"' + oldPath + '"').join('"' + newPath + '"');
   }
   if (tool) {
