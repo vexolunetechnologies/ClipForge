@@ -36,6 +36,13 @@
     <aside class="inspector panel">
       <div class="panel-head"><strong>Inspector</strong><span id="selectionHint">No selection</span></div>
       <div id="inspectorContent" class="inspector-body"><div class="placeholder">Select a clip or title to edit its settings.</div></div>
+      <div class="mobile-project-panel">
+        <strong>PROJECT TOOLS</strong>
+        <div class="mobile-project-row"><button id="mobileOpenProject" type="button">Open Project</button><button id="mobileSaveProject" type="button">Save Project</button></div>
+        <label>Video format <select id="mobileAspect"><option value="16:9">Landscape 16:9</option><option value="9:16">Portrait 9:16</option><option value="1:1">Square 1:1</option></select></label>
+        <button id="mobileDeleteClip" type="button">Delete selected clip</button>
+        <p>Project file saves the edit instructions. Keep original media files for transferring to another device.</p>
+      </div>
     </aside>
     <section class="timeline panel">
       <div class="timeline-top">
