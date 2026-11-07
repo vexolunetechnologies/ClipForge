@@ -77,6 +77,70 @@ try{
  await page.locator("#vmRatio").selectOption("1:1");
  assert.match(await page.locator("#vmRatioInfo").textContent(),/Manual: 1:1/,"Manual format override must work");
  await page.locator("#vmRatio").selectOption("auto");
+
+ // Two clips must preview as one seekable, continuous montage without pre-rendering.
+ await page.locator("#vmFiles").setInputFiles({name:"second-clip.webm",mimeType:"video/webm",buffer:Buffer.from(videoData)});
+ await page.waitForFunction(()=>document.getElementById("vmCount")?.textContent.includes("2 clips"),null,{timeout:12000});
+ assert.equal(await page.locator("#vmCombinedPlay").isEnabled(),true);
+ const totalPreview=Number(await page.locator("#vmCombinedSeek").getAttribute("max"));
+ assert.ok(totalPreview>2.5,"Combined preview duration should include both uploaded clips");
+ await page.locator("#vmCombinedPlay").click();
+ try{
+  await page.waitForFunction(()=>{
+   const seek=document.getElementById("vmCombinedSeek");
+   return Number(seek?.value)>1.8;
+  },null,{timeout:15000});
+ }catch(error){
+  throw Error("Combined preview did not advance to clip 2: "+JSON.stringify(await page.evaluate(()=>({
+   t:document.getElementById("vmCombinedSeek")?.value,
+   src:document.getElementById("vmPreview")?.getAttribute("src"),
+   status:document.getElementById("vmStatus")?.textContent
+  }))));
+ }
+ await page.locator("#vmCombinedPlay").click();
+ // Generate automatic captions with the exact existing Cloudflare Whisper API contract.
+ let transcribeRequests=0;
+ await page.route("**/api/v1/shorts/transcribe",async route=>{
+  const request=route.request().postDataJSON();
+  assert.ok(request.audio?.startsWith("UklGR"),"Whisper expects PCM WAV base64");
+  transcribeRequests++;
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+   segments:[{start:.1,end:.9,text:"Generated caption test"}]
+  })});
+ });
+ await page.locator("#vmCaptionLang").selectOption("ur");
+ await page.locator("#vmGenerateCaptions").click();
+ try{
+  await page.waitForFunction(()=>{
+   const status=document.getElementById("vmGenerationStatus")?.textContent||"";
+   return /Generated \d+ captions|No speech detected|generation failed/i.test(status);
+  },null,{timeout:18000});
+  assert.match(await page.locator("#vmGenerationStatus").textContent(),/Generated \d+ captions/);
+ }catch(error){
+  throw Error("Auto captions generation issue: "+(await page.locator("#vmGenerationStatus").textContent()));
+ }
+ assert.ok(transcribeRequests>=2,"Both clips must be transcribed, not just the selected one");
+ const edit=page.locator("#vmCaptionText"),lines=(await edit.inputValue()).trim().split("\n");
+ assert.ok(lines.length>=2,"Generated captions must cover both clips");
+ await edit.fill(lines.map((line,i)=>i===0?"Edited caption line":line).join("\n"));
+ await page.locator("#vmApplyCaptionText").click();
+ assert.match(await page.locator("#vmGenerationStatus").textContent(),/applied/i);
+ await page.setViewportSize({width:390,height:844});
+ const overflow=await page.evaluate(()=>{
+  const panel=document.querySelector("#vmTool .cf-grid>.cf-panel:last-child").getBoundingClientRect();
+  const items=["#vmCaptions","#vmCaptionGallery","#vmCaptionGrid","#vmStyleCategories","#vmCaptionText","#vmCaptionLang"];
+  return {documentWidth:document.documentElement.scrollWidth,viewportWidth:document.documentElement.clientWidth,
+   panelLeft:panel.left,panelRight:panel.right,
+   elements:items.map(selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {selector,left:r.left,right:r.right}})};
+ });
+ assert.ok(overflow.documentWidth<=overflow.viewportWidth+2,"Montage CSS should not create horizontal page overflow: "+JSON.stringify(overflow));
+ for(const item of overflow.elements){
+  assert.ok(item.right<=overflow.panelRight+2&&item.left>=overflow.panelLeft-2,"Montage caption UI exceeds settings panel: "+JSON.stringify({item,overflow}));
+ }
+ await page.setViewportSize({width:1400,height:900});
+ // Remove duplicate test media to keep existing 720p and 1080p export regressions unchanged.
+ await page.locator("#vmTimeline .cf-clip").nth(1).locator(".cf-clip-actions button").last().click();
+ await page.waitForFunction(()=>document.getElementById("vmCount")?.textContent.includes("1 clips"),null,{timeout:10000});
  const captions="1\n00:00:00,100 --> 00:00:01,000\nSample dialogue\n";
  await page.locator("#vmCaptions").setInputFiles({name:"dialogue.srt",mimeType:"text/plain",buffer:Buffer.from(captions)});
  await page.locator("#vmTitle").fill("MP4 Montage Test");
