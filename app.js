@@ -1731,7 +1731,7 @@ function mountTimeline(prefix,mode){
   const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight),dpr=Math.min(2,window.devicePixelRatio||1);
   canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
   const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
-  const title=el('Title').value.trim(),cue=captionAtPreview(),caption=cue?cue.text:state.captionSample?'Your captions here':'';
+  const title=el('Title').value.trim(),cue=captionAtPreview(),caption=cue?cue.text:state.captionSample||state.captions.length?'Caption positioning preview':'';
   paintMontageTitle(ctx,w,h,title);paintMontageCaption(ctx,w,h,caption);
   titleHandle.hidden=!title;captionHandle.hidden=!caption;
   [[titleHandle,state.titlePos],[captionHandle,state.captionPos]].forEach(([handle,pos])=>{handle.style.left=(pos.x*100)+'%';handle.style.top=(pos.y*100)+'%'});
@@ -1744,14 +1744,23 @@ function mountTimeline(prefix,mode){
   if(typeof ResizeObserver==='function')new ResizeObserver(updateMontagePreview).observe(el('Stage'));
   else window.addEventListener('resize',updateMontagePreview);
   for(const [id,key] of [['TitleHandle','titlePos'],['CaptionHandle','captionPos']]){
-   const handle=el(id);
-   handle.addEventListener('pointerdown',e=>{if(state.busy)return;e.preventDefault();handle.setPointerCapture(e.pointerId)});
+   const handle=el(id);let origin=null;
+   handle.addEventListener('pointerdown',e=>{
+    if(state.busy)return;
+    e.preventDefault();origin={x:e.clientX,y:e.clientY,start:{...state[key]}};
+    handle.setPointerCapture(e.pointerId);
+   });
    handle.addEventListener('pointermove',e=>{
-    if(!handle.hasPointerCapture(e.pointerId))return;
+    if(!origin||!handle.hasPointerCapture(e.pointerId))return;
     const rect=el('Stage').getBoundingClientRect();
-    state[key]={x:Math.max(.15,Math.min(.85,(e.clientX-rect.left)/rect.width)),y:Math.max(.14,Math.min(.86,(e.clientY-rect.top)/rect.height))};
+    state[key]={
+     x:Math.max(.15,Math.min(.85,origin.start.x+(e.clientX-origin.x)/rect.width)),
+     y:Math.max(.14,Math.min(.86,origin.start.y+(e.clientY-origin.y)/rect.height))
+    };
     updateMontagePreview();
    });
+   handle.addEventListener('pointerup',()=>{origin=null});
+   handle.addEventListener('pointercancel',()=>{origin=null});
   }
   const lib=window.ClipForgeCaptionStyles;
   if(lib){
@@ -1790,6 +1799,28 @@ function mountTimeline(prefix,mode){
    el('CaptionGallery').addEventListener('toggle',()=>{if(el('CaptionGallery').open)filterGallery()});
    filterGallery();
   }
+  el('MusicPreview').onclick=async()=>{
+   if(state.busy)return;
+   if(!state.music&&state.musicPreset==='none')return setStatus('Select a built-in music style or upload an audio file first.');
+   const button=el('MusicPreview');button.disabled=true;
+   let context=null,player=null,interval=null;
+   try{
+    if(state.music){
+     player=new Audio(state.music);player.volume=.45;
+     await player.play();
+    }else{
+     context=new(window.AudioContext||window.webkitAudioContext)();
+     const pump=createMontageScore(context,context.destination,state.musicPreset);
+     await context.resume();pump();interval=setInterval(pump,300);
+    }
+    setStatus('Previewing '+(state.music?'your uploaded track':state.musicPreset+' built-in music')+' for 5 seconds.');
+    setTimeout(()=>{if(interval)clearInterval(interval);if(player){player.pause();player.src=''}if(context)context.close().catch(()=>{});button.disabled=false},5000);
+   }catch(err){
+    if(interval)clearInterval(interval);
+    if(context)context.close().catch(()=>{});
+    button.disabled=false;setStatus('Music preview unavailable: '+err.message);
+   }
+  };
   updateMontageRatio();
  }
  function dimensions(){
