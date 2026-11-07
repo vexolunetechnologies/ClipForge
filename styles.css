@@ -3240,3 +3240,77 @@ body[data-tool="trailer"] #cfLivePreviewBlock{display:none!important}
  #vmTool .cf-vm-stage .cf-vm-drag{font-size:10px;padding:4px 5px}
  #vmTool #vmCaptionGallery .cf-style-browser{padding:8px}
 }
+
+
+/* Montage-only responsive containment: no captions control can expand the right panel. */
+#vmTool,#vmTool .cf-grid,#vmTool .cf-grid>.cf-panel,
+#vmTool .cf-field,#vmTool #vmCaptionGallery,
+#vmTool #vmCaptionGallery>.cf-style-browser,
+#vmTool #vmCaptionGrid,#vmTool .cf-style-categories{
+ box-sizing:border-box;min-width:0;max-width:100%;
+}
+#vmTool .cf-grid>.cf-panel{width:100%;overflow-x:clip}
+#vmTool .cf-field>*{box-sizing:border-box;min-width:0;max-width:100%}
+#vmTool .cf-field input[type="file"]{
+ box-sizing:border-box!important;width:100%!important;max-width:100%!important;
+ min-width:0!important;overflow:hidden;text-overflow:ellipsis;
+}
+#vmTool .cf-field input[type="file"]::file-selector-button{
+ max-width:58%;margin-right:7px;
+}
+#vmTool #vmCaptionGallery{display:block;width:100%;overflow:hidden}
+#vmTool #vmCaptionGallery>summary{box-sizing:border-box;max-width:100%;overflow-wrap:anywhere}
+#vmTool #vmCaptionGallery .cf-style-browser{
+ box-sizing:border-box!important;width:100%!important;max-width:100%;
+ margin:10px 0 12px!important;overflow:hidden;
+}
+#vmTool #vmStyleCategories{
+ display:flex;width:100%;max-width:100%;min-width:0;
+ overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;
+}
+#vmTool #vmCaptionGrid{
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ gap:8px!important;width:100%;min-width:0;max-width:100%;overflow-x:hidden;
+}
+#vmTool #vmCaptionGrid .cf-cap-template{
+ width:100%!important;min-width:0!important;max-width:100%!important;
+ overflow:hidden;box-sizing:border-box;overflow-wrap:anywhere;
+}
+#vmTool #vmCaptionGrid .cf-cap-template canvas{
+ box-sizing:border-box;width:100%!important;max-width:100%!important;
+ min-width:0;object-fit:contain;
+}
+#vmTool #vmStyleSearch,#vmTool #vmCaptionText,#vmTool #vmCaptionLang{
+ box-sizing:border-box;width:100%;max-width:100%;min-width:0;
+}
+#vmTool .cf-vm-caption-generate{
+ display:grid;gap:8px;max-width:100%;min-width:0;
+ padding:10px;background:var(--panel-2);
+ border-radius:10px;border:1px solid var(--line);
+}
+#vmTool .cf-vm-caption-generate .cf-row{min-width:0;flex-wrap:wrap}
+#vmTool .cf-vm-caption-generate button{
+ max-width:100%;white-space:normal;text-align:center;
+}
+#vmTool .cf-vm-player-controls{
+ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+ min-width:0;padding:12px 0;
+}
+#vmTool .cf-vm-player-controls input[type=range]{
+ flex:1 1 180px;width:auto;min-width:70px;accent-color:var(--accent);
+}
+#vmTool .cf-vm-player-controls #vmCombinedTime{
+ font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+#vmTool .cf-vm-stage #vmTransitionShade{
+ position:absolute;inset:0;z-index:1;pointer-events:none;
+ background:#000;opacity:0;
+}
+@media(max-width:600px){
+ #vmTool .cf-grid>.cf-panel{min-width:0;padding:12px!important}
+ #vmTool #vmCaptionGallery .cf-style-browser{padding:8px!important}
+ #vmTool #vmCaptionGrid{gap:6px!important}
+ #vmTool .cf-vm-player-controls{gap:7px}
+ #vmTool .cf-vm-player-controls button{flex:1 1 auto}
+ #vmTool .cf-vm-player-controls input[type=range]{order:3;flex-basis:100%}
+}
