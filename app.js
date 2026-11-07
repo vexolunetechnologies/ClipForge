@@ -1616,9 +1616,11 @@ const activeWorkspace=()=>['montage','editor'].includes(window.ClipForgeNavigati
 // router here caused competing .solo/data-tool updates on hash navigation.
 /* Reusable in-memory timeline engine. Files and exports are never written to storage. */
 function mountTimeline(prefix,mode){
- const el=id=>document.getElementById(prefix+id),state={clips:[],selected:0,music:null,captions:[],captionStyle:'classic',busy:false,cancel:false,outUrl:null};
+ const el=id=>document.getElementById(prefix+id),state={clips:[],selected:0,music:null,musicPreset:'none',captions:[],captionStyle:'classic',captionSample:false,titlePos:{x:.5,y:.82},captionPos:{x:.5,y:.78},busy:false,cancel:false,outUrl:null};
  const isEditor=mode==='editor';
  const ratio=()=>el('Ratio').value;
+ const autoRatio=()=>{const c=state.clips[0];return c&&c.width>0&&c.height>0?c.width/c.height:16/9;};
+ const even=n=>Math.max(2,Math.round(n/2)*2);
  const setStatus=t=>{el('Status').textContent=t||''};
  const duration=()=>state.clips.reduce((n,c)=>n+Math.max(.05,c.end-c.start),0);
  const fmt=t=>{t=Math.max(0,Math.floor(t||0));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
@@ -1639,15 +1641,16 @@ function mountTimeline(prefix,mode){
   else{el('Count').textContent=state.clips.length+' clips';el('Duration').textContent=state.clips.length?fmt(duration())+' total duration':'Add media to calculate duration'}
   const c=selected();
   if(isEditor){el('Start').value=c?c.start.toFixed(1):0;el('End').value=c?c.end.toFixed(1):0;el('Start').max=c?c.duration:0;el('End').max=c?c.duration:0;el('PreviewInfo').textContent=c?c.file.name+' · '+fmt(c.duration)+' source length':'Select a clip to inspect it.'}
+  else updateMontagePreview();
  };
  function loadPreview(){
   const c=selected(),v=el('Preview');
-  if(!c){v.removeAttribute('src');v.load();return}
-  v.src=c.url;v.onloadedmetadata=()=>{v.currentTime=Math.min(c.start,Math.max(0,c.duration-.05))};
+  if(!c){v.removeAttribute('src');v.load();if(!isEditor)updateMontagePreview();return}
+  v.src=c.url;v.onloadedmetadata=()=>{v.currentTime=Math.min(c.start,Math.max(0,c.duration-.05));if(!isEditor)updateMontagePreview()};
   v.onended=()=>{try{v.pause()}catch(e){}};
  }
  function move(i,dir){const j=i+dir;if(j<0||j>=state.clips.length)return;[state.clips[i],state.clips[j]]=[state.clips[j],state.clips[i]];state.selected=j;render();loadPreview()}
- function remove(i){const c=state.clips[i];if(c)revoke(c);state.clips.splice(i,1);state.selected=Math.max(0,Math.min(state.selected,state.clips.length-1));render();loadPreview()}
+ function remove(i){const c=state.clips[i];if(c)revoke(c);state.clips.splice(i,1);state.selected=Math.max(0,Math.min(state.selected,state.clips.length-1));if(!isEditor)updateMontageRatio();render();loadPreview()}
  async function addFiles(files){
   for(const file of Array.from(files||[])){
    if(!file.type.startsWith('video/'))continue;
@@ -1658,6 +1661,7 @@ function mountTimeline(prefix,mode){
    }catch(e){URL.revokeObjectURL(url);setStatus(e.message)}
   }
   if(state.clips.length)state.selected=state.clips.length-1;
+  if(!isEditor)updateMontageRatio();
   render();loadPreview();setStatus(state.clips.length+' clips ready. Files remain in this browser session only.');
  }
  const input=el('Files');input.addEventListener('change',e=>{addFiles(e.target.files);e.target.value=''});
@@ -1674,7 +1678,7 @@ function mountTimeline(prefix,mode){
   el('Clear').onclick=clear;
   el('PreviewBtn').onclick=()=>{const c=selected(),v=el('Preview');if(!c)return setStatus('Add a clip first.');v.currentTime=c.start;v.play().catch(()=>setStatus('Tap the preview player to start playback.'))};
  }
- function clear(){if(state.busy)return;state.clips.forEach(revoke);state.clips=[];state.selected=0;render();loadPreview();setStatus('Timeline cleared.');}
+ function clear(){if(state.busy)return;state.clips.forEach(revoke);state.clips=[];state.selected=0;if(!isEditor)updateMontageRatio();render();loadPreview();setStatus('Timeline cleared.');}
  const musicInput=el('Music');
  musicInput.addEventListener('change',e=>{const f=e.target.files[0];if(state.music)URL.revokeObjectURL(state.music);state.music=f?URL.createObjectURL(f):null;setStatus(f?'Music track ready.':'Music removed.');e.target.value=''});
  const captionInput=el('Captions'),captionStyleInput=el('CaptionStyle'),captionStatus=el('CaptionStatus'),captionClear=el('CaptionClear');
@@ -1691,7 +1695,8 @@ function mountTimeline(prefix,mode){
     if(r==='1:1')return[1080,1080];
     return[1280,720];
   }
-  const quality=Number(el('Quality').value)===1080?1080:720;
+  const quality=Number(el('Quality').value)===720?720:1080;
+  if(r==='auto'){const ar=autoRatio();return ar>=1?[even(quality*ar),quality]:[quality,even(quality/ar)];}
   if(r==='9:16')return[quality,Math.round(quality*16/9/2)*2];
   if(r==='1:1')return[quality,quality];
   return[Math.round(quality*16/9/2)*2,quality];
