@@ -1687,6 +1687,110 @@ function mountTimeline(prefix,mode){
  if(captionInput)captionInput.addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;try{const cues=parseSubtitle(await file.text());if(!cues.length)throw new Error('No valid SRT/VTT caption cues were found.');state.captions=cues;if(captionStatus)captionStatus.textContent=cues.length+' caption cues loaded. Times follow the final combined timeline.';setStatus('Captions loaded for export.')}catch(err){state.captions=[];if(captionStatus)captionStatus.textContent=err.message||'Could not read captions.';setStatus(err.message||'Could not read captions.')}e.target.value=''});
  if(captionStyleInput)captionStyleInput.addEventListener('change',()=>{state.captionStyle=captionStyleInput.value||'classic'});
  if(captionClear)captionClear.addEventListener('click',()=>{state.captions=[];if(captionStatus)captionStatus.textContent='No captions added. Export remains unchanged.';setStatus('Captions cleared. Export will have no subtitles.')});
+
+ function updateMontageRatio(){
+  if(isEditor)return;
+  const c=state.clips[0],r=ratio(),ar=autoRatio(),size=dimensions();
+  const name=Math.abs(ar-16/9)<.08?'16:9':Math.abs(ar-9/16)<.07?'9:16':Math.abs(ar-1)<.06?'1:1':c?c.width+':'+c.height:'16:9';
+  el('RatioInfo').textContent=c?(r==='auto'?'Auto: '+name+' · first clip '+c.width+'×'+c.height:'Manual: '+r+' · source '+name):'Auto will match your first uploaded video.';
+  const stage=el('Stage');stage.style.aspectRatio=size[0]+' / '+size[1];stage.style.maxWidth=size[0]<size[1]?'350px':'100%';
+  updateMontagePreview();
+ }
+ function captionAtPreview(){
+  const c=selected();if(!c)return null;
+  const earlier=state.clips.slice(0,state.selected).reduce((n,k)=>n+Math.max(.05,k.end-k.start),0);
+  const t=earlier+Math.max(0,Math.min(c.end-c.start,(Number(el('Preview').currentTime)||c.start)-c.start));
+  return state.captions.find(q=>t>=q.start&&t<q.end)||null;
+ }
+ function paintMontageTitle(ctx,w,h,title){
+  if(!title)return;
+  const pos=isEditor?{x:.5,y:.82}:state.titlePos,size=Math.max(24,Math.round(w*.042));
+  ctx.save();ctx.font='800 '+size+'px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.lineWidth=Math.max(4,size*.13);ctx.strokeStyle='rgba(0,0,0,.82)';ctx.fillStyle='#fff';
+  const lines=[];let line='';
+  for(const word of title.split(/\s+/)){const next=line?line+' '+word:word;if(ctx.measureText(next).width>w*.84&&line){lines.push(line);line=word}else line=next;}
+  if(line)lines.push(line);
+  const shown=lines.slice(0,3);
+  shown.forEach((part,i)=>{const yy=h*pos.y+(i-(shown.length-1)/2)*size*1.2;ctx.strokeText(part,w*pos.x,yy);ctx.fillText(part,w*pos.x,yy)});
+  ctx.restore();
+ }
+ function paintMontageCaption(ctx,w,h,text){
+  if(!text||!window.ClipForgeCaptionStyles)return;
+  ctx.save();
+  if(!isEditor){
+   const modern=window.ClipForgeCaptionStyles.modernPresets.some(row=>row[0]===state.captionStyle);
+   ctx.translate((state.captionPos.x-.5)*w,(state.captionPos.y-(modern?.75:.78))*h);
+  }
+  window.ClipForgeCaptionStyles.draw(ctx,text,state.captionStyle,w,h,1,2);
+  ctx.restore();
+ }
+ function updateMontagePreview(){
+  if(isEditor)return;
+  const stage=el('Stage'),canvas=el('Overlay'),titleHandle=el('TitleHandle'),captionHandle=el('CaptionHandle');
+  const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight),dpr=Math.min(2,window.devicePixelRatio||1);
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const title=el('Title').value.trim(),cue=captionAtPreview(),caption=cue?cue.text:state.captionSample?'Your captions here':'';
+  paintMontageTitle(ctx,w,h,title);paintMontageCaption(ctx,w,h,caption);
+  titleHandle.hidden=!title;captionHandle.hidden=!caption;
+  [[titleHandle,state.titlePos],[captionHandle,state.captionPos]].forEach(([handle,pos])=>{handle.style.left=(pos.x*100)+'%';handle.style.top=(pos.y*100)+'%'});
+ }
+ function setupMontageControls(){
+  if(isEditor)return;
+  el('Ratio').addEventListener('change',updateMontageRatio);
+  el('Title').addEventListener('input',updateMontagePreview);
+  for(const event of ['timeupdate','seeked','loadedmetadata'])el('Preview').addEventListener(event,updateMontagePreview);
+  if(typeof ResizeObserver==='function')new ResizeObserver(updateMontagePreview).observe(el('Stage'));
+  else window.addEventListener('resize',updateMontagePreview);
+  for(const [id,key] of [['TitleHandle','titlePos'],['CaptionHandle','captionPos']]){
+   const handle=el(id);
+   handle.addEventListener('pointerdown',e=>{if(state.busy)return;e.preventDefault();handle.setPointerCapture(e.pointerId)});
+   handle.addEventListener('pointermove',e=>{
+    if(!handle.hasPointerCapture(e.pointerId))return;
+    const rect=el('Stage').getBoundingClientRect();
+    state[key]={x:Math.max(.15,Math.min(.85,(e.clientX-rect.left)/rect.width)),y:Math.max(.14,Math.min(.86,(e.clientY-rect.top)/rect.height))};
+    updateMontagePreview();
+   });
+  }
+  const lib=window.ClipForgeCaptionStyles;
+  if(lib){
+   const grid=el('CaptionGrid'),categories=el('StyleCategories'),search=el('StyleSearch');let category='trending';
+   for(const group of lib.groups){
+    const b=document.createElement('button');b.type='button';b.className='cf-style-category';b.dataset.group=group.id;b.textContent=group.label;
+    b.onclick=()=>{category=group.id;filterGallery()};categories.append(b);
+   }
+   for(const [key,label] of lib.list){
+    const b=document.createElement('button');b.type='button';b.className='cf-cap-template';b.dataset.cfPreviewStyle=key;b.setAttribute('aria-label','Caption style: '+label);
+    const canvas=document.createElement('canvas');canvas.width=180;canvas.height=108;
+    const span=document.createElement('span');span.textContent=label;b.append(canvas,span);
+    b.onclick=()=>{state.captionStyle=key;el('CaptionStyle').value=key;state.captionSample=!state.captions.length;
+     if(state.captionSample)el('CaptionStatus').textContent='Template preview only. Upload SRT/VTT to include captions in export.';
+     updateMontagePreview();filterGallery();
+    };
+    grid.append(b);
+   }
+   function filterGallery(){
+    const group=lib.groups.find(x=>x.id===category)||lib.groups[0],q=search.value.trim().toLowerCase();let count=0;
+    categories.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.group===category)));
+    for(const b of grid.children){
+     const key=b.dataset.cfPreviewStyle,label=b.querySelector('span').textContent.toLowerCase();
+     b.hidden=!group.ids.includes(key)||!!(q&&!key.includes(q)&&!label.includes(q));
+     b.classList.toggle('is-selected',key===state.captionStyle);
+     b.setAttribute('aria-pressed',String(key===state.captionStyle));
+     if(!b.hidden){count++;const canvas=b.querySelector('canvas');if(!canvas.dataset.painted){
+      canvas.dataset.painted='1';const ctx=canvas.getContext('2d');ctx.fillStyle='#171b25';ctx.fillRect(0,0,180,108);
+      lib.draw(ctx,'THIS CHANGES EVERYTHING',key,180,108,1,2);
+     }}
+    }
+    el('StyleCount').textContent=count+' of '+lib.list.length+' unique caption styles';
+    el('StyleSelected').textContent='Selected: '+(lib.list.find(p=>p[0]===state.captionStyle)||['',state.captionStyle])[1];
+   }
+   search.oninput=()=>{if(search.value.trim())category='all';filterGallery()};
+   el('CaptionGallery').addEventListener('toggle',()=>{if(el('CaptionGallery').open)filterGallery()});
+   filterGallery();
+  }
+  updateMontageRatio();
+ }
  function dimensions(){
   const r=ratio();
   // Existing Editor resolution is intentionally unchanged.
@@ -1788,6 +1892,7 @@ function mountTimeline(prefix,mode){
   }
  }
  el('Export').onclick=exportTimeline;el('Stop').onclick=()=>{state.cancel=true;setStatus('Stopping export…')};
+ if(!isEditor)setupMontageControls();
  render();loadPreview();
  window.addEventListener('beforeunload',()=>{state.clips.forEach(revoke);if(state.music)URL.revokeObjectURL(state.music);if(state.outUrl)URL.revokeObjectURL(state.outUrl)});
 }
