@@ -3314,3 +3314,17 @@ body[data-tool="trailer"] #cfLivePreviewBlock{display:none!important}
  #vmTool .cf-vm-player-controls button{flex:1 1 auto}
  #vmTool .cf-vm-player-controls input[type=range]{order:3;flex-basis:100%}
 }
+
+
+/* ClipForge homepage hero artwork: scoped, leaves hero copy and tool cards intact. */
+.hero-banner::before{display:none!important}
+.hero-banner .cf-hero-art{position:relative;grid-column:1;grid-row:1;z-index:1;min-width:0;width:100%;align-self:center;justify-self:center;pointer-events:none;animation:cfHeroEntrance .8s ease-out both}
+.hero-banner .cf-hero-art::before{content:"";position:absolute;inset:15% 6%;border-radius:50%;background:radial-gradient(ellipse,rgba(108,96,241,.25),rgba(71,201,226,.09) 52%,transparent 73%);filter:blur(24px);animation:cfHeroGlow 7s ease-in-out infinite alternate}
+.hero-banner .cf-hero-art img{position:relative;display:block;width:100%;height:auto;max-height:470px;object-fit:contain;filter:drop-shadow(0 20px 32px rgba(0,0,0,.14));animation:cfHeroFloat 7s ease-in-out infinite}
+.hero-banner .hero-copy{grid-column:2;grid-row:1}
+@keyframes cfHeroEntrance{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes cfHeroFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-10px,0)}}
+@keyframes cfHeroGlow{from{opacity:.42;transform:scale(.92)}to{opacity:.8;transform:scale(1.06)}}
+@media(max-width:800px){.hero-banner .cf-hero-art{grid-column:1;grid-row:2;max-width:580px;margin:2px auto 0}.hero-banner .hero-copy{grid-column:1;grid-row:1}.hero-banner .cf-hero-art img{max-height:350px}}
+@media(max-width:480px){.hero-banner .cf-hero-art img{max-height:260px}}
+@media(prefers-reduced-motion:reduce){.hero-banner .cf-hero-art,.hero-banner .cf-hero-art::before,.hero-banner .cf-hero-art img{animation:none!important;transform:none!important}}
