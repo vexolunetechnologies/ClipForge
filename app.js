@@ -1876,7 +1876,7 @@ function mountTimeline(prefix,mode){
   const clips=state.clips.slice();state.busy=true;state.cancel=false;
   const button=el('Export'),stop=el('Stop'),bar=el('Progress'),output=el('Output');button.disabled=true;stop.style.display='inline-block';output.innerHTML='';bar.style.width='0%';
   if(state.outUrl){URL.revokeObjectURL(state.outUrl);state.outUrl=null}
-  let recorder=null,stream=null,video=null,audioCtx=null,musicEl=null,raf=0;
+  let recorder=null,stream=null,video=null,audioCtx=null,musicEl=null,musicPump=null,raf=0;
   try{
    const [w,h]=dimensions(),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d',{alpha:false});
    stream=canvas.captureStream(30);
@@ -2046,7 +2046,7 @@ function wait(v,event){return new Promise((res,rej)=>{const timer=setTimeout(()=
 async function exportPro(){
  if(state.busy)return;if(!state.clips.length)return status('Import at least one video first.');if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)return status('This browser cannot export video. Try the latest Chrome or Edge.');
  state.busy=true;state.cancel=false;const button=by('edExport'),stop=by('edStop'),bar=by('edProgress'),out=by('edOutput');button.disabled=true;stop.style.display='inline-block';out.innerHTML='';bar.style.width='0%';if(state.outUrl)URL.revokeObjectURL(state.outUrl);
- let recorder=null,stream=null,video=null,audioCtx=null,musicEl=null,musicPump=null,raf=0;
+ let recorder=null,stream=null,video=null,audioCtx=null,musicEl=null,raf=0;
  try{
   const ratio=by('edRatio').value,q=by('edQuality').value,short=q==='1080'?1080:720;let w,h;if(ratio==='9:16'){h=short;w=Math.round(short*9/16);}else if(ratio==='1:1'){w=h=short;}else{w=Math.round(short*16/9);h=short;}
   const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('Canvas unavailable.');
