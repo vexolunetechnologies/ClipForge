@@ -77,3 +77,17 @@
 @media(max-width:850px){.cf-learn-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.cf-learn-grid,.cf-guide .cf-learn-grid{grid-template-columns:1fr}.cf-learn-card,.cf-guide .cf-learn-card{min-height:unset;padding:20px}.cf-guide-page .cf-guide{margin:26px auto 42px}.cf-learn{padding:21px}}
 @media(prefers-reduced-motion:reduce){.cf-learn-card{transition:none}.cf-learn-card:hover,.cf-learn-card:focus-visible{transform:none}}
+
+/* Standalone learning-center foundation: guide pages intentionally do not load global studio sidebar CSS. */
+.cf-guide-page{--bg:#0b1120;--card:#17243a;--bd:rgba(142,163,210,.23);--tx:#eff3ff;--mu:#aebbd3;--ac:#a99cff;--text:#eff3ff;--muted:#aebbd3;box-sizing:border-box;min-width:0;min-height:100vh;margin:0;background:radial-gradient(ellipse at 65% 0%,rgba(95,91,190,.16),transparent 49%),#0b1120!important;color:#eff3ff!important;font:16px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;overflow-x:hidden}
+.cf-guide-page *, .cf-guide-page *::before,.cf-guide-page *::after{box-sizing:border-box}
+.cf-guide-page > .cf-guide-header{position:relative!important;inset:auto!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:20px!important;width:min(1120px,calc(100% - 36px))!important;max-width:1120px!important;height:auto!important;min-height:0!important;margin:0 auto!important;padding:20px 0!important;background:transparent!important;border:0!important;border-bottom:1px solid rgba(146,166,215,.2)!important;box-shadow:none!important;backdrop-filter:none!important;z-index:auto!important}
+.cf-guide-page > .cf-guide-header nav{display:flex!important;flex-direction:row!important;align-items:center!important;flex-wrap:wrap!important;gap:14px!important;width:auto!important;margin:0!important}
+.cf-guide-page > main{display:block!important;position:relative!important;min-width:0!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+.cf-guide-page > main > .cf-guide{width:min(1040px,calc(100% - 36px))!important;max-width:1040px!important;margin:42px auto 64px!important;padding:0!important;min-width:0!important}
+.cf-guide-page .cf-guide h1,.cf-guide-page .cf-guide h2,.cf-guide-page .cf-guide h3{overflow-wrap:break-word}
+.cf-guide-page .cf-guide p,.cf-guide-page .cf-guide li{overflow-wrap:break-word}
+.cf-guide-page a:focus-visible{outline:2px solid #68e1ec;outline-offset:3px}
+.cf-guide-page > .cf-guide-footer{position:relative!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;margin:0 auto!important;width:min(1120px,calc(100% - 36px))!important;max-width:1120px!important;padding:20px 0 35px!important;background:transparent!important}
+.cf-guide-page a[href="https://vexolunetech.pages.dev/"]{color:#8de3ef!important;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:650px){.cf-guide-page > .cf-guide-header{align-items:flex-start!important;flex-direction:column!important;gap:12px!important}.cf-guide-page > .cf-guide-header nav{gap:11px!important}.cf-guide-page > main > .cf-guide{margin:27px auto 42px!important}.cf-guide-page > .cf-guide-footer{flex-direction:column!important;align-items:flex-start!important}}
