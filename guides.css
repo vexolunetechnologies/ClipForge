@@ -31,3 +31,49 @@
 .cf-guide-links a{padding:16px;border:1px solid var(--bd,#333);border-radius:10px;text-decoration:none;font-weight:750}
 .cf-guide-footer{padding:22px 0 35px;border-top:1px solid var(--bd,#333);font-size:13px;color:var(--mu,#aaa);flex-wrap:wrap}
 @media(max-width:700px){.cf-learn{padding:18px}.cf-learn-grid,.cf-guide .cf-guide-links{grid-template-columns:1fr}.cf-guide-header{align-items:flex-start;flex-direction:column}.cf-guide-page .cf-guide{margin:25px auto 40px}}
+
+
+/* Premium creator guide presentation, confined to learning center pages and section. */
+.cf-learn{position:relative;overflow:hidden;padding:clamp(22px,3.7vw,48px);border:1px solid rgba(130,154,206,.22);border-radius:24px;background:radial-gradient(ellipse at 100% 0%,rgba(76,212,232,.10),transparent 42%),radial-gradient(ellipse at 0% 20%,rgba(139,124,255,.13),transparent 42%),#111a2d;color:#eef3ff}
+.cf-learn .cf-learn-kicker,.cf-guide .cf-guide-kicker{display:inline-block;color:#a59aff;letter-spacing:.19em;font-size:11px;font-weight:850}
+.cf-learn h2{font-size:clamp(25px,3vw,36px);line-height:1.15;letter-spacing:-.045em;margin:14px 0 14px;color:#f3f5ff}
+.cf-learn .cf-learn-intro{font-size:clamp(14px,1.3vw,16px);line-height:1.75;color:#aab9d4;max-width:76ch}
+.cf-learn>.cf-learn-intro:last-child{margin:23px 0 0}
+.cf-learn>.cf-learn-intro:last-child a{color:#61ddea;font-weight:750;text-decoration-thickness:1px;text-underline-offset:4px}
+.cf-learn-grid{gap:16px;margin-top:28px}
+.cf-learn-card{position:relative;min-width:0;overflow:hidden;padding:22px 20px 20px;border:1px solid rgba(142,163,210,.23);border-radius:18px;background:linear-gradient(145deg,rgba(29,40,67,.92),rgba(16,25,44,.95));color:#eff3ff;min-height:225px;gap:12px;box-shadow:0 12px 28px rgba(0,0,0,.08);transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
+.cf-learn-card:before{content:"";display:block;width:54px;height:48px;border-radius:13px;background:linear-gradient(135deg,rgba(148,127,255,.27),rgba(80,210,231,.17));border:1px solid rgba(179,173,255,.25);margin:0 0 2px;flex-shrink:0}
+.cf-learn-card:after{position:absolute;top:33px;left:38px;color:#c8c1ff;font-weight:900;font-size:23px;line-height:1}
+.cf-learn-grid>.cf-learn-card:nth-child(4n+1):after{content:"▶"}
+.cf-learn-grid>.cf-learn-card:nth-child(4n+2):after{content:"CC";font-size:16px;top:38px;left:36px}
+.cf-learn-grid>.cf-learn-card:nth-child(4n+3):after{content:"↧";font-size:27px;top:31px}
+.cf-learn-grid>.cf-learn-card:nth-child(4n+4):after{content:"◈";font-size:27px;top:31px}
+.cf-learn-card strong{font-size:clamp(16px,1.5vw,19px);line-height:1.35;letter-spacing:-.02em;color:#f6f7ff}
+.cf-learn-card p{font-size:13px;line-height:1.65;color:#a7b7d2}
+.cf-learn-card span{display:inline-flex;align-items:center;margin-top:auto;font-size:13px;color:#a99cff}
+.cf-learn-card:hover,.cf-learn-card:focus-visible{transform:translateY(-5px);border-color:rgba(148,128,255,.75);box-shadow:0 18px 42px rgba(20,16,69,.24)}
+.cf-learn-card:focus-visible{outline:2px solid #6be2ed;outline-offset:3px}
+.cf-guide-page{background:radial-gradient(ellipse at 60% 0%,rgba(90,89,181,.16),transparent 48%),#0b1120!important;color:#f0f3ff!important}
+.cf-guide-header,.cf-guide-footer{width:min(1120px,calc(100% - 36px))}
+.cf-guide-header{padding:22px 0;border-color:rgba(146,166,215,.18)}
+.cf-guide-header .cf-guide-logo{color:#edf0ff;font-size:19px}
+.cf-guide-header nav a:hover,.cf-guide-footer a:hover{color:#73dce7}
+.cf-guide-page .cf-guide{width:min(1040px,calc(100% - 36px));margin:42px auto 64px}
+.cf-guide .cf-guide-breadcrumb{font-size:12px;margin-bottom:22px}
+.cf-guide .cf-guide-kicker{padding:8px 12px;background:rgba(137,118,240,.13);border:1px solid rgba(137,118,240,.25);border-radius:999px}
+.cf-guide h1{font-size:clamp(32px,4.6vw,56px);line-height:1.12;max-width:20ch;letter-spacing:-.05em;margin:18px 0;color:#f6f7ff}
+.cf-guide .cf-guide-intro{max-width:76ch;color:#b5c2d9;font-size:clamp(15px,1.6vw,18px);line-height:1.8}
+.cf-guide h2{color:#edf1ff;letter-spacing:-.025em}
+.cf-guide h3{color:#e6edff}
+.cf-guide p,.cf-guide li{color:#b6c3d9}
+.cf-guide a{color:#91dfe8}
+.cf-guide .cf-learn-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:22px}
+.cf-guide .cf-learn-card{color:#f2f5ff;min-height:218px}
+.cf-guide .cf-learn-card p{color:#a7b7d2}
+.cf-guide .cf-learn-card span{color:#a99cff}
+.cf-guide .cf-guide-note{background:rgba(30,41,69,.83);border-left-color:#9b88ff}
+.cf-guide .cf-guide-links a{background:rgba(25,37,62,.85);border:1px solid rgba(142,163,210,.25);border-radius:13px}
+.cf-guide-footer{border-color:rgba(146,166,215,.19)}
+@media(max-width:850px){.cf-learn-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.cf-learn-grid,.cf-guide .cf-learn-grid{grid-template-columns:1fr}.cf-learn-card,.cf-guide .cf-learn-card{min-height:unset;padding:20px}.cf-guide-page .cf-guide{margin:26px auto 42px}.cf-learn{padding:21px}}
+@media(prefers-reduced-motion:reduce){.cf-learn-card{transition:none}.cf-learn-card:hover,.cf-learn-card:focus-visible{transform:none}}
