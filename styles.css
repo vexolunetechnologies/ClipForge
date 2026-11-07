@@ -3205,8 +3205,9 @@ body[data-tool="trailer"] #cfLivePreviewBlock{display:none!important}
  border-radius:12px;background:#080a0f;
 }
 #vmTool .cf-vm-stage #vmPreview{
- display:block;width:100%;height:100%;max-height:none;margin:0;
- object-fit:cover;border:0;border-radius:0;background:#080a0f;
+ display:block;width:100%;height:100%!important;min-height:0!important;
+ max-height:none!important;margin:0;object-fit:cover!important;
+ border:0;border-radius:0;background:#080a0f;
 }
 #vmTool .cf-vm-stage #vmOverlay{
  position:absolute;inset:0;display:block;width:100%;height:100%;
