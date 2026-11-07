@@ -125,4 +125,9 @@ for (const path of ["public/guides/index.html", ...guides.map(slug => "public/gu
   assert.ok(html.includes('href="https://vexolunetech.pages.dev/"'), path + " needs company footer link");
 }
 assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "Guide header layout must be independently scoped");
+// Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
+assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
+  "Mobile hero must override legacy zero-horizontal-padding rule");
+assert.ok(rootHome.includes("/styles.css?v=20261107-mobile-hero-padding-1"),
+  "Homepage should load the refreshed mobile hero CSS version");
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");

@@ -3333,3 +3333,15 @@ body[data-tool="trailer"] #cfLivePreviewBlock{display:none!important}
 .hero-banner .cf-hero-art > svg{max-width:100%;display:block;overflow:visible}
 footer .copy a[href="https://vexolunetech.pages.dev/"],footer .fg a[href="https://vexolunetech.pages.dev/"]{color:#94eaf2!important;text-decoration:underline!important;text-decoration-thickness:1px!important;text-underline-offset:3px;position:relative;z-index:2;pointer-events:auto}
 footer a[href="https://vexolunetech.pages.dev/"]:hover{color:#c5baff!important}
+
+/* Homepage hero mobile spacing: higher specificity than the legacy .hero mobile reset.
+   Scoped to the hero banner only; other cards and editor workspaces are untouched. */
+@media (max-width:760px) {
+  body:not(.studio-app) .hero.hero-banner {
+    padding:clamp(20px,5vw,28px)!important;
+  }
+  body:not(.studio-app) .hero.hero-banner .hero-copy {
+    min-width:0;
+    max-width:100%;
+  }
+}
