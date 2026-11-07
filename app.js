@@ -1680,13 +1680,14 @@ function mountTimeline(prefix,mode){
  }
  function clear(){if(state.busy)return;state.clips.forEach(revoke);state.clips=[];state.selected=0;if(!isEditor)updateMontageRatio();render();loadPreview();setStatus('Timeline cleared.');}
  const musicInput=el('Music');
- musicInput.addEventListener('change',e=>{const f=e.target.files[0];if(state.music)URL.revokeObjectURL(state.music);state.music=f?URL.createObjectURL(f):null;setStatus(f?'Music track ready.':'Music removed.');e.target.value=''});
+ musicInput.addEventListener('change',e=>{const f=e.target.files[0];if(state.music)URL.revokeObjectURL(state.music);state.music=f?URL.createObjectURL(f):null;if(f&&!isEditor){state.musicPreset='none';el('MusicPreset').value='none'}setStatus(f?'Music track ready.':'Music removed.');e.target.value=''});
+ if(!isEditor){el('MusicPreset').onchange=()=>{state.musicPreset=el('MusicPreset').value;if(state.musicPreset!=='none'&&state.music){URL.revokeObjectURL(state.music);state.music=null;musicInput.value=''}setStatus(state.musicPreset==='none'?'Built-in music disabled.':'Built-in '+state.musicPreset+' soundtrack selected.')};}
  const captionInput=el('Captions'),captionStyleInput=el('CaptionStyle'),captionStatus=el('CaptionStatus'),captionClear=el('CaptionClear');
  if(captionStyleInput&&window.ClipForgeCaptionStyles)window.ClipForgeCaptionStyles.populateSelect(captionStyleInput);
  const parseSubtitle=source=>{const src=String(source||'').replace(/^\uFEFF/,'').replace(/\r/g,'');const blocks=src.split(/\n\s*\n/);const out=[];const toSec=value=>{const p=value.replace(',','.').split(':');return p.reduce((n,x)=>n*60+Number(x),0)};for(const block of blocks){const lines=block.split('\n').map(x=>x.trim()).filter(Boolean);const ti=lines.findIndex(x=>/(?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3}\s*-->\s*(?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3}/.test(x));if(ti<0)continue;const m=lines[ti].match(/((?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*((?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3})/);if(!m)continue;const start=toSec(m[1]),end=toSec(m[2]),caption=lines.slice(ti+1).join(' ').replace(/<[^>]+>/g,'').trim();if(end>start&&caption)out.push({start,end,text:caption})}return out.sort((a,b)=>a.start-b.start)};
- if(captionInput)captionInput.addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;try{const cues=parseSubtitle(await file.text());if(!cues.length)throw new Error('No valid SRT/VTT caption cues were found.');state.captions=cues;if(captionStatus)captionStatus.textContent=cues.length+' caption cues loaded. Times follow the final combined timeline.';setStatus('Captions loaded for export.')}catch(err){state.captions=[];if(captionStatus)captionStatus.textContent=err.message||'Could not read captions.';setStatus(err.message||'Could not read captions.')}e.target.value=''});
- if(captionStyleInput)captionStyleInput.addEventListener('change',()=>{state.captionStyle=captionStyleInput.value||'classic'});
- if(captionClear)captionClear.addEventListener('click',()=>{state.captions=[];if(captionStatus)captionStatus.textContent='No captions added. Export remains unchanged.';setStatus('Captions cleared. Export will have no subtitles.')});
+ if(captionInput)captionInput.addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;try{const cues=parseSubtitle(await file.text());if(!cues.length)throw new Error('No valid SRT/VTT caption cues were found.');state.captions=cues;if(captionStatus)captionStatus.textContent=cues.length+' caption cues loaded. Times follow the final combined timeline.';state.captionSample=false;if(!isEditor)updateMontagePreview();setStatus('Captions loaded for export.')}catch(err){state.captions=[];if(captionStatus)captionStatus.textContent=err.message||'Could not read captions.';setStatus(err.message||'Could not read captions.')}e.target.value=''});
+ if(captionStyleInput)captionStyleInput.addEventListener('change',()=>{state.captionStyle=captionStyleInput.value||'classic';if(!isEditor)updateMontagePreview()});
+ if(captionClear)captionClear.addEventListener('click',()=>{state.captions=[];state.captionSample=false;if(!isEditor)updateMontagePreview();if(captionStatus)captionStatus.textContent='No captions added. Export remains unchanged.';setStatus('Captions cleared. Export will have no subtitles.')});
 
  function updateMontageRatio(){
   if(isEditor)return;
@@ -1811,9 +1812,33 @@ function mountTimeline(prefix,mode){
   const vw=v.videoWidth||w,vh=v.videoHeight||h,scale=Math.max(w/vw,h/vh),dw=vw*scale,dh=vh*scale;
   ctx.filter=filter==='mono'?'grayscale(1)':filter==='warm'?'sepia(.28) saturate(1.2)':filter==='cinema'?'contrast(1.12) saturate(1.08)':'none';
   ctx.drawImage(v,(w-dw)/2,(h-dh)/2,dw,dh);ctx.filter='none';
-  if(title){const size=Math.max(24,Math.round(w*.042)),y=h*.82;ctx.font='800 '+size+'px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=Math.max(4,size*.13);ctx.strokeStyle='rgba(0,0,0,.82)';ctx.fillStyle='#fff';const words=title.split(/\s+/);let lines=[],line='';for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>w*.84&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);lines.slice(0,3).forEach((t,i)=>{const yy=y+(i-(Math.min(3,lines.length)-1)/2)*size*1.2;ctx.strokeText(t,w/2,yy);ctx.fillText(t,w/2,yy)})}
-  if(caption&&window.ClipForgeCaptionStyles){window.ClipForgeCaptionStyles.draw(ctx,caption,state.captionStyle,w,h,1,2)}
+  paintMontageTitle(ctx,w,h,title);
+  paintMontageCaption(ctx,w,h,caption);
   ctx.restore();
+ }
+
+ // Procedural soundtracks: original instrumentals generated in the browser.
+ function createMontageScore(context,destination,mood){
+  const notes={cinematic:[146.83,174.61,220,261.63],ambient:[196,246.94,293.66,392],upbeat:[261.63,329.63,392,523.25],warm:[220,277.18,329.63,440]}[mood];
+  if(!notes)return()=>{};
+  const master=context.createGain();master.gain.value=.56;master.connect(destination);
+  const speed=mood==='ambient'?.82:mood==='cinematic'?.62:.43;let tick=0,next=context.currentTime+.06;
+  function sound(freq,start,length,loud,shape){
+   const osc=context.createOscillator(),gain=context.createGain();osc.type=shape;osc.frequency.value=freq;
+   gain.gain.setValueAtTime(.0001,start);gain.gain.linearRampToValueAtTime(loud,start+.04);
+   gain.gain.exponentialRampToValueAtTime(.0001,start+length);
+   osc.connect(gain);gain.connect(master);osc.start(start);osc.stop(start+length+.03);
+  }
+  return ()=>{
+   let steps=0;
+   while(next<context.currentTime+1.5&&steps++<8){
+    const n=notes[(tick*3+Math.floor(tick/8))%notes.length];
+    sound(n,next,speed*.88,mood==='ambient'?.035:.06,mood==='cinematic'?'sawtooth':'triangle');
+    if(tick%4===0)sound(notes[0]/2,next,speed*3.7,.04,'sine');
+    if(mood==='upbeat'&&tick%2===0)sound(92,next,.17,.04,'sine');
+    tick++;next+=speed;
+   }
+  };
  }
  async function exportTimeline(){
   if(state.busy)return;if(!state.clips.length)return setStatus('Add at least one video clip first.');
@@ -1842,13 +1867,14 @@ function mountTimeline(prefix,mode){
     video=document.createElement('video');video.playsInline=true;video.preload='auto';video.muted=false;
     source=audioCtx.createMediaElementSource(video);source.connect(audioDest);source.connect(audioCtx.destination);
     if(state.music){musicEl=new Audio(state.music);musicEl.loop=true;musicEl.crossOrigin='anonymous';const ms=audioCtx.createMediaElementSource(musicEl);const gain=audioCtx.createGain();gain.gain.value=.32;ms.connect(gain);gain.connect(audioDest);await audioCtx.resume();musicEl.play().catch(()=>{});}
+    else if(!isEditor&&state.musicPreset!=='none'){musicPump=createMontageScore(audioCtx,audioDest,state.musicPreset);await audioCtx.resume();musicPump();}
     audioDest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
    }catch(e){setStatus('Video audio will be omitted on this browser. Rendering video…')}
    recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:Math.min(12000000,w*h*8)});
    const chunks=[];recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
    const finished=new Promise((res,rej)=>{recorder.onstop=res;recorder.onerror=e=>rej(e.error||new Error('Recording failed'))});
    recorder.start(500);
-   const total=clips.reduce((n,c)=>n+(c.end-c.start),0),transition=el('Transition')?el('Transition').value:'fade',title=el('Title')?el('Title').value.trim():'',filter=isEditor?el('Filter').value:'none';
+   const total=clips.reduce((n,c)=>n+(c.end-c.start),0),transition=el('Transition')?el('Transition').value:'none',title=el('Title')?el('Title').value.trim():'',filter=isEditor?el('Filter').value:'none';
    let elapsed=0;const fps=30;
    for(let i=0;i<clips.length;i++){
     if(state.cancel)throw new Error('Export stopped.');
@@ -1858,7 +1884,7 @@ function mountTimeline(prefix,mode){
     while(video.currentTime<c.end-.035&&!video.ended){
      if(state.cancel)throw new Error('Export stopped.');
      const p=Math.max(0,Math.min(1,(video.currentTime-c.start)/clipDur));
-     const timelineTime=elapsed+Math.max(0,video.currentTime-c.start),activeCaption=state.captions.find(q=>timelineTime>=q.start&&timelineTime<q.end);drawFrame(ctx,video,w,h,title,filter,1,activeCaption&&activeCaption.text);
+     const timelineTime=elapsed+Math.max(0,video.currentTime-c.start),activeCaption=state.captions.find(q=>timelineTime>=q.start&&timelineTime<q.end);drawFrame(ctx,video,w,h,title,filter,1,activeCaption&&activeCaption.text);if(musicPump)musicPump();
      if(transition==='fade'&&(p<.045||p>.94)){const a=p<.045?1-p/.045:(p-.94)/.06;ctx.fillStyle='rgba(0,0,0,'+Math.max(0,Math.min(.85,a*.85))+')';ctx.fillRect(0,0,w,h)}
      const done=elapsed+Math.max(0,video.currentTime-c.start);bar.style.width=Math.min(99,done/total*100)+'%';el('Status').textContent='Rendering clip '+(i+1)+' of '+clips.length+' · '+fmt(done)+' / '+fmt(total);
      await new Promise(r=>{raf=requestAnimationFrame(r)});
@@ -1989,7 +2015,7 @@ function wait(v,event){return new Promise((res,rej)=>{const timer=setTimeout(()=
 async function exportPro(){
  if(state.busy)return;if(!state.clips.length)return status('Import at least one video first.');if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)return status('This browser cannot export video. Try the latest Chrome or Edge.');
  state.busy=true;state.cancel=false;const button=by('edExport'),stop=by('edStop'),bar=by('edProgress'),out=by('edOutput');button.disabled=true;stop.style.display='inline-block';out.innerHTML='';bar.style.width='0%';if(state.outUrl)URL.revokeObjectURL(state.outUrl);
- let recorder=null,stream=null,video=null,audioCtx=null,musicEl=null,raf=0;
+ let recorder=null,stream=null,video=null,audioCtx=null,musicEl=null,musicPump=null,raf=0;
  try{
   const ratio=by('edRatio').value,q=by('edQuality').value,short=q==='1080'?1080:720;let w,h;if(ratio==='9:16'){h=short;w=Math.round(short*9/16);}else if(ratio==='1:1'){w=h=short;}else{w=Math.round(short*16/9);h=short;}
   const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw new Error('Canvas unavailable.');
