@@ -13,8 +13,11 @@ try{
  await page.goto(server.origin+"/tools/montage/",{waitUntil:"load"});
  await page.waitForSelector("#vmFiles",{timeout:15000});
  assert.ok(await page.locator("#vmQuality").isVisible(),"Montage resolution selector");
- assert.deepEqual(await page.locator("#vmQuality option").evaluateAll(options=>options.map(x=>x.value)),["720","1080"]);
- assert.equal(await page.locator("#vmQuality").inputValue(),"720");
+ assert.deepEqual(await page.locator("#vmQuality option").evaluateAll(options=>options.map(x=>x.value)),["1080","720"]);
+ assert.equal(await page.locator("#vmQuality").inputValue(),"1080");
+ assert.equal(await page.locator("#vmRatio").inputValue(),"auto","Source aspect must be automatic until changed");
+ assert.equal(await page.locator("#vmTransition").inputValue(),"none","Transitions start disabled");
+ assert.deepEqual(await page.locator("#vmMusicPreset option").evaluateAll(options=>options.map(x=>x.value)),["none","cinematic","ambient","upbeat","warm"]);
  assert.equal(await page.locator("#vmTool").locator("text=MP4 · H.264 / AAC").count(),1);
  assert.equal(await page.locator("#edQuality").count(),0,"Existing editor unaffected");
 
@@ -70,9 +73,29 @@ try{
   }));
   throw Error("Montage input failed: "+JSON.stringify(diagnostics)+"; "+error.message);
  }
+ assert.match(await page.locator("#vmRatioInfo").textContent(),/Auto: 16:9/,"320×180 upload should auto-detect landscape");
+ await page.locator("#vmRatio").selectOption("1:1");
+ assert.match(await page.locator("#vmRatioInfo").textContent(),/Manual: 1:1/,"Manual format override must work");
+ await page.locator("#vmRatio").selectOption("auto");
  const captions="1\n00:00:00,100 --> 00:00:01,000\nSample dialogue\n";
  await page.locator("#vmCaptions").setInputFiles({name:"dialogue.srt",mimeType:"text/plain",buffer:Buffer.from(captions)});
  await page.locator("#vmTitle").fill("MP4 Montage Test");
+ await page.locator("#vmCaptionGallery summary").click();
+ const sharedStyles=await page.evaluate(()=>window.ClipForgeCaptionStyles.list.length);
+ assert.equal(await page.locator("#vmCaptionGrid .cf-cap-template").count(),sharedStyles,"Montage must reuse every caption template once");
+ await page.locator('#vmCaptionGrid [data-cf-preview-style="creator-yellow"]').click();
+ assert.equal(await page.locator("#vmCaptionStyle").inputValue(),"creator-yellow");
+ assert.ok(await page.locator("#vmTitleHandle").isVisible(),"Title should be draggable on the video preview");
+ assert.ok(await page.locator("#vmCaptionHandle").isVisible(),"Caption should be draggable on the video preview");
+ const handle=page.locator("#vmTitleHandle"),beforeTop=await handle.evaluate(node=>Number(node.style.top.replace("%","")));
+ const box=await handle.boundingBox();
+ await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
+ await page.mouse.move(box.x+box.width/2,box.y+box.height/2-45,{steps:4});await page.mouse.up();
+ const afterTop=await handle.evaluate(node=>Number(node.style.top.replace("%","")));
+ assert.ok(afterTop<beforeTop-1,"Drag must reposition title vertically");
+ await page.locator("#vmMusicPreset").selectOption("warm");
+ assert.equal(await page.locator("#vmMusicPreset").inputValue(),"warm");
+
  for(const [quality,ratio,width,height] of [
   ["720","16:9",1280,720],["1080","9:16",1080,1920]
  ]){
