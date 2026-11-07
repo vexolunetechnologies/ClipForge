@@ -40,7 +40,7 @@ for (const file of [
   "_worker.js", "about.html", "contact.html", "privacy.html", "terms.html",
   "cookies.html", "copyright.html", "styles.css", "editor-mobile-layout.css", "app.js", "navigation.js",
   "caption-style-library.js", "captions-studio.js", "highlights-studio.js", "transcription-queue.js",
-  "editor-loader.js", "editor-mobile-thumbnails.js", "animator-idle.js", "montage-mp4.js",
+  "editor-loader.js", "editor-mobile-thumbnails.js", "animator-idle.js", "montage-mp4.js", "montage-enhancements.js",
   "dist/editor/layout.js", "dist/editor/timeline.js",
   "dist/editor/studio-ui.js", "dist/editor/types.js"
 ]) copy(file);
@@ -86,6 +86,7 @@ function page(tool = null) {
     ["/styles.css", "/assets/css/styles.css"],
     ["/caption-style-library.js", "/assets/js/shared/caption-style-library.js"],
     ["/app.js", "/assets/js/core/app.js"],
+    ["/montage-enhancements.js", "/montage-enhancements.js"],
     ["/editor-loader.js", "/assets/js/core/editor-loader.js"],
     ["/navigation.js", "/assets/js/core/navigation.js"],
     ["/captions-studio.js", "/assets/js/tools/captions-studio.js"],
