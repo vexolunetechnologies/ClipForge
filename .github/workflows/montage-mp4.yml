@@ -5,6 +5,9 @@ on:
     paths:
       - 'app.js'
       - 'montage-mp4.js'
+      - 'montage-enhancements.js'
+      - 'styles.css'
+      - 'index.html'
       - 'scripts/build-pages.mjs'
       - 'scripts/test-montage-mp4-browser.mjs'
       - '.github/workflows/montage-mp4.yml'
@@ -21,7 +24,7 @@ jobs:
           node-version: 22
       - run: npm install
       - name: Check MP4 conversion script syntax
-        run: node --check app.js && node --check montage-mp4.js && node --check scripts/test-montage-mp4-browser.mjs
+        run: node --check app.js && node --check montage-mp4.js && node --check montage-enhancements.js && node --check scripts/test-montage-mp4-browser.mjs
       - name: Build Cloudflare Pages assets
         run: node scripts/build-pages.mjs
       - run: npx playwright install chromium
