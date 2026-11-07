@@ -113,4 +113,16 @@ for(const tool of tools){
  assert.ok(html.includes('<meta name="description"'),"Tool needs a unique summary: "+tool);
 }
 assert.ok(!sitemap.includes("ca-pub-"),"Do not invent an AdSense publisher ID");
+// Regression checks: hero media, guide page layout and company footer links.
+assert.match(page, /class="cf-hero-art"/, "Homepage must contain the hero artwork container");
+assert.match(page, /<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 850 700"/, "Homepage must embed hero SVG so no image request can fail");
+assert.doesNotMatch(page, /src="\/assets\/clipforge-hero-studio\.svg"/, "Hero must not rely on an external SVG path");
+assert.ok(page.includes('href="https://vexolunetech.pages.dev/"'), "Company attribution must link to Vexolune");
+for (const path of ["public/guides/index.html", ...guides.map(slug => "public/guides/" + slug + "/index.html")]) {
+  const html = from(path);
+  assert.doesNotMatch(html, /href="\/styles\.css"/, path + " must not load the studio's fixed-sidebar stylesheet");
+  assert.match(html, /href="\/guides\.css\?v=3"/, path + " must load the standalone guide stylesheet");
+  assert.ok(html.includes('href="https://vexolunetech.pages.dev/"'), path + " needs company footer link");
+}
+assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "Guide header layout must be independently scoped");
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");
