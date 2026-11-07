@@ -1605,7 +1605,7 @@ if(typeof window.projOffer==='function')window.projOffer=function(){};
 const addWorkspace=(id,html)=>{let el=document.getElementById(id);if(!el){el=document.createElement('section');el.id=id;el.className='cf-workspace';el.style.display='none';const home=$('.wrap');const tools=$('#tools');if(home&&tools&&tools.parentNode===home)tools.insertAdjacentElement('afterend',el);else if(home)home.append(el);else document.body.append(el)}el.innerHTML=html;return el};
 const shell=(title,desc,tag)=>'<a class="cf-back" href="#tools">← All creative tools</a><div class="cf-page-head"><div><div class="cf-kicker">'+tag+'</div><h2>'+title+'</h2><p>'+desc+'</p></div><span class="cf-badge">● Local browser session</span></div>';
 const montageHTML=shell('Video Montage Maker','Bring multiple clips together, refine the order and create a clean montage with optional music and title text.','CLIPFORGE / MONTAGE')+
-'<div class="cf-grid"><div class="cf-panel"><div class="cf-field"><label>ADD VIDEO CLIPS</label><input id="vmFiles" type="file" accept="video/*" multiple></div><div id="vmEmpty" class="cf-empty">Choose two or more video clips to start your montage.</div><div id="vmTimeline" class="cf-timeline"></div><video id="vmPreview" class="cf-preview" controls playsinline></video><div class="cf-row" style="margin-top:12px"><button class="sm" id="vmPreviewBtn">Preview selected clip</button><button class="sm" id="vmClear">Clear clips</button></div></div><div class="cf-panel"><div class="cf-kicker">OUTPUT SETTINGS</div><div class="cf-field"><label>VIDEO FORMAT</label><select id="vmRatio"><option value="9:16">9:16 · Reels / Shorts</option><option value="16:9" selected>16:9 · YouTube</option><option value="1:1">1:1 · Square</option></select></div><div class="cf-field"><label>EXPORT RESOLUTION</label><select id="vmQuality"><option value="720" selected>720p · HD</option><option value="1080">1080p · Full HD</option></select></div><div class="cf-field"><label>OUTPUT FILE</label><strong>MP4 · H.264 / AAC</strong></div><div class="cf-field"><label>TRANSITION</label><select id="vmTransition"><option value="fade">Fade between clips</option><option value="cut">Straight cuts</option></select></div><div class="cf-field"><label>VIDEO TITLE (OPTIONAL)</label><input id="vmTitle" maxlength="90" placeholder="Your montage title"></div><div class="cf-field"><label>BACKGROUND MUSIC (OPTIONAL)</label><input id="vmMusic" type="file" accept="audio/*"></div><div class="cf-field"><label>CAPTIONS (OPTIONAL · SRT / VTT)</label><input id="vmCaptions" type="file" accept=".srt,.vtt,text/vtt,application/x-subrip"><select id="vmCaptionStyle"><option value="classic">Classic</option><option value="box">Box</option><option value="news">News bar</option><option value="minimal">Minimal</option></select><button class="sm" id="vmCaptionClear" type="button">No captions / Clear</button><small id="vmCaptionStatus" class="cf-muted">No captions added. Export remains unchanged.</small></div><div class="cf-stat"><b id="vmCount">0 clips</b><span id="vmDuration">Add media to calculate duration</span></div><button class="main" id="vmExport">Render montage</button><button class="sm" id="vmStop" style="display:none;margin-top:8px">Stop rendering</button><div class="cf-progress"><i id="vmProgress"></i></div><div id="vmStatus" class="cf-status" role="status"></div><div id="vmOutput" class="cf-output"></div></div></div>';
+'<div class="cf-grid"><div class="cf-panel"><div class="cf-field"><label>ADD VIDEO CLIPS</label><input id="vmFiles" type="file" accept="video/*" multiple></div><div id="vmEmpty" class="cf-empty">Choose two or more video clips to start your montage.</div><div id="vmTimeline" class="cf-timeline"></div><div id="vmStage" class="cf-vm-stage"><video id="vmPreview" class="cf-preview" controls playsinline></video><canvas id="vmOverlay" aria-hidden="true"></canvas><button id="vmTitleHandle" type="button" class="cf-vm-drag" hidden>Drag title</button><button id="vmCaptionHandle" type="button" class="cf-vm-drag" hidden>Drag caption</button></div><small class="cf-muted">Drag title or captions directly on the preview to reposition them.</small><div class="cf-row" style="margin-top:12px"><button class="sm" id="vmPreviewBtn">Preview selected clip</button><button class="sm" id="vmClear">Clear clips</button></div></div><div class="cf-panel"><div class="cf-kicker">OUTPUT SETTINGS</div><div class="cf-field"><label>VIDEO FORMAT</label><select id="vmRatio"><option value="auto" selected>Auto · Match first video</option><option value="9:16">9:16 · Reels / Shorts</option><option value="16:9">16:9 · YouTube</option><option value="1:1">1:1 · Square</option></select><small id="vmRatioInfo" class="cf-muted">Import a video to detect its original format. You can override it anytime.</small></div><div class="cf-field"><label>EXPORT RESOLUTION</label><select id="vmQuality"><option value="1080" selected>1080p · Full HD</option><option value="720">720p · HD</option></select></div><div class="cf-field"><label>OUTPUT FILE</label><strong>MP4 · H.264 / AAC</strong></div><div class="cf-field"><label>TRANSITION</label><select id="vmTransition"><option value="none" selected>None · Straight cuts</option><option value="fade">Fade between clips</option></select></div><div class="cf-field"><label>VIDEO TITLE (OPTIONAL)</label><input id="vmTitle" maxlength="90" placeholder="Your montage title"></div><div class="cf-field"><label>BACKGROUND MUSIC (OPTIONAL)</label><select id="vmMusicPreset"><option value="none" selected>No built-in music</option><option value="cinematic">Cinematic Pulse</option><option value="ambient">Soft Ambient</option><option value="upbeat">Upbeat Rhythm</option><option value="warm">Warm Melody</option></select><small class="cf-muted">Original instrumental loops generated locally, or upload your own audio below.</small><input id="vmMusic" type="file" accept="audio/*"><button type="button" class="sm" id="vmMusicPreview">Preview selected music</button></div><div class="cf-field"><label>CAPTIONS (OPTIONAL · SRT / VTT)</label><input id="vmCaptions" type="file" accept=".srt,.vtt,text/vtt,application/x-subrip"><select id="vmCaptionStyle" hidden><option value="classic">Classic</option></select><details id="vmCaptionGallery"><summary>Browse all caption templates</summary><div class="cf-style-browser" aria-label="Montage caption styles"><div class="cf-style-header"><div><strong>Caption Style Gallery</strong><small>Same styles as Shorts and Captions Studio</small></div><span id="vmStyleSelected" class="cf-style-selected">Classic</span></div><div id="vmStyleCategories" class="cf-style-categories"></div><input id="vmStyleSearch" class="cf-style-search" type="search" placeholder="Search caption styles…" aria-label="Search montage caption styles"><div id="vmCaptionGrid" class="cf-cap-template-grid"></div><small id="vmStyleCount" class="cf-muted"></small></div></details><button class="sm" id="vmCaptionClear" type="button">No captions / Clear</button><small id="vmCaptionStatus" class="cf-muted">No captions added. Export remains unchanged.</small></div><div class="cf-stat"><b id="vmCount">0 clips</b><span id="vmDuration">Add media to calculate duration</span></div><button class="main" id="vmExport">Render montage</button><button class="sm" id="vmStop" style="display:none;margin-top:8px">Stop rendering</button><div class="cf-progress"><i id="vmProgress"></i></div><div id="vmStatus" class="cf-status" role="status"></div><div id="vmOutput" class="cf-output"></div></div></div>';
 const editorHTML='<div class="cf-studio-topbar"><a class="cf-studio-brand" href="#top" aria-label="Back to ClipForge home"><span class="cf-studio-mark">▶</span><span>CLIPFORGE <b>STUDIO</b></span></a><span class="cf-studio-mode">VIDEO EDITOR</span><a class="cf-studio-exit" href="#top">← Exit Studio</a></div>'+shell('Editor','A focused editing workspace with a clip timeline, trim controls, split and reorder tools, visual treatments, titles and export.','CLIPFORGE / EDITOR')+
 '<div class="cf-panel"><div class="cf-row cf-toolbar"><label class="sm" for="edFiles" style="cursor:pointer">＋ Import videos</label><input id="edFiles" type="file" accept="video/*" multiple style="display:none"><button class="sm" id="edSplit">Split selected</button><button class="sm" id="edRemove">Remove selected</button><button class="sm" id="edClear">Clear timeline</button><span class="cf-muted" id="edCount">0 clips</span></div><div id="edEmpty" class="cf-empty" style="margin-top:12px">Import videos to build your editing timeline.</div><div id="edTimeline" class="cf-timeline"></div></div>'+
 '<div class="cf-grid"><div class="cf-panel"><video id="edPreview" class="cf-preview" controls playsinline></video><div class="cf-row" style="margin-top:12px"><button class="sm" id="edPlay">Preview selected</button><span class="cf-muted" id="edPreviewInfo">Select a clip to inspect it.</span></div></div><div class="cf-panel"><div class="cf-kicker">CLIP CONTROLS</div><div class="cf-field"><label>TRIM START (SECONDS)</label><input id="edStart" type="number" min="0" step=".1" value="0"></div><div class="cf-field"><label>TRIM END (SECONDS)</label><input id="edEnd" type="number" min="0" step=".1" value="0"></div><button class="sm p" id="edApply">Apply trim</button><div class="cf-field"><label>CANVAS RATIO</label><select id="edRatio"><option value="9:16">9:16 · Vertical</option><option value="16:9" selected>16:9 · Landscape</option><option value="1:1">1:1 · Square</option></select></div><div class="cf-field"><label>VISUAL LOOK</label><select id="edFilter"><option value="none">Original</option><option value="cinema">Cinematic</option><option value="mono">Black &amp; white</option><option value="warm">Warm</option></select></div><div class="cf-field"><label>TITLE / TEXT OVERLAY</label><input id="edTitle" maxlength="100" placeholder="Add a title to your video"></div><div class="cf-field"><label>BACKGROUND MUSIC (OPTIONAL)</label><input id="edMusic" type="file" accept="audio/*"></div><div class="cf-field"><label>CAPTIONS (OPTIONAL · SRT / VTT)</label><input id="edCaptions" type="file" accept=".srt,.vtt,text/vtt,application/x-subrip"><select id="edCaptionStyle"><option value="classic">Classic</option><option value="box">Box</option><option value="news">News bar</option><option value="minimal">Minimal</option></select><button class="sm" id="edCaptionClear" type="button">No captions / Clear</button><small id="edCaptionStatus" class="cf-muted">No captions added. Export remains unchanged.</small></div><div class="cf-stat"><b id="edDuration">0:00</b><span>Timeline duration</span></div><button class="main" id="edExport">Export edited video</button><button class="sm" id="edStop" style="display:none;margin-top:8px">Stop export</button><div class="cf-progress"><i id="edProgress"></i></div><div id="edStatus" class="cf-status" role="status"></div><div id="edOutput" class="cf-output"></div></div></div>'+
@@ -1616,9 +1616,11 @@ const activeWorkspace=()=>['montage','editor'].includes(window.ClipForgeNavigati
 // router here caused competing .solo/data-tool updates on hash navigation.
 /* Reusable in-memory timeline engine. Files and exports are never written to storage. */
 function mountTimeline(prefix,mode){
- const el=id=>document.getElementById(prefix+id),state={clips:[],selected:0,music:null,captions:[],captionStyle:'classic',busy:false,cancel:false,outUrl:null};
+ const el=id=>document.getElementById(prefix+id),state={clips:[],selected:0,music:null,musicPreset:'none',captions:[],captionStyle:'classic',captionSample:false,titlePos:{x:.5,y:.82},captionPos:{x:.5,y:.78},busy:false,cancel:false,outUrl:null};
  const isEditor=mode==='editor';
  const ratio=()=>el('Ratio').value;
+ const autoRatio=()=>{const c=state.clips[0];return c&&c.width>0&&c.height>0?c.width/c.height:16/9;};
+ const even=n=>Math.max(2,Math.round(n/2)*2);
  const setStatus=t=>{el('Status').textContent=t||''};
  const duration=()=>state.clips.reduce((n,c)=>n+Math.max(.05,c.end-c.start),0);
  const fmt=t=>{t=Math.max(0,Math.floor(t||0));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
@@ -1639,15 +1641,16 @@ function mountTimeline(prefix,mode){
   else{el('Count').textContent=state.clips.length+' clips';el('Duration').textContent=state.clips.length?fmt(duration())+' total duration':'Add media to calculate duration'}
   const c=selected();
   if(isEditor){el('Start').value=c?c.start.toFixed(1):0;el('End').value=c?c.end.toFixed(1):0;el('Start').max=c?c.duration:0;el('End').max=c?c.duration:0;el('PreviewInfo').textContent=c?c.file.name+' · '+fmt(c.duration)+' source length':'Select a clip to inspect it.'}
+  else updateMontagePreview();
  };
  function loadPreview(){
   const c=selected(),v=el('Preview');
-  if(!c){v.removeAttribute('src');v.load();return}
-  v.src=c.url;v.onloadedmetadata=()=>{v.currentTime=Math.min(c.start,Math.max(0,c.duration-.05))};
+  if(!c){v.removeAttribute('src');v.load();if(!isEditor)updateMontagePreview();return}
+  v.src=c.url;v.onloadedmetadata=()=>{v.currentTime=Math.min(c.start,Math.max(0,c.duration-.05));if(!isEditor)updateMontagePreview()};
   v.onended=()=>{try{v.pause()}catch(e){}};
  }
  function move(i,dir){const j=i+dir;if(j<0||j>=state.clips.length)return;[state.clips[i],state.clips[j]]=[state.clips[j],state.clips[i]];state.selected=j;render();loadPreview()}
- function remove(i){const c=state.clips[i];if(c)revoke(c);state.clips.splice(i,1);state.selected=Math.max(0,Math.min(state.selected,state.clips.length-1));render();loadPreview()}
+ function remove(i){const c=state.clips[i];if(c)revoke(c);state.clips.splice(i,1);state.selected=Math.max(0,Math.min(state.selected,state.clips.length-1));if(!isEditor)updateMontageRatio();render();loadPreview()}
  async function addFiles(files){
   for(const file of Array.from(files||[])){
    if(!file.type.startsWith('video/'))continue;
@@ -1658,6 +1661,7 @@ function mountTimeline(prefix,mode){
    }catch(e){URL.revokeObjectURL(url);setStatus(e.message)}
   }
   if(state.clips.length)state.selected=state.clips.length-1;
+  if(!isEditor)updateMontageRatio();
   render();loadPreview();setStatus(state.clips.length+' clips ready. Files remain in this browser session only.');
  }
  const input=el('Files');input.addEventListener('change',e=>{addFiles(e.target.files);e.target.value=''});
@@ -1674,15 +1678,151 @@ function mountTimeline(prefix,mode){
   el('Clear').onclick=clear;
   el('PreviewBtn').onclick=()=>{const c=selected(),v=el('Preview');if(!c)return setStatus('Add a clip first.');v.currentTime=c.start;v.play().catch(()=>setStatus('Tap the preview player to start playback.'))};
  }
- function clear(){if(state.busy)return;state.clips.forEach(revoke);state.clips=[];state.selected=0;render();loadPreview();setStatus('Timeline cleared.');}
+ function clear(){if(state.busy)return;state.clips.forEach(revoke);state.clips=[];state.selected=0;if(!isEditor)updateMontageRatio();render();loadPreview();setStatus('Timeline cleared.');}
  const musicInput=el('Music');
- musicInput.addEventListener('change',e=>{const f=e.target.files[0];if(state.music)URL.revokeObjectURL(state.music);state.music=f?URL.createObjectURL(f):null;setStatus(f?'Music track ready.':'Music removed.');e.target.value=''});
+ musicInput.addEventListener('change',e=>{const f=e.target.files[0];if(state.music)URL.revokeObjectURL(state.music);state.music=f?URL.createObjectURL(f):null;if(f&&!isEditor){state.musicPreset='none';el('MusicPreset').value='none'}setStatus(f?'Music track ready.':'Music removed.');e.target.value=''});
+ if(!isEditor){el('MusicPreset').onchange=()=>{state.musicPreset=el('MusicPreset').value;if(state.musicPreset!=='none'&&state.music){URL.revokeObjectURL(state.music);state.music=null;musicInput.value=''}setStatus(state.musicPreset==='none'?'Built-in music disabled.':'Built-in '+state.musicPreset+' soundtrack selected.')};}
  const captionInput=el('Captions'),captionStyleInput=el('CaptionStyle'),captionStatus=el('CaptionStatus'),captionClear=el('CaptionClear');
  if(captionStyleInput&&window.ClipForgeCaptionStyles)window.ClipForgeCaptionStyles.populateSelect(captionStyleInput);
  const parseSubtitle=source=>{const src=String(source||'').replace(/^\uFEFF/,'').replace(/\r/g,'');const blocks=src.split(/\n\s*\n/);const out=[];const toSec=value=>{const p=value.replace(',','.').split(':');return p.reduce((n,x)=>n*60+Number(x),0)};for(const block of blocks){const lines=block.split('\n').map(x=>x.trim()).filter(Boolean);const ti=lines.findIndex(x=>/(?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3}\s*-->\s*(?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3}/.test(x));if(ti<0)continue;const m=lines[ti].match(/((?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*((?:\d{1,2}:)?\d{2}:\d{2}[,.]\d{1,3})/);if(!m)continue;const start=toSec(m[1]),end=toSec(m[2]),caption=lines.slice(ti+1).join(' ').replace(/<[^>]+>/g,'').trim();if(end>start&&caption)out.push({start,end,text:caption})}return out.sort((a,b)=>a.start-b.start)};
- if(captionInput)captionInput.addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;try{const cues=parseSubtitle(await file.text());if(!cues.length)throw new Error('No valid SRT/VTT caption cues were found.');state.captions=cues;if(captionStatus)captionStatus.textContent=cues.length+' caption cues loaded. Times follow the final combined timeline.';setStatus('Captions loaded for export.')}catch(err){state.captions=[];if(captionStatus)captionStatus.textContent=err.message||'Could not read captions.';setStatus(err.message||'Could not read captions.')}e.target.value=''});
- if(captionStyleInput)captionStyleInput.addEventListener('change',()=>{state.captionStyle=captionStyleInput.value||'classic'});
- if(captionClear)captionClear.addEventListener('click',()=>{state.captions=[];if(captionStatus)captionStatus.textContent='No captions added. Export remains unchanged.';setStatus('Captions cleared. Export will have no subtitles.')});
+ if(captionInput)captionInput.addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;try{const cues=parseSubtitle(await file.text());if(!cues.length)throw new Error('No valid SRT/VTT caption cues were found.');state.captions=cues;if(captionStatus)captionStatus.textContent=cues.length+' caption cues loaded. Times follow the final combined timeline.';state.captionSample=false;if(!isEditor)updateMontagePreview();setStatus('Captions loaded for export.')}catch(err){state.captions=[];if(captionStatus)captionStatus.textContent=err.message||'Could not read captions.';setStatus(err.message||'Could not read captions.')}e.target.value=''});
+ if(captionStyleInput)captionStyleInput.addEventListener('change',()=>{state.captionStyle=captionStyleInput.value||'classic';if(!isEditor)updateMontagePreview()});
+ if(captionClear)captionClear.addEventListener('click',()=>{state.captions=[];state.captionSample=false;if(!isEditor)updateMontagePreview();if(captionStatus)captionStatus.textContent='No captions added. Export remains unchanged.';setStatus('Captions cleared. Export will have no subtitles.')});
+
+ function updateMontageRatio(){
+  if(isEditor)return;
+  const c=state.clips[0],r=ratio(),ar=autoRatio(),size=dimensions();
+  const name=Math.abs(ar-16/9)<.08?'16:9':Math.abs(ar-9/16)<.07?'9:16':Math.abs(ar-1)<.06?'1:1':c?c.width+':'+c.height:'16:9';
+  el('RatioInfo').textContent=c?(r==='auto'?'Auto: '+name+' · first clip '+c.width+'×'+c.height:'Manual: '+r+' · source '+name):'Auto will match your first uploaded video.';
+  const stage=el('Stage');stage.style.aspectRatio=size[0]+' / '+size[1];stage.style.maxWidth=size[0]<size[1]?'350px':'100%';
+  updateMontagePreview();
+ }
+ function captionAtPreview(){
+  const c=selected();if(!c)return null;
+  const earlier=state.clips.slice(0,state.selected).reduce((n,k)=>n+Math.max(.05,k.end-k.start),0);
+  const t=earlier+Math.max(0,Math.min(c.end-c.start,(Number(el('Preview').currentTime)||c.start)-c.start));
+  return state.captions.find(q=>t>=q.start&&t<q.end)||null;
+ }
+ function paintMontageTitle(ctx,w,h,title){
+  if(!title)return;
+  const pos=isEditor?{x:.5,y:.82}:state.titlePos,size=Math.max(24,Math.round(w*.042));
+  ctx.save();ctx.font='800 '+size+'px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.lineWidth=Math.max(4,size*.13);ctx.strokeStyle='rgba(0,0,0,.82)';ctx.fillStyle='#fff';
+  const lines=[];let line='';
+  for(const word of title.split(/\s+/)){const next=line?line+' '+word:word;if(ctx.measureText(next).width>w*.84&&line){lines.push(line);line=word}else line=next;}
+  if(line)lines.push(line);
+  const shown=lines.slice(0,3);
+  shown.forEach((part,i)=>{const yy=h*pos.y+(i-(shown.length-1)/2)*size*1.2;ctx.strokeText(part,w*pos.x,yy);ctx.fillText(part,w*pos.x,yy)});
+  ctx.restore();
+ }
+ function paintMontageCaption(ctx,w,h,text){
+  if(!text||!window.ClipForgeCaptionStyles)return;
+  ctx.save();
+  if(!isEditor){
+   const modern=window.ClipForgeCaptionStyles.modernPresets.some(row=>row[0]===state.captionStyle);
+   ctx.translate((state.captionPos.x-.5)*w,(state.captionPos.y-(modern?.75:.78))*h);
+  }
+  window.ClipForgeCaptionStyles.draw(ctx,text,state.captionStyle,w,h,1,2);
+  ctx.restore();
+ }
+ function updateMontagePreview(){
+  if(isEditor)return;
+  const stage=el('Stage'),canvas=el('Overlay'),titleHandle=el('TitleHandle'),captionHandle=el('CaptionHandle');
+  const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight),dpr=Math.min(2,window.devicePixelRatio||1);
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const title=el('Title').value.trim(),cue=captionAtPreview(),caption=cue?cue.text:state.captionSample||state.captions.length?'Caption positioning preview':'';
+  paintMontageTitle(ctx,w,h,title);paintMontageCaption(ctx,w,h,caption);
+  titleHandle.hidden=!title;captionHandle.hidden=!caption;
+  [[titleHandle,state.titlePos],[captionHandle,state.captionPos]].forEach(([handle,pos])=>{handle.style.left=(pos.x*100)+'%';handle.style.top=(pos.y*100)+'%'});
+ }
+ function setupMontageControls(){
+  if(isEditor)return;
+  el('Ratio').addEventListener('change',updateMontageRatio);
+  el('Title').addEventListener('input',updateMontagePreview);
+  for(const event of ['timeupdate','seeked','loadedmetadata'])el('Preview').addEventListener(event,updateMontagePreview);
+  if(typeof ResizeObserver==='function')new ResizeObserver(updateMontagePreview).observe(el('Stage'));
+  else window.addEventListener('resize',updateMontagePreview);
+  for(const [id,key] of [['TitleHandle','titlePos'],['CaptionHandle','captionPos']]){
+   const handle=el(id);let origin=null;
+   handle.addEventListener('pointerdown',e=>{
+    if(state.busy)return;
+    e.preventDefault();origin={x:e.clientX,y:e.clientY,start:{...state[key]}};
+    handle.setPointerCapture(e.pointerId);
+   });
+   handle.addEventListener('pointermove',e=>{
+    if(!origin||!handle.hasPointerCapture(e.pointerId))return;
+    const rect=el('Stage').getBoundingClientRect();
+    state[key]={
+     x:Math.max(.15,Math.min(.85,origin.start.x+(e.clientX-origin.x)/rect.width)),
+     y:Math.max(.14,Math.min(.86,origin.start.y+(e.clientY-origin.y)/rect.height))
+    };
+    updateMontagePreview();
+   });
+   handle.addEventListener('pointerup',()=>{origin=null});
+   handle.addEventListener('pointercancel',()=>{origin=null});
+  }
+  const lib=window.ClipForgeCaptionStyles;
+  if(lib){
+   const grid=el('CaptionGrid'),categories=el('StyleCategories'),search=el('StyleSearch');let category='trending';
+   for(const group of lib.groups){
+    const b=document.createElement('button');b.type='button';b.className='cf-style-category';b.dataset.group=group.id;b.textContent=group.label;
+    b.onclick=()=>{category=group.id;filterGallery()};categories.append(b);
+   }
+   for(const [key,label] of lib.list){
+    const b=document.createElement('button');b.type='button';b.className='cf-cap-template';b.dataset.cfPreviewStyle=key;b.setAttribute('aria-label','Caption style: '+label);
+    const canvas=document.createElement('canvas');canvas.width=180;canvas.height=108;
+    const span=document.createElement('span');span.textContent=label;b.append(canvas,span);
+    b.onclick=()=>{state.captionStyle=key;el('CaptionStyle').value=key;state.captionSample=!state.captions.length;
+     if(state.captionSample)el('CaptionStatus').textContent='Template preview only. Upload SRT/VTT to include captions in export.';
+     updateMontagePreview();filterGallery();
+    };
+    grid.append(b);
+   }
+   function filterGallery(){
+    const group=lib.groups.find(x=>x.id===category)||lib.groups[0],q=search.value.trim().toLowerCase();let count=0;
+    categories.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.group===category)));
+    for(const b of grid.children){
+     const key=b.dataset.cfPreviewStyle,label=b.querySelector('span').textContent.toLowerCase();
+     b.hidden=!group.ids.includes(key)||!!(q&&!key.includes(q)&&!label.includes(q));
+     b.classList.toggle('is-selected',key===state.captionStyle);
+     b.setAttribute('aria-pressed',String(key===state.captionStyle));
+     if(!b.hidden){count++;const canvas=b.querySelector('canvas');if(!canvas.dataset.painted){
+      canvas.dataset.painted='1';const ctx=canvas.getContext('2d');ctx.fillStyle='#171b25';ctx.fillRect(0,0,180,108);
+      lib.draw(ctx,'THIS CHANGES EVERYTHING',key,180,108,1,2);
+     }}
+    }
+    el('StyleCount').textContent=count+' of '+lib.list.length+' unique caption styles';
+    el('StyleSelected').textContent='Selected: '+(lib.list.find(p=>p[0]===state.captionStyle)||['',state.captionStyle])[1];
+   }
+   search.oninput=()=>{if(search.value.trim())category='all';filterGallery()};
+   el('CaptionGallery').addEventListener('toggle',()=>{if(el('CaptionGallery').open)filterGallery()});
+   filterGallery();
+  }
+  el('MusicPreview').onclick=async()=>{
+   if(state.busy)return;
+   if(!state.music&&state.musicPreset==='none')return setStatus('Select a built-in music style or upload an audio file first.');
+   const button=el('MusicPreview');button.disabled=true;
+   let context=null,player=null,interval=null;
+   try{
+    if(state.music){
+     player=new Audio(state.music);player.volume=.45;
+     await player.play();
+    }else{
+     context=new(window.AudioContext||window.webkitAudioContext)();
+     const pump=createMontageScore(context,context.destination,state.musicPreset);
+     await context.resume();pump();interval=setInterval(pump,300);
+    }
+    setStatus('Previewing '+(state.music?'your uploaded track':state.musicPreset+' built-in music')+' for 5 seconds.');
+    setTimeout(()=>{if(interval)clearInterval(interval);if(player){player.pause();player.src=''}if(context)context.close().catch(()=>{});button.disabled=false},5000);
+   }catch(err){
+    if(interval)clearInterval(interval);
+    if(context)context.close().catch(()=>{});
+    button.disabled=false;setStatus('Music preview unavailable: '+err.message);
+   }
+  };
+  updateMontageRatio();
+ }
  function dimensions(){
   const r=ratio();
   // Existing Editor resolution is intentionally unchanged.
@@ -1691,7 +1831,8 @@ function mountTimeline(prefix,mode){
     if(r==='1:1')return[1080,1080];
     return[1280,720];
   }
-  const quality=Number(el('Quality').value)===1080?1080:720;
+  const quality=Number(el('Quality').value)===720?720:1080;
+  if(r==='auto'){const ar=autoRatio();return ar>=1?[even(quality*ar),quality]:[quality,even(quality/ar)];}
   if(r==='9:16')return[quality,Math.round(quality*16/9/2)*2];
   if(r==='1:1')return[quality,quality];
   return[Math.round(quality*16/9/2)*2,quality];
@@ -1702,16 +1843,40 @@ function mountTimeline(prefix,mode){
   const vw=v.videoWidth||w,vh=v.videoHeight||h,scale=Math.max(w/vw,h/vh),dw=vw*scale,dh=vh*scale;
   ctx.filter=filter==='mono'?'grayscale(1)':filter==='warm'?'sepia(.28) saturate(1.2)':filter==='cinema'?'contrast(1.12) saturate(1.08)':'none';
   ctx.drawImage(v,(w-dw)/2,(h-dh)/2,dw,dh);ctx.filter='none';
-  if(title){const size=Math.max(24,Math.round(w*.042)),y=h*.82;ctx.font='800 '+size+'px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=Math.max(4,size*.13);ctx.strokeStyle='rgba(0,0,0,.82)';ctx.fillStyle='#fff';const words=title.split(/\s+/);let lines=[],line='';for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>w*.84&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);lines.slice(0,3).forEach((t,i)=>{const yy=y+(i-(Math.min(3,lines.length)-1)/2)*size*1.2;ctx.strokeText(t,w/2,yy);ctx.fillText(t,w/2,yy)})}
-  if(caption&&window.ClipForgeCaptionStyles){window.ClipForgeCaptionStyles.draw(ctx,caption,state.captionStyle,w,h,1,2)}
+  paintMontageTitle(ctx,w,h,title);
+  paintMontageCaption(ctx,w,h,caption);
   ctx.restore();
+ }
+
+ // Procedural soundtracks: original instrumentals generated in the browser.
+ function createMontageScore(context,destination,mood){
+  const notes={cinematic:[146.83,174.61,220,261.63],ambient:[196,246.94,293.66,392],upbeat:[261.63,329.63,392,523.25],warm:[220,277.18,329.63,440]}[mood];
+  if(!notes)return()=>{};
+  const master=context.createGain();master.gain.value=.56;master.connect(destination);
+  const speed=mood==='ambient'?.82:mood==='cinematic'?.62:.43;let tick=0,next=context.currentTime+.06;
+  function sound(freq,start,length,loud,shape){
+   const osc=context.createOscillator(),gain=context.createGain();osc.type=shape;osc.frequency.value=freq;
+   gain.gain.setValueAtTime(.0001,start);gain.gain.linearRampToValueAtTime(loud,start+.04);
+   gain.gain.exponentialRampToValueAtTime(.0001,start+length);
+   osc.connect(gain);gain.connect(master);osc.start(start);osc.stop(start+length+.03);
+  }
+  return ()=>{
+   let steps=0;
+   while(next<context.currentTime+1.5&&steps++<8){
+    const n=notes[(tick*3+Math.floor(tick/8))%notes.length];
+    sound(n,next,speed*.88,mood==='ambient'?.035:.06,mood==='cinematic'?'sawtooth':'triangle');
+    if(tick%4===0)sound(notes[0]/2,next,speed*3.7,.04,'sine');
+    if(mood==='upbeat'&&tick%2===0)sound(92,next,.17,.04,'sine');
+    tick++;next+=speed;
+   }
+  };
  }
  async function exportTimeline(){
   if(state.busy)return;if(!state.clips.length)return setStatus('Add at least one video clip first.');
   const clips=state.clips.slice();state.busy=true;state.cancel=false;
   const button=el('Export'),stop=el('Stop'),bar=el('Progress'),output=el('Output');button.disabled=true;stop.style.display='inline-block';output.innerHTML='';bar.style.width='0%';
   if(state.outUrl){URL.revokeObjectURL(state.outUrl);state.outUrl=null}
-  let recorder=null,stream=null,video=null,audioCtx=null,musicEl=null,raf=0;
+  let recorder=null,stream=null,video=null,audioCtx=null,musicEl=null,musicPump=null,raf=0;
   try{
    const [w,h]=dimensions(),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d',{alpha:false});
    stream=canvas.captureStream(30);
@@ -1733,13 +1898,14 @@ function mountTimeline(prefix,mode){
     video=document.createElement('video');video.playsInline=true;video.preload='auto';video.muted=false;
     source=audioCtx.createMediaElementSource(video);source.connect(audioDest);source.connect(audioCtx.destination);
     if(state.music){musicEl=new Audio(state.music);musicEl.loop=true;musicEl.crossOrigin='anonymous';const ms=audioCtx.createMediaElementSource(musicEl);const gain=audioCtx.createGain();gain.gain.value=.32;ms.connect(gain);gain.connect(audioDest);await audioCtx.resume();musicEl.play().catch(()=>{});}
+    else if(!isEditor&&state.musicPreset!=='none'){musicPump=createMontageScore(audioCtx,audioDest,state.musicPreset);await audioCtx.resume();musicPump();}
     audioDest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
    }catch(e){setStatus('Video audio will be omitted on this browser. Rendering video…')}
    recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:Math.min(12000000,w*h*8)});
    const chunks=[];recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
    const finished=new Promise((res,rej)=>{recorder.onstop=res;recorder.onerror=e=>rej(e.error||new Error('Recording failed'))});
    recorder.start(500);
-   const total=clips.reduce((n,c)=>n+(c.end-c.start),0),transition=el('Transition')?el('Transition').value:'fade',title=el('Title')?el('Title').value.trim():'',filter=isEditor?el('Filter').value:'none';
+   const total=clips.reduce((n,c)=>n+(c.end-c.start),0),transition=el('Transition')?el('Transition').value:'none',title=el('Title')?el('Title').value.trim():'',filter=isEditor?el('Filter').value:'none';
    let elapsed=0;const fps=30;
    for(let i=0;i<clips.length;i++){
     if(state.cancel)throw new Error('Export stopped.');
@@ -1749,7 +1915,7 @@ function mountTimeline(prefix,mode){
     while(video.currentTime<c.end-.035&&!video.ended){
      if(state.cancel)throw new Error('Export stopped.');
      const p=Math.max(0,Math.min(1,(video.currentTime-c.start)/clipDur));
-     const timelineTime=elapsed+Math.max(0,video.currentTime-c.start),activeCaption=state.captions.find(q=>timelineTime>=q.start&&timelineTime<q.end);drawFrame(ctx,video,w,h,title,filter,1,activeCaption&&activeCaption.text);
+     const timelineTime=elapsed+Math.max(0,video.currentTime-c.start),activeCaption=state.captions.find(q=>timelineTime>=q.start&&timelineTime<q.end);drawFrame(ctx,video,w,h,title,filter,1,activeCaption&&activeCaption.text);if(musicPump)musicPump();
      if(transition==='fade'&&(p<.045||p>.94)){const a=p<.045?1-p/.045:(p-.94)/.06;ctx.fillStyle='rgba(0,0,0,'+Math.max(0,Math.min(.85,a*.85))+')';ctx.fillRect(0,0,w,h)}
      const done=elapsed+Math.max(0,video.currentTime-c.start);bar.style.width=Math.min(99,done/total*100)+'%';el('Status').textContent='Rendering clip '+(i+1)+' of '+clips.length+' · '+fmt(done)+' / '+fmt(total);
      await new Promise(r=>{raf=requestAnimationFrame(r)});
@@ -1783,6 +1949,7 @@ function mountTimeline(prefix,mode){
   }
  }
  el('Export').onclick=exportTimeline;el('Stop').onclick=()=>{state.cancel=true;setStatus('Stopping export…')};
+ if(!isEditor)setupMontageControls();
  render();loadPreview();
  window.addEventListener('beforeunload',()=>{state.clips.forEach(revoke);if(state.music)URL.revokeObjectURL(state.music);if(state.outUrl)URL.revokeObjectURL(state.outUrl)});
 }

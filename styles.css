@@ -3196,3 +3196,47 @@ body[data-tool="trailer"] #cfLivePreviewBlock{display:none!important}
    margin-left:7px!important;
  }
 }
+
+
+/* Montage-only preview drag handles and shared caption gallery; other tools unchanged. */
+#vmTool .cf-vm-stage{
+ position:relative;width:100%;max-width:100%;margin:10px auto 0;
+ aspect-ratio:16 / 9;overflow:hidden;border:1px solid var(--line);
+ border-radius:12px;background:#080a0f;
+}
+#vmTool .cf-vm-stage #vmPreview{
+ display:block;width:100%;height:100%!important;min-height:0!important;
+ max-height:none!important;margin:0;object-fit:cover!important;
+ border:0;border-radius:0;background:#080a0f;
+}
+#vmTool .cf-vm-stage #vmOverlay{
+ position:absolute;inset:0;display:block;width:100%;height:100%;
+ z-index:1;pointer-events:none;
+}
+#vmTool .cf-vm-stage .cf-vm-drag{
+ position:absolute;z-index:2;transform:translate(-50%,-100%);
+ max-width:132px;touch-action:none;cursor:grab;user-select:none;
+ background:rgba(10,15,25,.82);color:white;
+ border:1px dashed #b7adff;border-radius:7px;padding:4px 7px;
+ font:700 11px system-ui,sans-serif;line-height:1.4;
+ box-shadow:0 0 0 1px rgba(0,0,0,.2);white-space:nowrap;
+}
+#vmTool .cf-vm-stage #vmTitleHandle{transform:translate(-115%,-120%)}
+#vmTool .cf-vm-stage #vmCaptionHandle{transform:translate(15%,30%)}
+#vmTool .cf-vm-stage .cf-vm-drag:active{cursor:grabbing}
+#vmTool .cf-vm-stage .cf-vm-drag[hidden]{display:none!important}
+#vmTool #vmCaptionGallery{margin-top:10px}
+#vmTool #vmCaptionGallery>summary{
+ cursor:pointer;padding:10px 12px;border-radius:9px;
+ border:1px solid var(--line);font-weight:700;
+}
+#vmTool #vmCaptionGallery .cf-style-browser{
+ margin-top:10px;padding:12px;width:100%;
+}
+#vmTool #vmCaptionGrid .cf-cap-template{
+ min-width:0;
+}
+@media(max-width:600px){
+ #vmTool .cf-vm-stage .cf-vm-drag{font-size:10px;padding:4px 5px}
+ #vmTool #vmCaptionGallery .cf-style-browser{padding:8px}
+}
