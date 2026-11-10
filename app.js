@@ -945,7 +945,10 @@ async function semanticShortPlan(tok,dur){
  if(segments.length>2500)throw new Error('This video has too much dialogue for one analysis pass. Try a shorter section first.');
  const wanted=S.n==='auto'?Math.min(10,Math.max(3,Math.round(dur/180))):Math.max(1,Math.min(50,+S.n||3));
  workProgress('Finding the best moments',66);
- const response=await guard(fetch(SEMANTIC_ENDPOINT,{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({duration:dur,targetLength:PL,autoDuration:S.len==='auto',count:wanted,language:S.lang,segments})}),120000,'AI dialogue analysis');
+ // Auto intentionally sends NO fixed-duration target. Fixed/Custom still send their requested seconds.
+ const requestBody={duration:dur,autoDuration:S.len==='auto',count:wanted,language:S.lang,segments};
+ if(S.len!=='auto')requestBody.targetLength=PL;
+ const response=await guard(fetch(SEMANTIC_ENDPOINT,{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify(requestBody)}),120000,'AI dialogue analysis');
  const responseText=await response.text();alive(tok);workProgress('Selecting the strongest moments',86);
  let data=null;try{data=JSON.parse(responseText)}catch(e){
   const preview=String(responseText||'').replace(/\s+/g,' ').slice(0,160);
