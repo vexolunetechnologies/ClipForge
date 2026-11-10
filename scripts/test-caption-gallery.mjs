@@ -83,6 +83,17 @@ try{
  await page.locator("#cfCapResetPlace").click();
  assert.equal(await page.locator("#cfCapSizeValue").innerText(),"100%");
  assert.equal(await page.locator("#cfCapPosXValue").innerText(),"50%");
+ const legacyDefault=await page.evaluate(()=>{
+  const shared=window.ClipForgeCaptionStyles,custom=window.ClipForgeStudioCaptions;
+  const a=document.createElement("canvas"),b=document.createElement("canvas");
+  a.width=b.width=360;a.height=b.height=220;
+  shared.draw(a.getContext("2d"),"KEEP EXISTING STYLE","creator-yellow",360,220,1,2);
+  custom.draw(b.getContext("2d"),"KEEP EXISTING STYLE","creator-yellow",360,220,1,2,custom.defaultPlacement());
+  const one=a.getContext("2d").getImageData(0,0,360,220).data;
+  const two=b.getContext("2d").getImageData(0,0,360,220).data;
+  return one.every((value,i)=>value===two[i]);
+ });
+ assert.ok(legacyDefault,"Default settings must preserve the exact original caption rendering");
  const extra=await page.evaluate(()=>{
   const api=window.ClipForgeStudioCaptions;
   const samples={};
