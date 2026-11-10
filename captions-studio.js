@@ -491,7 +491,7 @@ function animatePreview(){
 }
 function init(){
  workspace();video=$('cfCapVideo');
- syncPlacementControls();
+ syncPlacementControls();syncLookControls();
  if(document.fonts){Promise.all([document.fonts.load('700 48px "Noto Nastaliq Urdu"','اردو کیپشن'),document.fonts.load('700 48px "Noto Sans Devanagari"','हिन्दी')]).then(()=>{if(activeRoute()==='captions')refresh(true);if(['shorts','trailer'].includes(activeRoute())&&$('cfShortTemplateGrid')?.children.length)shortGrid(true)}).catch(()=>{})}
  $('cfCapFile').onchange=e=>{file=e.target.files[0]||null;stop=false;cues=[];sourceCues=[];placement=STUDIO.defaultPlacement();look=STUDIO.defaultLook();syncPlacementControls();syncLookControls();clearHistory();$('cfCapText').value='';$('cfCapOutput').innerHTML='';if(video.src)URL.revokeObjectURL(video.src);if(file){video.src=URL.createObjectURL(file);video.load();status(file.name+' selected.');livePreview()}else{video.removeAttribute('src');status('Choose a video to begin.')}enabled()};
  $('cfCapTranscribe').onclick=transcribe;$('cfCapLang').onchange=()=>{refresh();livePreview()};$('cfCapDensity').onchange=()=>{if(!sourceCues.length)return;cues=segmentTranscript(sourceCues);clearHistory();renderCaptionLines();status('Caption length updated · '+cues.length+' captions.');livePreview()};video.addEventListener('timeupdate',livePreview);
@@ -505,12 +505,12 @@ function init(){
  controlSize.oninput=()=>{placement.size=Number(controlSize.value)/100;constrainPlacement();syncPlacementControls();livePreview()};
  controlX.oninput=()=>{placement.x=Number(controlX.value)/100;constrainPlacement();syncPlacementControls();livePreview()};
  controlY.oninput=()=>{placement.y=Number(controlY.value)/100;constrainPlacement();syncPlacementControls();livePreview()};
- $('cfCapResetPlace').onclick=()=>{placement=STUDIO.defaultPlacement();syncPlacementControls();livePreview()};
+ $('cfCapResetPlace').onclick=()=>{const before=captureEdit();placement=STUDIO.defaultPlacement();syncPlacementControls();livePreview();recordEdit(before)};
  const moveHandle=$('cfCapMoveHandle');let drag=null;
  moveHandle.addEventListener('pointerdown',e=>{
   if(busy||!videoBox())return;
   e.preventDefault();moveHandle.setPointerCapture(e.pointerId);
-  drag={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,x:placement.x,y:placement.y};
+  drag={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,x:placement.x,y:placement.y,before:captureEdit()};
   moveHandle.classList.add('is-dragging');
  });
  moveHandle.addEventListener('pointermove',e=>{
@@ -520,12 +520,12 @@ function init(){
   placement.y=Math.max(0,Math.min(1,drag.y+(e.clientY-drag.clientY)/box.h));
   constrainPlacement();syncPlacementControls();livePreview();
  });
- const endDrag=e=>{if(drag&&drag.id===e.pointerId){drag=null;moveHandle.classList.remove('is-dragging');if(moveHandle.hasPointerCapture(e.pointerId))moveHandle.releasePointerCapture(e.pointerId)}};
+ const endDrag=e=>{if(drag&&drag.id===e.pointerId){const before=drag.before;drag=null;recordEdit(before);moveHandle.classList.remove('is-dragging');if(moveHandle.hasPointerCapture(e.pointerId))moveHandle.releasePointerCapture(e.pointerId)}};
  moveHandle.addEventListener('pointerup',endDrag);
  moveHandle.addEventListener('pointercancel',endDrag);
  moveHandle.addEventListener('keydown',e=>{
   if(busy)return;
-  const step=e.shiftKey?.05:.015;
+  const before=captureEdit(),step=e.shiftKey?.05:.015;
   if(e.key==='ArrowLeft')placement.x-=step;
   else if(e.key==='ArrowRight')placement.x+=step;
   else if(e.key==='ArrowUp')placement.y-=step;
@@ -533,10 +533,42 @@ function init(){
   else return;
   e.preventDefault();
   placement=STUDIO.normalisePlacement(placement);
-  constrainPlacement();syncPlacementControls();livePreview();
+  constrainPlacement();syncPlacementControls();livePreview();recordEdit(before);
  });
- $('cfCapText').oninput=sync;$('cfCapSrt').onclick=()=>subs(false);$('cfCapVtt').onclick=()=>subs(true);$('cfCapExport').onclick=exportVideo;$('cfCapStop').onclick=()=>{stop=true;try{if(activeInput&&!activeInput.disposed)activeInput.dispose()}catch(e){}try{if(activeOutput&&activeOutput.state!=='finalized'&&activeOutput.state!=='canceled')activeOutput.cancel().catch(()=>{})}catch(e){}};
- function refresh(force=false){grid($('cfCapTemplateGrid'),$('cfCapLang').value,style,k=>{style=k;refresh();livePreview()},force)}
+ // Appearance and motion settings are Studio-only, never written into Shorts.
+ const settings=[
+  ["cfCapFont","font"],["cfCapColor","color"],["cfCapCustomColor","customColor"],
+  ["cfCapOutlineColor","outlineColor"],["cfCapOutline","outline"],
+  ["cfCapShadow","shadow"],["cfCapBackground","background"],
+  ["cfCapTracking","tracking"],["cfCapEffect","effect"],
+  ["cfCapSpeed","speed"],["cfCapDuration","duration"],
+  ["cfCapSafe","safe"],["cfCapPlatform","platform"]
+ ];
+ settings.forEach(([id,key])=>{
+  const el=$(id);if(!el)return;
+  const update=()=>{
+   if(busy)return;
+   const value=el.type==="checkbox"?el.checked:
+    el.type==="range"?Number(el.value):el.value;
+   look=STUDIO.normaliseLook({...look,[key]:value,
+    ...(key==="color"?{customColor:true}:{})});
+   syncLookControls();livePreview();
+  };
+  el.addEventListener(el.tagName==="SELECT"||el.type==="checkbox"?"change":"input",update);
+  watchEditorInput(el);
+ });
+ [controlSize,controlX,controlY,$("cfCapText")].forEach(watchEditorInput);
+ $("cfCapUndo").onclick=()=>travelHistory("undo");
+ $("cfCapRedo").onclick=()=>travelHistory("redo");
+ $("cfCapResetLook").onclick=()=>{
+  if(busy)return;
+  const before=captureEdit();
+  const {safe,platform}=look;look={...STUDIO.defaultLook(),safe,platform};
+  syncLookControls();livePreview();recordEdit(before);
+ };
+ $('cfCapText').oninput=()=>{sync();livePreview()};$('cfCapSrt').onclick=()=>subs(false);$('cfCapVtt').onclick=()=>subs(true);$('cfCapExport').onclick=exportVideo;$('cfCapStop').onclick=()=>{stop=true;try{if(activeInput&&!activeInput.disposed)activeInput.dispose()}catch(e){}try{if(activeOutput&&activeOutput.state!=='finalized'&&activeOutput.state!=='canceled')activeOutput.cancel().catch(()=>{})}catch(e){}};
+ function refresh(force=false){grid($('cfCapTemplateGrid'),$('cfCapLang').value,style,k=>{const before=captureEdit();style=k;refresh();livePreview();recordEdit(before)},force)}
+ refreshStyles=()=>refresh();
  function activeRoute(){return window.ClipForgeNavigation?.current?.()||'top'}
  function activatePreviews(){
   const route=activeRoute();
