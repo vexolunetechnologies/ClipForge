@@ -134,7 +134,7 @@ assert.ok(rootHome.includes("/styles.css?v=20261110-captions-clean-ui-2"),
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");
 assert.match(captionsPage,/src="\/assets\/js\/tools\/captions-studio-enhancements\.js\?v=20261110"/);
-assert.match(captionsPage,/src="\/assets\/js\/tools\/captions-studio\.js\?v=20261110"/);
+assert.match(captionsPage,/src="\/assets\/js\/tools\/captions-studio\.js\?v=20261110-clean-ui-2"/);
 assert.ok(captionsPage.indexOf("captions-studio-enhancements.js")<captionsPage.indexOf("captions-studio.js"),
  "Caption template renderer must load before workspace setup");
 const captionScript=from("captions-studio.js"),captionExtras=from("captions-studio-enhancements.js");
