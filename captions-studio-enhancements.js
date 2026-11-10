@@ -80,7 +80,7 @@ function drawStudioStyle(ctx,text,key,w,h,t=0,d=2){
   ctx.fillStyle='#4ae0e2';round(ctx,rtl?left+bw-5*scale:left,top,5*scale,bh,2*scale);
  }else if(key==='motion-type'){
   ctx.fillStyle='rgba(3,10,25,.83)';round(ctx,left,top,bw,bh,fs*.2);
-  ctx.save();ctx.beginPath();
+  ctx.beginPath();
   if(rtl)ctx.rect(left+bw*(1-entrance),top,bw*entrance,bh);
   else ctx.rect(left,top,bw*entrance,bh);
   ctx.clip();
@@ -120,7 +120,7 @@ function drawStudioStyle(ctx,text,key,w,h,t=0,d=2){
    key==='motion-slide'?'#a6f6f0':key==='motion-rise'?'#f7fffb':'#fff';
   ctx.fillText(line,w/2,y);
  });
- ctx.restore(); // Restores any type-reveal clip and all animation state.
+ ctx.restore(); // Restore the drawing state, including any reveal clip.
 }
 function draw(ctx,text,key,w,h,t=0,d=2,placement=null){
  if(!text||w<=0||h<=0)return null;
