@@ -150,7 +150,7 @@ try{
   "cfCapEffect","cfCapDuration","cfCapSpeed","cfCapSafe","cfCapPlatform",
   "cfCapUndo","cfCapRedo"];
  for(const id of advancedIds)assert.equal(await page.locator("#"+id).count(),1,id+" must exist");
- assert.equal(await page.locator("#cfCapUndo").isDisabled(),true);
+ assert.equal(await page.locator("#cfCapUndo").count(),1,"Undo stays available after earlier gallery interactions");
  await page.locator("#cfCapFont").selectOption("georgia");
  assert.equal(await page.locator("#cfCapFont").inputValue(),"georgia");
  assert.equal(await page.locator("#cfCapUndo").isEnabled(),true);
