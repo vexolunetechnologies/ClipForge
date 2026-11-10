@@ -89,6 +89,58 @@ function transcriptShortFallback(segments,duration,target,minClip,maxClip,count)
  return chosen;
 }
 
+/* Auto fallback: recover complete dialogue beats from actual transcript boundaries.
+ * No fixed 45-second target, no padding to a duration, no fabricated AI ranking.
+ * Prefer natural starts/ends and meaningful pauses; keep one continuous interval. */
+function transcriptAutoFallback(segments,duration,minClip,maxClip,count){
+ const rows=segments.filter(x=>x.text&&x.end>x.start).sort((a,b)=>a.start-b.start);
+ const candidates=[],terminal=/[.!?؟۔]$/;
+ const startQuality=i=>{
+  if(!i)return 1;
+  const gap=rows[i].start-rows[i-1].end;
+  return gap>=2.5?1:gap>=1?.65:terminal.test(rows[i-1].text)?.35:0;
+ };
+ const endQuality=j=>{
+  if(j===rows.length-1)return 1;
+  const gap=rows[j+1].start-rows[j].end;
+  return gap>=2.5?1:gap>=1?.65:terminal.test(rows[j].text)?.35:0;
+ };
+ for(let i=0;i<rows.length;i++){
+  const begin=startQuality(i),start=rows[i].start;
+  if(begin<.30||duration-start<minClip)continue;
+  let spoken=0,gapPenalty=0,previousEnd=start;
+  for(let j=i;j<rows.length;j++){
+   const row=rows[j],span=row.end-start,gap=Math.max(0,row.start-previousEnd);
+   if(span>maxClip||row.end>duration)break;
+   if(j>i&&gap>8)break; // A long silence separates scenes, not one beat.
+   if(j>i&&gap>2.5)gapPenalty+=Math.min(35,(gap-2.5)*9);
+   spoken+=Math.max(0,row.end-Math.max(previousEnd,row.start));
+   previousEnd=Math.max(previousEnd,row.end);
+   if(span<minClip||j===i)continue;
+   const ending=endQuality(j);
+   if(ending<.30)continue; // Do not cut inside an unfinished sentence.
+   const density=Math.min(1,spoken/span);
+   if(density<.22)continue; // Skip ranges mostly filled with silence.
+   const punct=terminal.test(row.text)?1:0;
+   // No span-vs-target score: 18s and 75s scenes compete on completeness alone.
+   const rank=begin*26+ending*35+punct*10+density*24+
+    Math.min(5,(j-i)*.35)-gapPenalty;
+   candidates.push({start,end:row.end,rank});
+  }
+ }
+ candidates.sort((a,b)=>b.rank-a.rank||a.start-b.start);
+ const chosen=[];
+ for(const item of candidates){
+  if(chosen.some(c=>item.start<c.end-1&&item.end>c.start+1))continue;
+  const start=Number(item.start.toFixed(2)),end=Number(item.end.toFixed(2));
+  if(end-start<minClip-.02||end-start>maxClip+.02)continue;
+  chosen.push({start,end,score:null,category:"Dialogue review",hook:"",
+   reason:"Auto duration follows a natural transcript pause or sentence ending. Transcript-based recovery, not an AI quality score. Preview the dialogue before export."});
+  if(chosen.length>=Math.min(60,count*3))break;
+ }
+ return chosen;
+}
+
 async function semanticPlan(request,env){
   if(request.method!=="POST")return json({error:"Method not allowed."},405);
   if(!env.AI)return json({error:"Cloudflare Workers AI binding is not configured yet. Add the AI binding in the Pages project."},503);
@@ -99,8 +151,8 @@ async function semanticPlan(request,env){
     const raw=await request.text();
     if(raw.length>MAX_BODY)return json({error:"Transcript is too large for one analysis pass. Try a shorter video section."},413);
     let input;try{input=JSON.parse(raw)}catch{return json({error:"Invalid request body."},400)}
-    const duration=Number(input.duration),targetLength=Number(input.targetLength),count=Math.max(1,Math.min(20,Math.floor(Number(input.count)||3))),autoDuration=input.autoDuration===true;
-    if(!Number.isFinite(duration)||duration<8||duration>21600||!Number.isFinite(targetLength)||targetLength<8||targetLength>120)return json({error:"Invalid video duration or clip length."},400);
+    const duration=Number(input.duration),autoDuration=input.autoDuration===true,targetLength=autoDuration?null:Number(input.targetLength),count=Math.max(1,Math.min(20,Math.floor(Number(input.count)||3)));
+    if(!Number.isFinite(duration)||duration<8||duration>21600||(!autoDuration&&(!Number.isFinite(targetLength)||targetLength<8||targetLength>120)))return json({error:"Invalid video duration or clip length."},400);
     if(!Array.isArray(input.segments)||!input.segments.length||input.segments.length>MAX_SEGMENTS)return json({error:"Transcript segment count is invalid."},400);
     const segments=[];
     for(const q of input.segments){
@@ -114,9 +166,9 @@ async function semanticPlan(request,env){
     if(used>=DAILY_LIMIT)return json({error:"Daily AI analysis limit reached for this network. Please try again tomorrow."},429);
     const transcript=segments.map((q,i)=>({i:i,s:q.start,e:q.end,t:q.text}));
     const minClip=autoDuration?8:Math.max(8,Math.round(targetLength*.8)),maxClip=autoDuration?110:Math.min(110,Math.round(targetLength*1.25));
-    const exampleLength=Math.min(duration,Math.max(minClip,Math.min(maxClip,autoDuration?35:targetLength)));
-    const exampleStart=Math.max(0,Math.min(12.3,duration-exampleLength));
-    const example=JSON.stringify({clips:[{start:Number(exampleStart.toFixed(1)),end:Number((exampleStart+exampleLength).toFixed(1)),score:92,category:"Emotional",hook:"dramatic reveal",reason:"complete conversational beat"}]});
+    const exampleLength=autoDuration?null:Math.min(duration,Math.max(minClip,Math.min(maxClip,targetLength)));
+    const exampleStart=autoDuration?null:Math.max(0,Math.min(12.3,duration-exampleLength));
+    const example=autoDuration?'{"clips":[{"start":<scene start timestamp>,"end":<scene end timestamp>,"score":<0 to 100>,"category":"Emotional","hook":"dramatic reveal","reason":"complete conversational beat"}]}':JSON.stringify({clips:[{start:Number(exampleStart.toFixed(1)),end:Number((exampleStart+exampleLength).toFixed(1)),score:92,category:"Emotional",hook:"dramatic reveal",reason:"complete conversational beat"}]});
     const durationRule=autoDuration
       ?"AUTO DURATION: Select each scene by its own complete dramatic arc, not a fixed number of seconds. Prefer about 15 to 75 seconds, but a coherent single scene may be any 8 to 110 seconds. A strong 22s reveal is better than padding it to 45s; a strong 70s conversation is better than cutting its payoff. Never pad with unrelated dialogue or cut mid-sentence."
       :"USER TARGET: "+targetLength+" seconds. Prefer self-contained dialogue within "+minClip+" to "+maxClip+" seconds. Treat the chosen value as a target, not an exact hard cut. Return fewer clips when needed instead of padding or cutting off the payoff.";
@@ -161,7 +213,7 @@ async function semanticPlan(request,env){
       if(clips.length>=count*3)break;
     }
     if(clips.length)return json({clips,model:MODEL,selectionMode:adjusted?"ai-adjusted":"ai"});
-    const recovered=transcriptShortFallback(segments,duration,targetLength,minClip,maxClip,count);
+    const recovered=autoDuration?transcriptAutoFallback(segments,duration,minClip,maxClip,count):transcriptShortFallback(segments,duration,targetLength,minClip,maxClip,count);
     if(recovered.length)return json({clips:recovered,selectionMode:"transcript-fallback",
       notice:"AI could not supply clips within the requested length. Showing continuous dialogue sections from your transcript for manual review; these are not AI-ranked picks."});
     return json({error:"AI could not produce clips matching this length, and no suitable continuous dialogue interval was found. Try a shorter target length or another section of the episode."},422);
