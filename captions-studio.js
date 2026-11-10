@@ -2,14 +2,25 @@
 (function(){
 'use strict';
 const ST=window.ClipForgeCaptionStyles.list;
+const STUDIO=window.ClipForgeStudioCaptions;
+const STUDIO_LIST=[...ST,...STUDIO.presets];
+const BROWSER_GROUPS=window.ClipForgeCaptionStyles.groups;
+const STUDIO_GROUPS=[...BROWSER_GROUPS.filter(g=>g.id!=="all"),
+ {id:"motion-fx",label:"Animated",ids:STUDIO.presets.filter(p=>p[0].startsWith("motion-")).map(p=>p[0])},
+ {id:"studio-pro",label:"Professional",ids:STUDIO.presets.filter(p=>p[0].startsWith("pro-")).map(p=>p[0])},
+ {id:"all",label:"All styles",ids:STUDIO_LIST.map(p=>p[0])}];
+const isStudioHost=host=>host?.id==="cfCapTemplateGrid";
+const catalogFor=host=>isStudioHost(host)?STUDIO_LIST:ST;
+const groupsFor=host=>isStudioHost(host)?STUDIO_GROUPS:BROWSER_GROUPS;
 const SAMPLE={english:'THIS CHANGES EVERYTHING',urdu:'یہ کہانی بدل گئی',hindi:'ये कहानी बदल गई'};
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let file=null,video=null,cues=[],sourceCues=[],style='creator-yellow',busy=false,stop=false,outUrl=null,activeOutput=null,activeInput=null;
+let placement=STUDIO.defaultPlacement(),animationFrame=0;
 function draw(ctx,text,key,w,h,t=0,d=2){window.ClipForgeCaptionStyles.draw(ctx,text,key,w,h,t,d)}
+function studioDraw(ctx,text,key,w,h,t=0,d=2,p=null){return STUDIO.draw(ctx,text,key,w,h,t,d,p)}
 /* Keep all 41 style buttons, but paint sample canvases only near the viewport. */
 const previewObservers=new WeakMap();
 
-const BROWSER_GROUPS=window.ClipForgeCaptionStyles.groups;
 function styleBrowser(host){
  if(host.parentElement?.classList.contains("cf-style-browser"))return;
  const wrapper=document.createElement("section");
@@ -22,7 +33,7 @@ function styleBrowser(host){
  categories.className="cf-style-categories";
  categories.setAttribute("role","group");
  categories.setAttribute("aria-label","Caption categories");
- BROWSER_GROUPS.forEach(group=>{
+ groupsFor(host).forEach(group=>{
   const button=document.createElement("button");button.type="button";
   button.className="cf-style-category";button.dataset.cfCategory=group.id;
   button.textContent=group.label;
@@ -60,7 +71,7 @@ function applyStyleFilter(host){
  const category=host.dataset.cfStyleCategory||"trending";
  const query=host.dataset.cfStyleSearch||"";
  const selected=host.dataset.cfSelectedStyle||"creator-yellow";
- const group=BROWSER_GROUPS.find(x=>x.id===category)||BROWSER_GROUPS[0];
+ const allGroups=groupsFor(host),group=allGroups.find(x=>x.id===category)||allGroups[0];
  let count=0;
  host.querySelectorAll(".cf-cap-template").forEach(button=>{
   const key=button.dataset.cfPreviewStyle;
@@ -72,16 +83,17 @@ function applyStyleFilter(host){
  wrapper.querySelectorAll(".cf-style-category").forEach(button=>{
   button.setAttribute("aria-pressed",String(button.dataset.cfCategory===category));
  });
- const chosen=ST.find(x=>x[0]===selected);
+ const chosen=catalogFor(host).find(x=>x[0]===selected);
  wrapper.querySelector(".cf-style-selected").textContent="Selected: "+(chosen?chosen[1]:selected);
- wrapper.querySelector(".cf-style-status").textContent=count+" of "+ST.length+" styles · Scroll to browse";
+ wrapper.querySelector(".cf-style-status").textContent=count+" of "+catalogFor(host).length+" styles · Scroll to browse";
 }
 
 function grid(host,lang,selected,pick,force=false){
  if(!host)return;
  styleBrowser(host);
+ const catalog=catalogFor(host);
  host.dataset.cfSelectedStyle=selected;
- if(!force&&host.dataset.cfPreviewLang===lang&&host.children.length===ST.length){
+ if(!force&&host.dataset.cfPreviewLang===lang&&host.children.length===catalog.length){
   Array.from(host.children).forEach(button=>{
    button.classList.toggle('is-selected',button.dataset.cfPreviewStyle===selected);
    button.setAttribute('aria-pressed',String(button.dataset.cfPreviewStyle===selected));
@@ -95,7 +107,8 @@ function grid(host,lang,selected,pick,force=false){
  const fragment=document.createDocumentFragment();
  const paint=canvas=>{
   if(canvas.dataset.cfPainted==='1')return;
-  draw(canvas.getContext('2d'),SAMPLE[lang]||SAMPLE.english,canvas.dataset.cfPreviewStyle,180,108);
+  if(isStudioHost(host))studioDraw(canvas.getContext('2d'),SAMPLE[lang]||SAMPLE.english,canvas.dataset.cfPreviewStyle,180,108,1,2);
+  else draw(canvas.getContext('2d'),SAMPLE[lang]||SAMPLE.english,canvas.dataset.cfPreviewStyle,180,108);
   canvas.dataset.cfPainted='1';
  };
  const observer=typeof IntersectionObserver==='function'
@@ -103,7 +116,7 @@ function grid(host,lang,selected,pick,force=false){
     entries.forEach(entry=>{if(entry.isIntersecting){paint(entry.target);observer.unobserve(entry.target)}});
    },{rootMargin:'96px 0px'}):null;
  if(observer)previewObservers.set(host,observer);
- ST.forEach(([key,label])=>{
+ catalog.forEach(([key,label])=>{
   const button=document.createElement('button');
   button.type='button';button.className='cf-cap-template'+(key===selected?' is-selected':'');
   button.dataset.cfPreviewStyle=key;
