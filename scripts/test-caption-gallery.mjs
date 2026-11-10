@@ -71,6 +71,8 @@ try{
  assert.equal(await grid.locator('button:visible').count(),4);
  await grid.locator('button[data-cf-preview-style="pro-lowerthird"]').click();
  assert.match(await gallery.locator(".cf-style-selected").innerText(),/Broadcast Lower Third/);
+ await gallery.locator('[data-cf-category="motion-fx"]').click();
+ await grid.locator('button[data-cf-preview-style="motion-rise"]').click();
  assert.equal(await page.locator("#cfCapSize").count(),1);
  assert.equal(await page.locator("#cfCapMoveHandle").count(),1);
  await page.locator("#cfCapSize").evaluate(el=>{el.value="135";el.dispatchEvent(new Event("input",{bubbles:true}))});
