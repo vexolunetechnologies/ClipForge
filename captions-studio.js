@@ -218,7 +218,7 @@ function sync(){const lines=$('cfCapText').value.split(/\r?\n/).map(x=>x.trim())
 function stamp(t,dot){let n=Math.round(Math.max(0,t)*1000),h=Math.floor(n/3600000),m=Math.floor(n%3600000/60000),s=Math.floor(n%60000/1000),ms=n%1000;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+(dot?'.':',')+String(ms).padStart(3,'0')}
 function download(name,type,text){const u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1200)}
 function subs(vtt){sync();const text=vtt?'WEBVTT\n\n'+cues.map(q=>stamp(q.s,true)+' --> '+stamp(q.e,true)+'\n'+q.text).join('\n\n'):cues.map((q,i)=>(i+1)+'\n'+stamp(q.s,false)+' --> '+stamp(q.e,false)+'\n'+q.text).join('\n\n');download((file.name||'captions').replace(/\.[^.]+$/,'')+(vtt?'.vtt':'.srt'),vtt?'text/vtt':'application/x-subrip',text)}
-function paint(ctx,w,h){if(!video.videoWidth)return;let sc=Math.max(w/video.videoWidth,h/video.videoHeight),dw=video.videoWidth*sc,dh=video.videoHeight*sc;ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);ctx.drawImage(video,(w-dw)/2,(h-dh)/2,dw,dh);let q=cues.find(x=>video.currentTime>=x.s&&video.currentTime<=x.e);if(q)draw(ctx,q.text,style,w,h,video.currentTime-q.s,Math.max(.2,q.e-q.s))}
+function paint(ctx,w,h){if(!video.videoWidth)return;let sc=Math.max(w/video.videoWidth,h/video.videoHeight),dw=video.videoWidth*sc,dh=video.videoHeight*sc;ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);ctx.drawImage(video,(w-dw)/2,(h-dh)/2,dw,dh);let q=cues.find(x=>video.currentTime>=x.s&&video.currentTime<=x.e);if(q)studioDraw(ctx,q.text,style,w,h,video.currentTime-q.s,Math.max(.2,q.e-q.s),placement)}
 async function exportVideo(){
  sync();
  if(!file||!cues.length||busy)return;
@@ -305,7 +305,7 @@ async function exportVideo(){
     while(cueIndex<renderCues.length&&renderCues[cueIndex].e<relativeTime)cueIndex++;
     const activeCue=renderCues[cueIndex];
     if(activeCue&&relativeTime>=activeCue.s&&relativeTime<=activeCue.e){
-     draw(ctx,activeCue.text,style,width,height,relativeTime-activeCue.s,Math.max(.2,activeCue.e-activeCue.s));
+     studioDraw(ctx,activeCue.text,style,width,height,relativeTime-activeCue.s,Math.max(.2,activeCue.e-activeCue.s),placement);
     }
     const timestamp=Math.max(0,relativeTime),frameDuration=Math.max(.001,frame.duration||1/30);
     const renderedFrame=new mb.VideoSample(canvas,{timestamp,duration:frameDuration});
@@ -373,15 +373,48 @@ async function exportVideo(){
   activeInput=null;activeOutput=null;busy=false;enabled();
  }
 }
+function videoBox(){
+ if(!video)return null;
+ const rect=video.getBoundingClientRect();
+ if(!rect.width||!rect.height)return null;
+ const aspect=video.videoWidth>0&&video.videoHeight>0?video.videoWidth/video.videoHeight:rect.width/rect.height;
+ if(!aspect||!Number.isFinite(aspect))return null;
+ const w=Math.min(rect.width,rect.height*aspect),h=w/aspect;
+ return {x:(rect.width-w)/2,y:(rect.height-h)/2,w,h};
+}
+function syncPlacementControls(){
+ const pairs=[['cfCapSize',Math.round(placement.size*100)],['cfCapPosX',Math.round(placement.x*100)],['cfCapPosY',Math.round(placement.y*100)]];
+ pairs.forEach(([id,n])=>{if($(id))$(id).value=String(n);const value=$(id+'Value');if(value)value.textContent=n+'%'});
+}
 function livePreview(){
- const canvas=$('cfCapLive');if(!canvas||!video)return;
+ const canvas=$('cfCapLive'),box=videoBox();
+ if(!canvas||!box)return;
  const rect=video.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
- if(!rect.width||!rect.height)return;
- canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);
- const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+ canvas.width=Math.max(1,Math.round(rect.width*dpr));
+ canvas.height=Math.max(1,Math.round(rect.height*dpr));
+ const ctx=canvas.getContext('2d');if(!ctx)return;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ ctx.save();ctx.translate(box.x,box.y);
+ ctx.beginPath();ctx.rect(0,0,box.w,box.h);ctx.clip();
  const active=cues.find(q=>video.currentTime>=q.s&&video.currentTime<=q.e);
  const text=active?active.text:(SAMPLE[$('cfCapLang').value]||SAMPLE.english);
- draw(ctx,text,style,rect.width,rect.height,active?video.currentTime-active.s:1,active?Math.max(.2,active.e-active.s):2);
+ const actual=studioDraw(ctx,text,style,box.w,box.h,active?video.currentTime-active.s:1,
+  active?Math.max(.2,active.e-active.s):2,placement);
+ ctx.restore();
+ const handle=$('cfCapMoveHandle');
+ if(handle&&actual){
+  handle.style.left=(box.x+box.w*actual.x)+'px';
+  handle.style.top=(box.y+box.h*actual.y)+'px';
+  handle.style.width=Math.min(box.w*.94,Math.max(70,box.w*actual.widthRatio))+'px';
+  handle.style.height=Math.min(box.h*.68,Math.max(38,box.h*actual.heightRatio))+'px';
+  handle.setAttribute('aria-label','Drag captions: '+Math.round(actual.x*100)+'% across, '+Math.round(actual.y*100)+'% down. Arrow keys adjust position.');
+ }
+}
+function animatePreview(){
+ animationFrame=0;
+ if(!video||video.paused||video.ended)return;
+ livePreview();
+ animationFrame=requestAnimationFrame(animatePreview);
 }
 function init(){
  workspace();video=$('cfCapVideo');
