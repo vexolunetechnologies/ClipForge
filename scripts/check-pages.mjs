@@ -21,6 +21,7 @@ const files = [
   ["animator-idle.js", "public/assets/js/core/animator-idle.js"],
   ["caption-style-library.js", "public/assets/js/shared/caption-style-library.js"],
   ["captions-studio.js", "public/assets/js/tools/captions-studio.js"],
+  ["captions-studio-enhancements.js", "public/assets/js/tools/captions-studio-enhancements.js"],
   ["highlights-studio.js", "public/assets/js/tools/highlights-studio.js"],
   ["transcription-queue.js", "public/transcription-queue.js"],
   ["transcription-queue.js", "public/assets/js/shared/transcription-queue.js"],
@@ -128,6 +129,22 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261107-mobile-hero-padding-1"),
+assert.ok(rootHome.includes("/styles.css?v=20261110-captions-controls-1"),
   "Homepage should load the refreshed mobile hero CSS version");
+// Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
+const captionsPage=from("public/tools/captions/index.html");
+assert.match(captionsPage,/src="\/assets\/js\/tools\/captions-studio-enhancements\.js\?v=20261110"/);
+assert.match(captionsPage,/src="\/assets\/js\/tools\/captions-studio\.js\?v=20261110"/);
+assert.ok(captionsPage.indexOf("captions-studio-enhancements.js")<captionsPage.indexOf("captions-studio.js"),
+ "Caption template renderer must load before workspace setup");
+const captionScript=from("captions-studio.js"),captionExtras=from("captions-studio-enhancements.js");
+for(const control of ["cfCapMoveHandle","cfCapSize","cfCapPosX","cfCapPosY","cfCapResetPlace"]){
+ assert.ok(captionScript.includes(control),"Missing caption placement control: "+control);
+}
+assert.match(captionScript,/studioDraw\(ctx,activeCue\.text,style,width,height/, "MP4 export must render custom placement");
+assert.match(captionScript,/studioDraw\(ctx,text,style,box\.w,box\.h/, "Preview must use export renderer");
+assert.match(captionExtras,/motion-rise/);
+assert.match(captionExtras,/pro-lowerthird/);
+assert.ok(!from("caption-style-library.js").includes("motion-rise"),
+ "New templates must not change the shared Shorts style library");
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");
