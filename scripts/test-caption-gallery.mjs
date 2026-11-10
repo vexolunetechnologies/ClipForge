@@ -144,6 +144,78 @@ try{
  assert.ok(extra.clamped.x>0&&extra.clamped.y<1,"Captions must stay within safe video bounds");
  await gallery.locator('[data-cf-category="trending"]').click();
 
+ // Custom typography, motion and safe-area controls only exist in Captions Studio.
+ const advancedIds=["cfCapFont","cfCapColor","cfCapCustomColor","cfCapOutlineColor",
+  "cfCapOutline","cfCapShadow","cfCapBackground","cfCapTracking",
+  "cfCapEffect","cfCapDuration","cfCapSpeed","cfCapSafe","cfCapPlatform",
+  "cfCapUndo","cfCapRedo"];
+ for(const id of advancedIds)assert.equal(await page.locator("#"+id).count(),1,id+" must exist");
+ assert.equal(await page.locator("#cfCapUndo").isDisabled(),true);
+ await page.locator("#cfCapFont").selectOption("georgia");
+ assert.equal(await page.locator("#cfCapFont").inputValue(),"georgia");
+ assert.equal(await page.locator("#cfCapUndo").isEnabled(),true);
+ await page.locator("#cfCapUndo").click();
+ assert.equal(await page.locator("#cfCapFont").inputValue(),"auto");
+ assert.equal(await page.locator("#cfCapRedo").isEnabled(),true);
+ await page.locator("#cfCapRedo").click();
+ assert.equal(await page.locator("#cfCapFont").inputValue(),"georgia");
+ // Reset styling preserves the existing template and keeps safe-guide settings separate.
+ await page.locator("#cfCapResetLook").click();
+ assert.equal(await page.locator("#cfCapFont").inputValue(),"auto");
+ await page.locator('#cfCaptionsWorkspace .cf-cap-feature summary').nth(1).click();
+ await page.locator("#cfCapEffect").selectOption("fade");
+ await page.locator("#cfCapDuration").evaluate(el=>{
+  el.value="1.2";el.dispatchEvent(new Event("input",{bubbles:true}));el.dispatchEvent(new Event("change",{bubbles:true}));
+ });
+ assert.equal(await page.locator("#cfCapDurationValue").innerText(),"1.2s");
+ await page.locator('#cfCaptionsWorkspace .cf-cap-feature summary').nth(2).click();
+ await page.locator("#cfCapSafe").check();
+ assert.equal(await page.locator("#cfCapSafe").isChecked(),true);
+ await page.locator("#cfCapPlatform").selectOption("tiktok");
+ assert.equal(await page.locator("#cfCapPlatform").inputValue(),"tiktok");
+ const optionsDraw=await page.evaluate(()=>{
+  const api=window.ClipForgeStudioCaptions;
+  const render=(key,text,look,position)=>{
+   const c=document.createElement("canvas");c.width=360;c.height=220;
+   api.draw(c.getContext("2d"),text,key,360,220,.08,2,
+    position||{x:.5,y:.77,size:1},look);
+   const pixels=c.getContext("2d").getImageData(0,0,360,220).data;
+   let hash=2166136261,alpha=0;
+   for(let i=0;i<pixels.length;i+=24){
+    if(pixels[i+3])alpha++;
+    for(let j=0;j<4;j++)hash=Math.imul(hash^pixels[i+j],16777619)>>>0;
+   }
+   return {hash,alpha};
+  };
+  const neutral=api.defaultLook();
+  return {
+   unchanged:render("drama-white","KEEP ORIGINAL",neutral),
+   color:render("drama-white","KEEP ORIGINAL",{...neutral,customColor:true,color:"#ff4400"}),
+   font:render("drama-white","KEEP ORIGINAL",{...neutral,font:"georgia"}),
+   outline:render("drama-white","KEEP ORIGINAL",{...neutral,outline:8,outlineColor:"#00ffcc"}),
+   shadow:render("drama-white","KEEP ORIGINAL",{...neutral,shadow:20}),
+   background:render("drama-white","KEEP ORIGINAL",{...neutral,background:60}),
+   tracking:render("drama-white","KEEP ORIGINAL",{...neutral,tracking:3}),
+   fadeStart:render("drama-white","KEEP ORIGINAL",{...neutral,effect:"fade",duration:1}),
+   fadeDone:render("drama-white","KEEP ORIGINAL",{...neutral,effect:"fade",duration:.2}),
+   typeReveal:render("motion-rise","THIS CHANGES EVERYTHING",{...neutral,effect:"typewriter",duration:1}),
+   guide:api.guideBox(360,220,"tiktok"),
+   urdu:render("urdu-cinema","یہ کہانی بدل گئی",{...neutral,font:"nastaliq",customColor:true,color:"#f2d860"}),
+   hindi:render("drama-white","ये कहानी बदल गई",{...neutral,font:"devanagari",outline:4})
+  };
+ });
+ for(const name of ["color","font","outline","shadow","background","tracking"]){
+  assert.notEqual(optionsDraw[name].hash,optionsDraw.unchanged.hash,
+   name+" should change real caption pixels");
+ }
+ assert.ok(optionsDraw.color.alpha>50&&optionsDraw.urdu.alpha>10&&optionsDraw.hindi.alpha>10,
+  "Custom styling must paint multilingual captions");
+ assert.notEqual(optionsDraw.fadeStart.hash,optionsDraw.fadeDone.hash,
+  "Animation duration should change an effect's entrance");
+ assert.ok(optionsDraw.typeReveal.alpha>0,"Typewriter should reveal without truncating complex script characters");
+ assert.ok(optionsDraw.guide.width<330&&optionsDraw.guide.height<200,
+  "Safe-area guide must leave room for social platform controls");
+ // Existing Shorts remains unchanged: 55 shared styles and no Captions-only panel in Shorts workspace.
  // All 14 modern styles must actually draw different pixels via the shared
  // caption renderer used by exported videos. Verify multilingual text paths.
  const rendered=await page.evaluate(()=>{
