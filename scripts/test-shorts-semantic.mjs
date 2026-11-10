@@ -99,8 +99,37 @@ function validateRanges(clips, min=36,max=56,duration=215){
  assert.match(t.calls.modelOptions.messages[0].content,/8 to 110 seconds/);
 }
 {
- const {status,data}=await setup('{"clips":[]}').request({autoDuration:true});
+ const {status,data}=await setup('{"clips":[]}').request({autoDuration:true,targetLength:null});
  assert.equal(status,200);assert.equal(data.selectionMode,"transcript-fallback");
  validateRanges(data.clips,8,110);
+}
+// Auto fallback should choose the complete natural durations of distinct scenes,
+// not cluster around a client placeholder (previously 45 seconds).
+{
+ const dialogue=(start,end,step)=>Array.from({length:Math.floor((end-start)/step)},(_,i)=>({
+  start:Number((start+i*step).toFixed(2)),
+  end:Number((start+(i+1)*step).toFixed(2)),
+  text:"Complete dialogue sentence "+i+"۔"
+ }));
+ const scenes=[...dialogue(0,18,2),...dialogue(30,60,2.5),...dialogue(70,140,2)];
+ const t=setup('{"clips":[]}');
+ const {status,data}=await t.request({duration:155,segments:scenes,autoDuration:true,targetLength:null,count:3});
+ assert.equal(status,200);
+ assert.equal(data.selectionMode,"transcript-fallback");
+ assert.ok(data.clips.every(x=>x.score===null),"Auto fallback must not invent AI rankings");
+ assert.deepEqual(data.clips.map(x=>Math.round(x.end-x.start)).sort((a,b)=>a-b),[18,30,70],
+  "Auto must keep different scene lengths rather than target ~45 seconds");
+ assert.doesNotMatch(t.calls.modelOptions.messages[0].content,/35\\.0|45 seconds|fixed 45/i,
+  "Auto prompt must not show a fixed-length example or target");
+}
+// Auto should accept omitted targetLength entirely, while manual lengths stay validated.
+{
+ const t=setup('{"clips":[{"start":12,"end":30,"score":91}]}');
+ const {status,data}=await t.request({duration:80,autoDuration:true,targetLength:undefined});
+ assert.equal(status,200);
+ assert.equal(data.clips[0].end-data.clips[0].start,18);
+ assert.equal(t.calls.ai,1);
+ const invalid=await setup('{"clips":[]}').request({targetLength:null,autoDuration:false});
+ assert.equal(invalid.status,400,"Manual duration still requires a valid selected target");
 }
 console.log("ClipForge Shorts: flexible Auto, manual durations, transcript recovery, no fake scores, quota and failure handling passed.");
