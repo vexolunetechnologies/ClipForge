@@ -434,6 +434,9 @@ function watchEditorInput(el){
  const finish=()=>{const before=controlSnapshots.get(el);controlSnapshots.delete(el);recordEdit(before)};
  el.addEventListener("pointerdown",capture);
  el.addEventListener("focus",capture);
+ // Programmatic selects and keyboard edits also need a BEFORE snapshot.
+ el.addEventListener("input",capture,true);
+ el.addEventListener("change",capture,true);
  el.addEventListener("change",finish);
  el.addEventListener("blur",finish);
 }
