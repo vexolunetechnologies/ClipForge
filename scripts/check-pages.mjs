@@ -129,7 +129,7 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261110-captions-controls-1"),
+assert.ok(rootHome.includes("/styles.css?v=20261110-captions-clean-ui-2"),
   "Homepage should load the refreshed mobile hero CSS version");
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");
@@ -147,4 +147,11 @@ assert.match(captionExtras,/motion-rise/);
 assert.match(captionExtras,/pro-lowerthird/);
 assert.ok(!from("caption-style-library.js").includes("motion-rise"),
  "New templates must not change the shared Shorts style library");
+// Captions Studio clean presentation: preserve draggable overlay but no floating label.
+const studioCode=from("captions-studio.js");
+assert.doesNotMatch(studioCode, /<span>✥ Drag caption<\/span>/, "Floating drag label must not appear");
+assert.match(studioCode, /id="cfCapMoveHandle"/, "Dragging must remain available");
+assert.match(studioCode, /<option value="1080" selected>1080p/, "1080p must be the default export quality");
+assert.match(studioCode, /<option value="720">720p/, "720p alternative must stay available");
+assert.match(rootHome, /\/captions-studio\.js\?v=20261110-clean-ui-2/, "Load fresh caption UI script after change");
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");
