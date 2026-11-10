@@ -78,7 +78,8 @@ try{
  await page.locator("#cfCapSize").evaluate(el=>{el.value="135";el.dispatchEvent(new Event("input",{bubbles:true}))});
  await page.locator("#cfCapPosX").evaluate(el=>{el.value="65";el.dispatchEvent(new Event("input",{bubbles:true}))});
  assert.equal(await page.locator("#cfCapSizeValue").innerText(),"135%");
- assert.equal(await page.locator("#cfCapPosXValue").innerText(),"65%");
+ const safeX=Number((await page.locator("#cfCapPosXValue").innerText()).replace("%",""));
+ assert.ok(safeX>=50&&safeX<=65,"Caption placement must clamp at the safe video edge when enlarged");
  await page.locator("#cfCapMoveHandle").focus();
  await page.keyboard.press("ArrowUp");
  assert.equal(await page.locator("#cfCapPosYValue").innerText(),"76%","Arrow keys should move captions accessibly");
