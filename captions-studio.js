@@ -418,9 +418,50 @@ function animatePreview(){
 }
 function init(){
  workspace();video=$('cfCapVideo');
+ syncPlacementControls();
  if(document.fonts){Promise.all([document.fonts.load('700 48px "Noto Nastaliq Urdu"','اردو کیپشن'),document.fonts.load('700 48px "Noto Sans Devanagari"','हिन्दी')]).then(()=>{if(activeRoute()==='captions')refresh(true);if(['shorts','trailer'].includes(activeRoute())&&$('cfShortTemplateGrid')?.children.length)shortGrid(true)}).catch(()=>{})}
- $('cfCapFile').onchange=e=>{file=e.target.files[0]||null;stop=false;cues=[];sourceCues=[];$('cfCapText').value='';$('cfCapOutput').innerHTML='';if(video.src)URL.revokeObjectURL(video.src);if(file){video.src=URL.createObjectURL(file);video.load();status(file.name+' selected.');livePreview()}else{video.removeAttribute('src');status('Choose a video to begin.')}enabled()};
- $('cfCapTranscribe').onclick=transcribe;$('cfCapLang').onchange=()=>{refresh();livePreview()};$('cfCapDensity').onchange=()=>{if(!sourceCues.length)return;cues=segmentTranscript(sourceCues);renderCaptionLines();status('Caption length updated · '+cues.length+' captions.');livePreview()};video.addEventListener('timeupdate',livePreview);video.addEventListener('loadedmetadata',livePreview);video.addEventListener('seeked',livePreview);window.addEventListener('resize',livePreview);
+ $('cfCapFile').onchange=e=>{file=e.target.files[0]||null;stop=false;cues=[];sourceCues=[];placement=STUDIO.defaultPlacement();syncPlacementControls();$('cfCapText').value='';$('cfCapOutput').innerHTML='';if(video.src)URL.revokeObjectURL(video.src);if(file){video.src=URL.createObjectURL(file);video.load();status(file.name+' selected.');livePreview()}else{video.removeAttribute('src');status('Choose a video to begin.')}enabled()};
+ $('cfCapTranscribe').onclick=transcribe;$('cfCapLang').onchange=()=>{refresh();livePreview()};$('cfCapDensity').onchange=()=>{if(!sourceCues.length)return;cues=segmentTranscript(sourceCues);renderCaptionLines();status('Caption length updated · '+cues.length+' captions.');livePreview()};video.addEventListener('timeupdate',livePreview);
+ video.addEventListener('loadedmetadata',livePreview);
+ video.addEventListener('seeked',livePreview);
+ video.addEventListener('play',()=>{if(!animationFrame)animationFrame=requestAnimationFrame(animatePreview)});
+ video.addEventListener('pause',()=>{if(animationFrame)cancelAnimationFrame(animationFrame);animationFrame=0;livePreview()});
+ video.addEventListener('ended',()=>{if(animationFrame)cancelAnimationFrame(animationFrame);animationFrame=0;livePreview()});
+ window.addEventListener('resize',livePreview);
+ const controlSize=$('cfCapSize'),controlX=$('cfCapPosX'),controlY=$('cfCapPosY');
+ controlSize.oninput=()=>{placement.size=Number(controlSize.value)/100;syncPlacementControls();livePreview()};
+ controlX.oninput=()=>{placement.x=Number(controlX.value)/100;syncPlacementControls();livePreview()};
+ controlY.oninput=()=>{placement.y=Number(controlY.value)/100;syncPlacementControls();livePreview()};
+ $('cfCapResetPlace').onclick=()=>{placement=STUDIO.defaultPlacement();syncPlacementControls();livePreview()};
+ const moveHandle=$('cfCapMoveHandle');let drag=null;
+ moveHandle.addEventListener('pointerdown',e=>{
+  if(busy||!videoBox())return;
+  e.preventDefault();moveHandle.setPointerCapture(e.pointerId);
+  drag={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,x:placement.x,y:placement.y};
+  moveHandle.classList.add('is-dragging');
+ });
+ moveHandle.addEventListener('pointermove',e=>{
+  if(!drag||drag.id!==e.pointerId)return;
+  const box=videoBox();if(!box)return;
+  placement.x=Math.max(0,Math.min(1,drag.x+(e.clientX-drag.clientX)/box.w));
+  placement.y=Math.max(0,Math.min(1,drag.y+(e.clientY-drag.clientY)/box.h));
+  syncPlacementControls();livePreview();
+ });
+ const endDrag=e=>{if(drag&&drag.id===e.pointerId){drag=null;moveHandle.classList.remove('is-dragging');if(moveHandle.hasPointerCapture(e.pointerId))moveHandle.releasePointerCapture(e.pointerId)}};
+ moveHandle.addEventListener('pointerup',endDrag);
+ moveHandle.addEventListener('pointercancel',endDrag);
+ moveHandle.addEventListener('keydown',e=>{
+  if(busy)return;
+  const step=e.shiftKey?.05:.015;
+  if(e.key==='ArrowLeft')placement.x-=step;
+  else if(e.key==='ArrowRight')placement.x+=step;
+  else if(e.key==='ArrowUp')placement.y-=step;
+  else if(e.key==='ArrowDown')placement.y+=step;
+  else return;
+  e.preventDefault();
+  placement=STUDIO.normalisePlacement(placement);
+  syncPlacementControls();livePreview();
+ });
  $('cfCapText').oninput=sync;$('cfCapSrt').onclick=()=>subs(false);$('cfCapVtt').onclick=()=>subs(true);$('cfCapExport').onclick=exportVideo;$('cfCapStop').onclick=()=>{stop=true;try{if(activeInput&&!activeInput.disposed)activeInput.dispose()}catch(e){}try{if(activeOutput&&activeOutput.state!=='finalized'&&activeOutput.state!=='canceled')activeOutput.cancel().catch(()=>{})}catch(e){}};
  function refresh(force=false){grid($('cfCapTemplateGrid'),$('cfCapLang').value,style,k=>{style=k;refresh();livePreview()},force)}
  function activeRoute(){return window.ClipForgeNavigation?.current?.()||'top'}
