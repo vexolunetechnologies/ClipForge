@@ -2,14 +2,25 @@
 (function(){
 'use strict';
 const ST=window.ClipForgeCaptionStyles.list;
+const STUDIO=window.ClipForgeStudioCaptions;
+const STUDIO_LIST=[...ST,...STUDIO.presets];
+const BROWSER_GROUPS=window.ClipForgeCaptionStyles.groups;
+const STUDIO_GROUPS=[...BROWSER_GROUPS.filter(g=>g.id!=="all"),
+ {id:"motion-fx",label:"Animated",ids:STUDIO.presets.filter(p=>p[0].startsWith("motion-")).map(p=>p[0])},
+ {id:"studio-pro",label:"Professional",ids:STUDIO.presets.filter(p=>p[0].startsWith("pro-")).map(p=>p[0])},
+ {id:"all",label:"All styles",ids:STUDIO_LIST.map(p=>p[0])}];
+const isStudioHost=host=>host?.id==="cfCapTemplateGrid";
+const catalogFor=host=>isStudioHost(host)?STUDIO_LIST:ST;
+const groupsFor=host=>isStudioHost(host)?STUDIO_GROUPS:BROWSER_GROUPS;
 const SAMPLE={english:'THIS CHANGES EVERYTHING',urdu:'یہ کہانی بدل گئی',hindi:'ये कहानी बदल गई'};
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let file=null,video=null,cues=[],sourceCues=[],style='creator-yellow',busy=false,stop=false,outUrl=null,activeOutput=null,activeInput=null;
+let placement=STUDIO.defaultPlacement(),animationFrame=0;
 function draw(ctx,text,key,w,h,t=0,d=2){window.ClipForgeCaptionStyles.draw(ctx,text,key,w,h,t,d)}
+function studioDraw(ctx,text,key,w,h,t=0,d=2,p=null){return STUDIO.draw(ctx,text,key,w,h,t,d,p)}
 /* Keep all 41 style buttons, but paint sample canvases only near the viewport. */
 const previewObservers=new WeakMap();
 
-const BROWSER_GROUPS=window.ClipForgeCaptionStyles.groups;
 function styleBrowser(host){
  if(host.parentElement?.classList.contains("cf-style-browser"))return;
  const wrapper=document.createElement("section");
@@ -22,7 +33,7 @@ function styleBrowser(host){
  categories.className="cf-style-categories";
  categories.setAttribute("role","group");
  categories.setAttribute("aria-label","Caption categories");
- BROWSER_GROUPS.forEach(group=>{
+ groupsFor(host).forEach(group=>{
   const button=document.createElement("button");button.type="button";
   button.className="cf-style-category";button.dataset.cfCategory=group.id;
   button.textContent=group.label;
@@ -60,7 +71,7 @@ function applyStyleFilter(host){
  const category=host.dataset.cfStyleCategory||"trending";
  const query=host.dataset.cfStyleSearch||"";
  const selected=host.dataset.cfSelectedStyle||"creator-yellow";
- const group=BROWSER_GROUPS.find(x=>x.id===category)||BROWSER_GROUPS[0];
+ const allGroups=groupsFor(host),group=allGroups.find(x=>x.id===category)||allGroups[0];
  let count=0;
  host.querySelectorAll(".cf-cap-template").forEach(button=>{
   const key=button.dataset.cfPreviewStyle;
@@ -72,16 +83,17 @@ function applyStyleFilter(host){
  wrapper.querySelectorAll(".cf-style-category").forEach(button=>{
   button.setAttribute("aria-pressed",String(button.dataset.cfCategory===category));
  });
- const chosen=ST.find(x=>x[0]===selected);
+ const chosen=catalogFor(host).find(x=>x[0]===selected);
  wrapper.querySelector(".cf-style-selected").textContent="Selected: "+(chosen?chosen[1]:selected);
- wrapper.querySelector(".cf-style-status").textContent=count+" of "+ST.length+" styles · Scroll to browse";
+ wrapper.querySelector(".cf-style-status").textContent=count+" of "+catalogFor(host).length+" styles · Scroll to browse";
 }
 
 function grid(host,lang,selected,pick,force=false){
  if(!host)return;
  styleBrowser(host);
+ const catalog=catalogFor(host);
  host.dataset.cfSelectedStyle=selected;
- if(!force&&host.dataset.cfPreviewLang===lang&&host.children.length===ST.length){
+ if(!force&&host.dataset.cfPreviewLang===lang&&host.children.length===catalog.length){
   Array.from(host.children).forEach(button=>{
    button.classList.toggle('is-selected',button.dataset.cfPreviewStyle===selected);
    button.setAttribute('aria-pressed',String(button.dataset.cfPreviewStyle===selected));
@@ -95,7 +107,8 @@ function grid(host,lang,selected,pick,force=false){
  const fragment=document.createDocumentFragment();
  const paint=canvas=>{
   if(canvas.dataset.cfPainted==='1')return;
-  draw(canvas.getContext('2d'),SAMPLE[lang]||SAMPLE.english,canvas.dataset.cfPreviewStyle,180,108);
+  if(isStudioHost(host))studioDraw(canvas.getContext('2d'),SAMPLE[lang]||SAMPLE.english,canvas.dataset.cfPreviewStyle,180,108,1,2);
+  else draw(canvas.getContext('2d'),SAMPLE[lang]||SAMPLE.english,canvas.dataset.cfPreviewStyle,180,108);
   canvas.dataset.cfPainted='1';
  };
  const observer=typeof IntersectionObserver==='function'
@@ -103,7 +116,7 @@ function grid(host,lang,selected,pick,force=false){
     entries.forEach(entry=>{if(entry.isIntersecting){paint(entry.target);observer.unobserve(entry.target)}});
    },{rootMargin:'96px 0px'}):null;
  if(observer)previewObservers.set(host,observer);
- ST.forEach(([key,label])=>{
+ catalog.forEach(([key,label])=>{
   const button=document.createElement('button');
   button.type='button';button.className='cf-cap-template'+(key===selected?' is-selected':'');
   button.dataset.cfPreviewStyle=key;
@@ -127,9 +140,9 @@ function ensureShortStyleButtons(){
  });
 }
 function shortGrid(force=false){const host=$('cfShortTemplateGrid');if(!host)return;const b=document.querySelector('#stylebox [data-k="cs"].on'),sel=b?b.dataset.v:'classic';grid(host,shortLang(),sel,k=>{const chip=document.querySelector('#stylebox [data-k="cs"][data-v="'+k+'"]');if(chip)chip.click();shortGrid()},force)}
-function workspace(){if($('cfCaptionsWorkspace'))return;const s=document.createElement('section');s.id='cfCaptionsWorkspace';s.className='cf-workspace';s.style.display='none';s.innerHTML='<a class="cf-back" href="#tools">← All creative tools</a><div class="cf-page-head"><div><div class="cf-kicker">CLIPFORGE / CAPTIONS</div><h2>Captions Studio</h2><p>Upload a full video, transcribe dialogue, choose a caption style and export.</p></div></div><div class="cf-cap-layout"><div class="cf-panel"><div class="cf-field"><label>UPLOAD FULL VIDEO</label><input id="cfCapFile" type="file" accept="video/*"></div><div class="cf-cap-video-wrap"><video id="cfCapVideo" class="cf-preview" controls playsinline></video><canvas id="cfCapLive" aria-hidden="true"></canvas></div><div class="cf-row cf-cap-controls"><label>Speech language</label><select id="cfCapLang"><option value="english">English</option><option value="urdu">Urdu</option><option value="hindi">Hindi</option></select></div><div class="cf-row cf-cap-controls"><label>Caption length</label><select id="cfCapDensity"><option value="3">Short · 2–3 words</option><option value="5" selected>Balanced · 4–5 words</option><option value="7">Long · 6–7 words</option></select></div><button class="main" id="cfCapTranscribe" disabled>Transcribe full video</button><p class="cf-muted" id="cfCapStatus">Choose a video to begin. Audio is sent in short chunks to Cloudflare Workers AI.</p><div class="cf-cap-progress"><i id="cfCapProgress"></i></div><div class="cf-field"><label>REVIEW / EDIT CAPTIONS · ONE CAPTION PER LINE</label><textarea id="cfCapText" rows="9" disabled placeholder="Transcribed captions appear here."></textarea></div><div class="cf-row"><button class="sm" id="cfCapSrt" disabled>Download SRT</button><button class="sm" id="cfCapVtt" disabled>Download VTT</button></div></div><div class="cf-panel"><div class="cf-kicker">CAPTION STYLE LIBRARY</div><p class="cf-muted">Choose a trending, dramatic or clean look. The preview uses the same renderer as the exported video. Word highlights are approximate unless transcription provides word-level timing.</p><div id="cfCapTemplateGrid" class="cf-cap-template-grid"></div><div class="cf-field"><label>EXPORT QUALITY</label><select id="cfCapQuality"><option value="720">720p · faster</option><option value="1080">1080p</option></select></div><button class="main" id="cfCapExport" disabled>Export captioned video</button><div id="cfCapOutput" class="cf-output"></div><button class="sm" id="cfCapStop" disabled>Stop export</button></div></div>';(document.querySelector('.wrap')||document.body).insertBefore(s,$('tool')||null)}
+function workspace(){if($('cfCaptionsWorkspace'))return;const s=document.createElement('section');s.id='cfCaptionsWorkspace';s.className='cf-workspace';s.style.display='none';s.innerHTML='<a class="cf-back" href="#tools">← All creative tools</a><div class="cf-page-head"><div><div class="cf-kicker">CLIPFORGE / CAPTIONS</div><h2>Captions Studio</h2><p>Upload a full video, transcribe dialogue, choose a caption style and export.</p></div></div><div class="cf-cap-layout"><div class="cf-panel"><div class="cf-field"><label>UPLOAD FULL VIDEO</label><input id="cfCapFile" type="file" accept="video/*"></div><div class="cf-cap-video-wrap"><video id="cfCapVideo" class="cf-preview" controls playsinline></video><canvas id="cfCapLive" aria-hidden="true"></canvas><div id="cfCapMoveHandle" class="cf-cap-move-handle" role="button" tabindex="0" aria-label="Drag to move captions. Arrow keys move the caption position."><span>✥ Drag caption</span></div></div><div class="cf-cap-placement" aria-label="Caption placement and text size"><div class="cf-cap-place-heading"><strong>Caption position &amp; size</strong><button class="sm" type="button" id="cfCapResetPlace">Reset</button></div><p class="cf-muted">Drag the caption directly on the video with your finger or mouse. Use sliders for precise adjustments. The exported MP4 keeps the same position and size.</p><div class="cf-cap-place-control"><label for="cfCapSize">Text size</label><output id="cfCapSizeValue" for="cfCapSize">100%</output><input type="range" id="cfCapSize" min="60" max="150" step="5" value="100"></div><div class="cf-cap-place-control"><label for="cfCapPosX">Horizontal</label><output id="cfCapPosXValue" for="cfCapPosX">50%</output><input type="range" id="cfCapPosX" min="0" max="100" step="1" value="50"></div><div class="cf-cap-place-control"><label for="cfCapPosY">Vertical</label><output id="cfCapPosYValue" for="cfCapPosY">77%</output><input type="range" id="cfCapPosY" min="0" max="100" step="1" value="77"></div></div><div class="cf-row cf-cap-controls"><label>Speech language</label><select id="cfCapLang"><option value="english">English</option><option value="urdu">Urdu</option><option value="hindi">Hindi</option></select></div><div class="cf-row cf-cap-controls"><label>Caption length</label><select id="cfCapDensity"><option value="3">Short · 2–3 words</option><option value="5" selected>Balanced · 4–5 words</option><option value="7">Long · 6–7 words</option></select></div><button class="main" id="cfCapTranscribe" disabled>Transcribe full video</button><p class="cf-muted" id="cfCapStatus">Choose a video to begin. Audio is sent in short chunks to Cloudflare Workers AI.</p><div class="cf-cap-progress"><i id="cfCapProgress"></i></div><div class="cf-field"><label>REVIEW / EDIT CAPTIONS · ONE CAPTION PER LINE</label><textarea id="cfCapText" rows="9" disabled placeholder="Transcribed captions appear here."></textarea></div><div class="cf-row"><button class="sm" id="cfCapSrt" disabled>Download SRT</button><button class="sm" id="cfCapVtt" disabled>Download VTT</button></div></div><div class="cf-panel"><div class="cf-kicker">CAPTION STYLE LIBRARY</div><p class="cf-muted">Choose from trending looks, animated reveals and professional broadcast templates. Preview and exported MP4 share the same rendering. Word highlights are approximate unless transcription provides word-level timing.</p><div id="cfCapTemplateGrid" class="cf-cap-template-grid"></div><div class="cf-field"><label>EXPORT QUALITY</label><select id="cfCapQuality"><option value="720">720p · faster</option><option value="1080">1080p</option></select></div><button class="main" id="cfCapExport" disabled>Export captioned video</button><div id="cfCapOutput" class="cf-output"></div><button class="sm" id="cfCapStop" disabled>Stop export</button></div></div>';(document.querySelector('.wrap')||document.body).insertBefore(s,$('tool')||null)}
 function status(t){$('cfCapStatus').textContent=t}
-function enabled(){const ready=!!cues.length;$('cfCapFile').disabled=busy;$('cfCapQuality').disabled=busy;$('cfCapLang').disabled=busy;$('cfCapDensity').disabled=busy;$('cfCapTranscribe').disabled=!file||busy;$('cfCapExport').disabled=!file||!ready||busy;$('cfCapText').disabled=!ready||busy;$('cfCapSrt').disabled=!ready||busy;$('cfCapVtt').disabled=!ready||busy;$('cfCapStop').disabled=!busy;const gridHost=$('cfCapTemplateGrid');if(gridHost)gridHost.querySelectorAll('button').forEach(b=>b.disabled=busy)}
+function enabled(){const ready=!!cues.length;$('cfCapFile').disabled=busy;$('cfCapQuality').disabled=busy;$('cfCapLang').disabled=busy;$('cfCapDensity').disabled=busy;$('cfCapTranscribe').disabled=!file||busy;$('cfCapExport').disabled=!file||!ready||busy;$('cfCapText').disabled=!ready||busy;$('cfCapSrt').disabled=!ready||busy;$('cfCapVtt').disabled=!ready||busy;$('cfCapStop').disabled=!busy;const gridHost=$('cfCapTemplateGrid');if(gridHost)gridHost.querySelectorAll('button').forEach(b=>b.disabled=busy);['cfCapSize','cfCapPosX','cfCapPosY','cfCapResetPlace'].forEach(id=>{if($(id))$(id).disabled=busy})}
 function wav(pcm){const b=new Uint8Array(44+pcm.length*2),v=new DataView(b.buffer),put=(o,s)=>{for(let i=0;i<s.length;i++)b[o+i]=s.charCodeAt(i)};put(0,'RIFF');v.setUint32(4,36+pcm.length*2,true);put(8,'WAVE');put(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);put(36,'data');v.setUint32(40,pcm.length*2,true);for(let i=0;i<pcm.length;i++){let x=Math.max(-1,Math.min(1,pcm[i]));v.setInt16(44+i*2,x<0?x*32768:x*32767,true)}let z='';for(let i=0;i<b.length;i+=32768)z+=String.fromCharCode.apply(null,b.subarray(i,Math.min(b.length,i+32768)));return btoa(z)}
 function mono(buf,start,end){const sr=buf.sampleRate,a=Array.from({length:buf.numberOfChannels},(_,i)=>buf.getChannelData(i)),from=Math.floor(start*sr),to=Math.min(buf.length,Math.ceil(end*sr)),step=sr/16000,n=Math.floor((to-from)/step),o=new Float32Array(n);for(let i=0;i<n;i++){let p=from+i*step,j=Math.floor(p),f=p-j,v=0;for(const ch of a)v+=(ch[j]||0)+((ch[Math.min(to-1,j+1)]||0)-(ch[j]||0))*f; o[i]=v/a.length}return o}
 function normalizeWords(words,segment){
@@ -205,7 +218,7 @@ function sync(){const lines=$('cfCapText').value.split(/\r?\n/).map(x=>x.trim())
 function stamp(t,dot){let n=Math.round(Math.max(0,t)*1000),h=Math.floor(n/3600000),m=Math.floor(n%3600000/60000),s=Math.floor(n%60000/1000),ms=n%1000;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+(dot?'.':',')+String(ms).padStart(3,'0')}
 function download(name,type,text){const u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1200)}
 function subs(vtt){sync();const text=vtt?'WEBVTT\n\n'+cues.map(q=>stamp(q.s,true)+' --> '+stamp(q.e,true)+'\n'+q.text).join('\n\n'):cues.map((q,i)=>(i+1)+'\n'+stamp(q.s,false)+' --> '+stamp(q.e,false)+'\n'+q.text).join('\n\n');download((file.name||'captions').replace(/\.[^.]+$/,'')+(vtt?'.vtt':'.srt'),vtt?'text/vtt':'application/x-subrip',text)}
-function paint(ctx,w,h){if(!video.videoWidth)return;let sc=Math.max(w/video.videoWidth,h/video.videoHeight),dw=video.videoWidth*sc,dh=video.videoHeight*sc;ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);ctx.drawImage(video,(w-dw)/2,(h-dh)/2,dw,dh);let q=cues.find(x=>video.currentTime>=x.s&&video.currentTime<=x.e);if(q)draw(ctx,q.text,style,w,h,video.currentTime-q.s,Math.max(.2,q.e-q.s))}
+function paint(ctx,w,h){if(!video.videoWidth)return;let sc=Math.max(w/video.videoWidth,h/video.videoHeight),dw=video.videoWidth*sc,dh=video.videoHeight*sc;ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);ctx.drawImage(video,(w-dw)/2,(h-dh)/2,dw,dh);let q=cues.find(x=>video.currentTime>=x.s&&video.currentTime<=x.e);if(q)studioDraw(ctx,q.text,style,w,h,video.currentTime-q.s,Math.max(.2,q.e-q.s),placement)}
 async function exportVideo(){
  sync();
  if(!file||!cues.length||busy)return;
@@ -292,7 +305,7 @@ async function exportVideo(){
     while(cueIndex<renderCues.length&&renderCues[cueIndex].e<relativeTime)cueIndex++;
     const activeCue=renderCues[cueIndex];
     if(activeCue&&relativeTime>=activeCue.s&&relativeTime<=activeCue.e){
-     draw(ctx,activeCue.text,style,width,height,relativeTime-activeCue.s,Math.max(.2,activeCue.e-activeCue.s));
+     studioDraw(ctx,activeCue.text,style,width,height,relativeTime-activeCue.s,Math.max(.2,activeCue.e-activeCue.s),placement);
     }
     const timestamp=Math.max(0,relativeTime),frameDuration=Math.max(.001,frame.duration||1/30);
     const renderedFrame=new mb.VideoSample(canvas,{timestamp,duration:frameDuration});
@@ -360,21 +373,102 @@ async function exportVideo(){
   activeInput=null;activeOutput=null;busy=false;enabled();
  }
 }
-function livePreview(){
- const canvas=$('cfCapLive');if(!canvas||!video)return;
- const rect=video.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
- if(!rect.width||!rect.height)return;
- canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);
- const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+function videoBox(){
+ if(!video)return null;
+ const rect=video.getBoundingClientRect();
+ if(!rect.width||!rect.height)return null;
+ const aspect=video.videoWidth>0&&video.videoHeight>0?video.videoWidth/video.videoHeight:rect.width/rect.height;
+ if(!aspect||!Number.isFinite(aspect))return null;
+ const w=Math.min(rect.width,rect.height*aspect),h=w/aspect;
+ return {x:(rect.width-w)/2,y:(rect.height-h)/2,w,h};
+}
+function constrainPlacement(){
+ const box=videoBox();if(!box)return;
  const active=cues.find(q=>video.currentTime>=q.s&&video.currentTime<=q.e);
  const text=active?active.text:(SAMPLE[$('cfCapLang').value]||SAMPLE.english);
- draw(ctx,text,style,rect.width,rect.height,active?video.currentTime-active.s:1,active?Math.max(.2,active.e-active.s):2);
+ const safe=STUDIO.safePlacement(placement,text,style,box.w,box.h);
+ placement.x=safe.x;placement.y=safe.y;
+}
+function syncPlacementControls(){
+ const pairs=[['cfCapSize',Math.round(placement.size*100)],['cfCapPosX',Math.round(placement.x*100)],['cfCapPosY',Math.round(placement.y*100)]];
+ pairs.forEach(([id,n])=>{if($(id))$(id).value=String(n);const value=$(id+'Value');if(value)value.textContent=n+'%'});
+}
+function livePreview(){
+ const canvas=$('cfCapLive'),box=videoBox();
+ if(!canvas||!box)return;
+ const rect=video.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
+ canvas.width=Math.max(1,Math.round(rect.width*dpr));
+ canvas.height=Math.max(1,Math.round(rect.height*dpr));
+ const ctx=canvas.getContext('2d');if(!ctx)return;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ ctx.save();ctx.translate(box.x,box.y);
+ ctx.beginPath();ctx.rect(0,0,box.w,box.h);ctx.clip();
+ const active=cues.find(q=>video.currentTime>=q.s&&video.currentTime<=q.e);
+ const text=active?active.text:(SAMPLE[$('cfCapLang').value]||SAMPLE.english);
+ const actual=studioDraw(ctx,text,style,box.w,box.h,active?video.currentTime-active.s:1,
+  active?Math.max(.2,active.e-active.s):2,placement);
+ ctx.restore();
+ const handle=$('cfCapMoveHandle');
+ if(handle&&actual){
+  handle.style.left=(box.x+box.w*actual.x)+'px';
+  handle.style.top=(box.y+box.h*actual.y)+'px';
+  handle.style.width=Math.min(box.w*.94,Math.max(70,box.w*actual.widthRatio))+'px';
+  handle.style.height=Math.min(box.h*.68,Math.max(38,box.h*actual.heightRatio))+'px';
+  handle.setAttribute('aria-label','Drag captions: '+Math.round(actual.x*100)+'% across, '+Math.round(actual.y*100)+'% down. Arrow keys adjust position.');
+ }
+}
+function animatePreview(){
+ animationFrame=0;
+ if(!video||video.paused||video.ended)return;
+ livePreview();
+ animationFrame=requestAnimationFrame(animatePreview);
 }
 function init(){
  workspace();video=$('cfCapVideo');
+ syncPlacementControls();
  if(document.fonts){Promise.all([document.fonts.load('700 48px "Noto Nastaliq Urdu"','اردو کیپشن'),document.fonts.load('700 48px "Noto Sans Devanagari"','हिन्दी')]).then(()=>{if(activeRoute()==='captions')refresh(true);if(['shorts','trailer'].includes(activeRoute())&&$('cfShortTemplateGrid')?.children.length)shortGrid(true)}).catch(()=>{})}
- $('cfCapFile').onchange=e=>{file=e.target.files[0]||null;stop=false;cues=[];sourceCues=[];$('cfCapText').value='';$('cfCapOutput').innerHTML='';if(video.src)URL.revokeObjectURL(video.src);if(file){video.src=URL.createObjectURL(file);video.load();status(file.name+' selected.');livePreview()}else{video.removeAttribute('src');status('Choose a video to begin.')}enabled()};
- $('cfCapTranscribe').onclick=transcribe;$('cfCapLang').onchange=()=>{refresh();livePreview()};$('cfCapDensity').onchange=()=>{if(!sourceCues.length)return;cues=segmentTranscript(sourceCues);renderCaptionLines();status('Caption length updated · '+cues.length+' captions.');livePreview()};video.addEventListener('timeupdate',livePreview);video.addEventListener('loadedmetadata',livePreview);video.addEventListener('seeked',livePreview);window.addEventListener('resize',livePreview);
+ $('cfCapFile').onchange=e=>{file=e.target.files[0]||null;stop=false;cues=[];sourceCues=[];placement=STUDIO.defaultPlacement();syncPlacementControls();$('cfCapText').value='';$('cfCapOutput').innerHTML='';if(video.src)URL.revokeObjectURL(video.src);if(file){video.src=URL.createObjectURL(file);video.load();status(file.name+' selected.');livePreview()}else{video.removeAttribute('src');status('Choose a video to begin.')}enabled()};
+ $('cfCapTranscribe').onclick=transcribe;$('cfCapLang').onchange=()=>{refresh();livePreview()};$('cfCapDensity').onchange=()=>{if(!sourceCues.length)return;cues=segmentTranscript(sourceCues);renderCaptionLines();status('Caption length updated · '+cues.length+' captions.');livePreview()};video.addEventListener('timeupdate',livePreview);
+ video.addEventListener('loadedmetadata',livePreview);
+ video.addEventListener('seeked',livePreview);
+ video.addEventListener('play',()=>{if(!animationFrame)animationFrame=requestAnimationFrame(animatePreview)});
+ video.addEventListener('pause',()=>{if(animationFrame)cancelAnimationFrame(animationFrame);animationFrame=0;livePreview()});
+ video.addEventListener('ended',()=>{if(animationFrame)cancelAnimationFrame(animationFrame);animationFrame=0;livePreview()});
+ window.addEventListener('resize',livePreview);
+ const controlSize=$('cfCapSize'),controlX=$('cfCapPosX'),controlY=$('cfCapPosY');
+ controlSize.oninput=()=>{placement.size=Number(controlSize.value)/100;constrainPlacement();syncPlacementControls();livePreview()};
+ controlX.oninput=()=>{placement.x=Number(controlX.value)/100;constrainPlacement();syncPlacementControls();livePreview()};
+ controlY.oninput=()=>{placement.y=Number(controlY.value)/100;constrainPlacement();syncPlacementControls();livePreview()};
+ $('cfCapResetPlace').onclick=()=>{placement=STUDIO.defaultPlacement();syncPlacementControls();livePreview()};
+ const moveHandle=$('cfCapMoveHandle');let drag=null;
+ moveHandle.addEventListener('pointerdown',e=>{
+  if(busy||!videoBox())return;
+  e.preventDefault();moveHandle.setPointerCapture(e.pointerId);
+  drag={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,x:placement.x,y:placement.y};
+  moveHandle.classList.add('is-dragging');
+ });
+ moveHandle.addEventListener('pointermove',e=>{
+  if(!drag||drag.id!==e.pointerId)return;
+  const box=videoBox();if(!box)return;
+  placement.x=Math.max(0,Math.min(1,drag.x+(e.clientX-drag.clientX)/box.w));
+  placement.y=Math.max(0,Math.min(1,drag.y+(e.clientY-drag.clientY)/box.h));
+  constrainPlacement();syncPlacementControls();livePreview();
+ });
+ const endDrag=e=>{if(drag&&drag.id===e.pointerId){drag=null;moveHandle.classList.remove('is-dragging');if(moveHandle.hasPointerCapture(e.pointerId))moveHandle.releasePointerCapture(e.pointerId)}};
+ moveHandle.addEventListener('pointerup',endDrag);
+ moveHandle.addEventListener('pointercancel',endDrag);
+ moveHandle.addEventListener('keydown',e=>{
+  if(busy)return;
+  const step=e.shiftKey?.05:.015;
+  if(e.key==='ArrowLeft')placement.x-=step;
+  else if(e.key==='ArrowRight')placement.x+=step;
+  else if(e.key==='ArrowUp')placement.y-=step;
+  else if(e.key==='ArrowDown')placement.y+=step;
+  else return;
+  e.preventDefault();
+  placement=STUDIO.normalisePlacement(placement);
+  constrainPlacement();syncPlacementControls();livePreview();
+ });
  $('cfCapText').oninput=sync;$('cfCapSrt').onclick=()=>subs(false);$('cfCapVtt').onclick=()=>subs(true);$('cfCapExport').onclick=exportVideo;$('cfCapStop').onclick=()=>{stop=true;try{if(activeInput&&!activeInput.disposed)activeInput.dispose()}catch(e){}try{if(activeOutput&&activeOutput.state!=='finalized'&&activeOutput.state!=='canceled')activeOutput.cancel().catch(()=>{})}catch(e){}};
  function refresh(force=false){grid($('cfCapTemplateGrid'),$('cfCapLang').value,style,k=>{style=k;refresh();livePreview()},force)}
  function activeRoute(){return window.ClipForgeNavigation?.current?.()||'top'}

@@ -38,6 +38,7 @@ jobs:
           node --check public/assets/js/core/editor-loader.js
           node --check public/assets/js/core/animator-idle.js
           node --check public/assets/js/tools/captions-studio.js
+          node --check public/assets/js/tools/captions-studio-enhancements.js
           node --check public/assets/js/tools/highlights-studio.js
           node --check public/assets/js/shared/transcription-queue.js
           node --check transcription-queue.js

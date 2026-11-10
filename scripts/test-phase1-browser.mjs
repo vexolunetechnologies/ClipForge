@@ -14,7 +14,7 @@ try {
       !!document.getElementById("cfCaptionsWorkspace"));
   await page.waitForTimeout(100);
 
-  // Home does not eagerly construct either set of 41 sample cards.
+  // Home does not eagerly construct either style gallery, including the new Captions-only templates.
   assert.equal(await page.locator("#cfCapTemplateGrid button").count(),0,"Captions gallery constructed before opening Captions");
   assert.equal(await page.locator("#cfShortTemplateGrid button").count(),0,"Shorts sample gallery constructed before opening Shorts");
   assert.equal(await page.evaluate(()=>performance.getEntriesByType("resource")
@@ -23,9 +23,9 @@ try {
 
   await page.locator('[data-tool-route="captions"]').click();
   await page.waitForFunction(()=>location.pathname==="/tools/captions/" &&
-    document.body.dataset.tool==="captions" && document.querySelectorAll("#cfCapTemplateGrid button").length===window.ClipForgeCaptionStyles.list.length);
-  const styleCount=await page.evaluate(()=>window.ClipForgeCaptionStyles.list.length);
-  assert.ok(styleCount>=55,"Modern captions should be included without removing the original 41");
+    document.body.dataset.tool==="captions" && document.querySelectorAll("#cfCapTemplateGrid button").length===(window.ClipForgeCaptionStyles.list.length+window.ClipForgeStudioCaptions.presets.length));
+  const styleCount=await page.evaluate(()=>window.ClipForgeCaptionStyles.list.length+window.ClipForgeStudioCaptions.presets.length);
+  assert.equal(styleCount,63,"Captions Studio must show 55 existing and 8 new templates");
   assert.equal(await page.locator("#cfCapTemplateGrid canvas").count(),styleCount);
   const canvases=page.locator("#cfCapTemplateGrid canvas");
   await canvases.first().scrollIntoViewIfNeeded();

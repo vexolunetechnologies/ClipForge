@@ -12,7 +12,7 @@ try{
  page.on("pageerror",error=>errors.push(error.message));
  await page.goto(site.origin+"/tools/captions/",{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>window.ClipForgeCaptionStyles?.list?.length===55 &&
-  document.querySelectorAll("#cfCapTemplateGrid button").length===55);
+  document.querySelectorAll("#cfCapTemplateGrid button").length===63);
  const lib=await page.evaluate(()=>({
   count:window.ClipForgeCaptionStyles.list.length,
   modern:window.ClipForgeCaptionStyles.modernPresets.length,
@@ -56,13 +56,82 @@ try{
  assert.ok(neonCount>=2&&neonCount<10,"Search must find new and existing glow styles");
  await gallery.locator(".cf-style-search").fill("");
  await gallery.locator('[data-cf-category="all"]').click();
- assert.equal(await grid.locator('button:visible').count(),55,"All must show 55 unique choices");
- assert.equal(await grid.locator('button[data-cf-preview-style]').count(),55,"Exactly one button per style ID");
+ assert.equal(await grid.locator('button:visible').count(),63,"All must show 63 unique choices in Captions Studio");
+ assert.equal(await grid.locator('button[data-cf-preview-style]').count(),63,"Exactly one button per caption studio style ID");
  await gallery.locator('[data-cf-category="trending"]').click();
  await grid.locator('button[data-cf-preview-style="marker-sweep"]').click();
  assert.equal(await gallery.locator(".cf-style-selected").innerText(),"Selected: Marker Highlight");
  assert.equal(await grid.locator("button.is-selected").count(),1);
  assert.equal(await grid.locator('button[data-cf-preview-style="marker-sweep"]').getAttribute("aria-pressed"),"true");
+
+ // Captions Studio adds 8 separate templates, without altering Shorts' original 55.
+ await gallery.locator('[data-cf-category="motion-fx"]').click();
+ assert.equal(await grid.locator('button:visible').count(),4);
+ await gallery.locator('[data-cf-category="studio-pro"]').click();
+ assert.equal(await grid.locator('button:visible').count(),4);
+ await grid.locator('button[data-cf-preview-style="pro-lowerthird"]').click();
+ assert.match(await gallery.locator(".cf-style-selected").innerText(),/Broadcast Lower Third/);
+ await gallery.locator('[data-cf-category="motion-fx"]').click();
+ await grid.locator('button[data-cf-preview-style="motion-rise"]').click();
+ assert.equal(await page.locator("#cfCapSize").count(),1);
+ assert.equal(await page.locator("#cfCapMoveHandle").count(),1);
+ await page.locator("#cfCapSize").evaluate(el=>{el.value="135";el.dispatchEvent(new Event("input",{bubbles:true}))});
+ await page.locator("#cfCapPosX").evaluate(el=>{el.value="65";el.dispatchEvent(new Event("input",{bubbles:true}))});
+ assert.equal(await page.locator("#cfCapSizeValue").innerText(),"135%");
+ const safeX=Number((await page.locator("#cfCapPosXValue").innerText()).replace("%",""));
+ assert.ok(safeX>=50&&safeX<=65,"Caption placement must clamp at the safe video edge when enlarged");
+ await page.locator("#cfCapMoveHandle").focus();
+ await page.keyboard.press("ArrowUp");
+ assert.equal(await page.locator("#cfCapPosYValue").innerText(),"76%","Arrow keys should move captions accessibly");
+ await page.locator("#cfCapResetPlace").click();
+ assert.equal(await page.locator("#cfCapSizeValue").innerText(),"100%");
+ assert.equal(await page.locator("#cfCapPosXValue").innerText(),"50%");
+ const legacyDefault=await page.evaluate(()=>{
+  const shared=window.ClipForgeCaptionStyles,custom=window.ClipForgeStudioCaptions;
+  const a=document.createElement("canvas"),b=document.createElement("canvas");
+  a.width=b.width=360;a.height=b.height=220;
+  shared.draw(a.getContext("2d"),"KEEP EXISTING STYLE","creator-yellow",360,220,1,2);
+  custom.draw(b.getContext("2d"),"KEEP EXISTING STYLE","creator-yellow",360,220,1,2,custom.defaultPlacement());
+  const one=a.getContext("2d").getImageData(0,0,360,220).data;
+  const two=b.getContext("2d").getImageData(0,0,360,220).data;
+  return one.every((value,i)=>value===two[i]);
+ });
+ assert.ok(legacyDefault,"Default settings must preserve the exact original caption rendering");
+ const extra=await page.evaluate(()=>{
+  const api=window.ClipForgeStudioCaptions;
+  const samples={};
+  function pixels(key,text,t,placement){
+   const canvas=document.createElement("canvas");canvas.width=360;canvas.height=220;
+   api.draw(canvas.getContext("2d"),text,key,360,220,t,2,placement);
+   const data=canvas.getContext("2d").getImageData(0,0,360,220).data;
+   let hash=2166136261,alpha=0;
+   for(let i=0;i<data.length;i+=32){
+    if(data[i+3]>0)alpha++;
+    for(let j=0;j<4;j++)hash=Math.imul(hash^data[i+j],16777619)>>>0;
+   }
+   return {hash,alpha};
+  }
+  for(const [key] of api.presets)samples[key]=pixels(key,"STORY FIRST",.75,null);
+  const moving={
+   center:pixels("motion-rise","STORY FIRST",1,{x:.5,y:.65,size:1}),
+   shifted:pixels("motion-rise","STORY FIRST",1,{x:.61,y:.42,size:1.25})
+  };
+  return {count:api.presets.length,unique:new Set(Object.values(samples).map(v=>v.hash)).size,
+   allVisible:Object.values(samples).every(v=>v.alpha>10),
+   motionA:pixels("motion-slide","STORY FIRST",.08,null),
+   motionB:pixels("motion-slide","STORY FIRST",.75,null),
+   urdu:pixels("pro-documentary","یہ کہانی بدل گئی",1,null),
+   hindi:pixels("motion-rise","ये कहानी बदल गई",1,null),
+   moving,clamped:api.safePlacement({x:0,y:1,size:1.5},"LONG CAPTIONS SHOULD STAY VISIBLE","pro-lowerthird",720,1280)};
+ });
+ assert.equal(extra.count,8);
+ assert.ok(extra.unique>=7,"New templates must be visually distinct");
+ assert.ok(extra.allVisible,"Every template needs visible output");
+ assert.notEqual(extra.motionA.hash,extra.motionB.hash,"Animated templates should change over time");
+ assert.notEqual(extra.moving.center.hash,extra.moving.shifted.hash,"Move and resize must change rendered pixels");
+ assert.ok(extra.urdu.alpha>10&&extra.hindi.alpha>10,"Multilingual custom caption templates must render");
+ assert.ok(extra.clamped.x>0&&extra.clamped.y<1,"Captions must stay within safe video bounds");
+ await gallery.locator('[data-cf-category="trending"]').click();
 
  // All 14 modern styles must actually draw different pixels via the shared
  // caption renderer used by exported videos. Verify multilingual text paths.
@@ -129,7 +198,7 @@ try{
  assert.equal(mobile.columns,2);
  assert.ok(mobile.height<=310 && mobile.scroll>mobile.height);
  assert.deepEqual(errors,[],"No uncaught browser errors");
- console.log("ClipForge captions: 14 modern+41 legacy presets, scroll gallery, categories, search, matching preview/export renderer, Urdu/Hindi, Shorts and mobile layout passed.");
+ console.log("ClipForge captions: 55 shared styles plus 8 studio-only motion/pro templates, movable/resizable captions, export renderer, Urdu/Hindi, Shorts and mobile layout passed.");
 }finally{
  if(browser)await browser.close();
  await site.close();
