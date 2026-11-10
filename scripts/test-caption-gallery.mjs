@@ -75,6 +75,17 @@ try{
  await grid.locator('button[data-cf-preview-style="motion-rise"]').click();
  assert.equal(await page.locator("#cfCapSize").count(),1);
  assert.equal(await page.locator("#cfCapMoveHandle").count(),1);
+ assert.equal(await page.locator("#cfCapMoveHandle span").count(),0,
+  "Caption drag overlay must not show the small Drag caption label");
+ assert.equal(await page.locator("#cfCapQuality").inputValue(),"1080",
+  "Captions Studio should default export to 1080p");
+ assert.equal(await page.locator('#cfCapQuality option[value="720"]').count(),1,
+  "720p must remain an available export option");
+ await page.locator("#cfCapQuality").selectOption("720");
+ assert.equal(await page.locator("#cfCapQuality").inputValue(),"720",
+  "User must still be able to select 720p manually");
+ await page.locator("#cfCapQuality").selectOption("1080");
+
  await page.locator("#cfCapSize").evaluate(el=>{el.value="135";el.dispatchEvent(new Event("input",{bubbles:true}))});
  await page.locator("#cfCapPosX").evaluate(el=>{el.value="65";el.dispatchEvent(new Event("input",{bubbles:true}))});
  assert.equal(await page.locator("#cfCapSizeValue").innerText(),"135%");
