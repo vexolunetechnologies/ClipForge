@@ -382,6 +382,13 @@ function videoBox(){
  const w=Math.min(rect.width,rect.height*aspect),h=w/aspect;
  return {x:(rect.width-w)/2,y:(rect.height-h)/2,w,h};
 }
+function constrainPlacement(){
+ const box=videoBox();if(!box)return;
+ const active=cues.find(q=>video.currentTime>=q.s&&video.currentTime<=q.e);
+ const text=active?active.text:(SAMPLE[$('cfCapLang').value]||SAMPLE.english);
+ const safe=STUDIO.safePlacement(placement,text,style,box.w,box.h);
+ placement.x=safe.x;placement.y=safe.y;
+}
 function syncPlacementControls(){
  const pairs=[['cfCapSize',Math.round(placement.size*100)],['cfCapPosX',Math.round(placement.x*100)],['cfCapPosY',Math.round(placement.y*100)]];
  pairs.forEach(([id,n])=>{if($(id))$(id).value=String(n);const value=$(id+'Value');if(value)value.textContent=n+'%'});
@@ -429,9 +436,9 @@ function init(){
  video.addEventListener('ended',()=>{if(animationFrame)cancelAnimationFrame(animationFrame);animationFrame=0;livePreview()});
  window.addEventListener('resize',livePreview);
  const controlSize=$('cfCapSize'),controlX=$('cfCapPosX'),controlY=$('cfCapPosY');
- controlSize.oninput=()=>{placement.size=Number(controlSize.value)/100;syncPlacementControls();livePreview()};
- controlX.oninput=()=>{placement.x=Number(controlX.value)/100;syncPlacementControls();livePreview()};
- controlY.oninput=()=>{placement.y=Number(controlY.value)/100;syncPlacementControls();livePreview()};
+ controlSize.oninput=()=>{placement.size=Number(controlSize.value)/100;constrainPlacement();syncPlacementControls();livePreview()};
+ controlX.oninput=()=>{placement.x=Number(controlX.value)/100;constrainPlacement();syncPlacementControls();livePreview()};
+ controlY.oninput=()=>{placement.y=Number(controlY.value)/100;constrainPlacement();syncPlacementControls();livePreview()};
  $('cfCapResetPlace').onclick=()=>{placement=STUDIO.defaultPlacement();syncPlacementControls();livePreview()};
  const moveHandle=$('cfCapMoveHandle');let drag=null;
  moveHandle.addEventListener('pointerdown',e=>{
@@ -445,7 +452,7 @@ function init(){
   const box=videoBox();if(!box)return;
   placement.x=Math.max(0,Math.min(1,drag.x+(e.clientX-drag.clientX)/box.w));
   placement.y=Math.max(0,Math.min(1,drag.y+(e.clientY-drag.clientY)/box.h));
-  syncPlacementControls();livePreview();
+  constrainPlacement();syncPlacementControls();livePreview();
  });
  const endDrag=e=>{if(drag&&drag.id===e.pointerId){drag=null;moveHandle.classList.remove('is-dragging');if(moveHandle.hasPointerCapture(e.pointerId))moveHandle.releasePointerCapture(e.pointerId)}};
  moveHandle.addEventListener('pointerup',endDrag);
@@ -460,7 +467,7 @@ function init(){
   else return;
   e.preventDefault();
   placement=STUDIO.normalisePlacement(placement);
-  syncPlacementControls();livePreview();
+  constrainPlacement();syncPlacementControls();livePreview();
  });
  $('cfCapText').oninput=sync;$('cfCapSrt').onclick=()=>subs(false);$('cfCapVtt').onclick=()=>subs(true);$('cfCapExport').onclick=exportVideo;$('cfCapStop').onclick=()=>{stop=true;try{if(activeInput&&!activeInput.disposed)activeInput.dispose()}catch(e){}try{if(activeOutput&&activeOutput.state!=='finalized'&&activeOutput.state!=='canceled')activeOutput.cancel().catch(()=>{})}catch(e){}};
  function refresh(force=false){grid($('cfCapTemplateGrid'),$('cfCapLang').value,style,k=>{style=k;refresh();livePreview()},force)}
