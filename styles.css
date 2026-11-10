@@ -3384,3 +3384,65 @@ footer a[href="https://vexolunetech.pages.dev/"]:hover{color:#c5baff!important}
 @media(prefers-reduced-motion:reduce){
  #cfCaptionsWorkspace .cf-cap-move-handle{transition:none}
 }
+
+/* Captions Studio only: collapsible styling, animation and safe-area controls. */
+#cfCaptionsWorkspace .cf-cap-edit-toolbar{
+ display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0;
+}
+#cfCaptionsWorkspace .cf-cap-edit-toolbar .sm{min-height:36px}
+#cfCaptionsWorkspace .cf-cap-edit-toolbar .sm:disabled{opacity:.5;cursor:not-allowed}
+#cfCaptionsWorkspace .cf-cap-edit-toolbar .cf-muted{font-size:11px}
+#cfCaptionsWorkspace .cf-cap-feature{
+ margin:10px 0;padding:0;min-width:0;
+ border:1px solid var(--line);border-radius:13px;
+ background:var(--panel-2);overflow:hidden;
+}
+#cfCaptionsWorkspace .cf-cap-feature summary{
+ list-style-position:inside;padding:13px 14px;
+ font-size:13px;font-weight:800;letter-spacing:.01em;
+ color:var(--text);cursor:pointer;user-select:none;
+}
+#cfCaptionsWorkspace .cf-cap-feature[open] summary{border-bottom:1px solid var(--line)}
+#cfCaptionsWorkspace .cf-cap-feature-body{display:grid;gap:13px;padding:14px}
+#cfCaptionsWorkspace .cf-cap-feature-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 16px;
+}
+#cfCaptionsWorkspace .cf-cap-feature-grid > label,
+#cfCaptionsWorkspace .cf-cap-feature-body > label{
+ display:flex;flex-direction:column;gap:6px;min-width:0;
+ font-size:12px;font-weight:700;color:var(--text);
+}
+#cfCaptionsWorkspace .cf-cap-feature select,
+#cfCaptionsWorkspace .cf-cap-feature input[type="color"]{
+ max-width:100%;width:100%;min-height:39px;padding:7px;
+ border:1px solid var(--line);border-radius:8px;
+ background:var(--panel);color:var(--text);font:inherit;
+ box-sizing:border-box;
+}
+#cfCaptionsWorkspace .cf-cap-feature input[type="range"]{
+ display:block;width:100%;min-width:0;max-width:100%;height:24px;
+ accent-color:#9087ff;cursor:pointer;
+}
+#cfCaptionsWorkspace .cf-cap-feature input[type="color"]{min-width:48px;min-height:40px;cursor:pointer}
+#cfCaptionsWorkspace .cf-cap-feature output{font-size:11px;color:var(--accent-2);font-variant-numeric:tabular-nums}
+#cfCaptionsWorkspace .cf-cap-color-row{display:flex;align-items:center;gap:8px}
+#cfCaptionsWorkspace .cf-cap-inline-check{
+ display:inline-flex!important;align-items:center;flex-direction:row!important;
+ gap:6px!important;font-size:12px!important;font-weight:650!important;
+ cursor:pointer;
+}
+#cfCaptionsWorkspace .cf-cap-inline-check input[type="checkbox"]{
+ width:17px;height:17px;flex-shrink:0;accent-color:#9087ff;
+}
+#cfCaptionsWorkspace .cf-cap-feature-action{display:flex;justify-content:flex-end}
+#cfCaptionsWorkspace .cf-cap-feature-body p.cf-muted{margin:0;font-size:11px;line-height:1.5}
+#cfCaptionsWorkspace .cf-cap-feature summary:focus-visible,
+#cfCaptionsWorkspace .cf-cap-feature select:focus-visible,
+#cfCaptionsWorkspace .cf-cap-feature input:focus-visible{
+ outline:2px solid #72dbe9;outline-offset:2px;
+}
+@media(max-width:600px){
+ #cfCaptionsWorkspace .cf-cap-feature-grid{grid-template-columns:minmax(0,1fr);gap:11px}
+ #cfCaptionsWorkspace .cf-cap-feature-body{padding:12px}
+ #cfCaptionsWorkspace .cf-cap-edit-toolbar .cf-muted{flex-basis:100%}
+}
