@@ -130,7 +130,7 @@ function draw(ctx,text,key,w,h,t=0,d=2,placement=null){
  const nativeAnchor=isStudioStyle(key)||window.ClipForgeCaptionStyles.modernPresets.some(r=>r[0]===key)?.75:.78;
  ctx.save();
  ctx.beginPath();ctx.rect(0,0,w,h);ctx.clip();
- ctx.translate((p.x-.5)*w,(p.y-nativeAnchor)*h);
+ ctx.translate((p.x-.5)*w,(p.y-.77)*h); // Neutral default: preserve every existing style’s native placement.
  ctx.translate(w/2,nativeAnchor*h);ctx.scale(p.size,p.size);ctx.translate(-w/2,-nativeAnchor*h);
  renderer(ctx,text,key,w,h,t,d);
  ctx.restore();
