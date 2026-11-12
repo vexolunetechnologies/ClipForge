@@ -222,7 +222,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 $('#pos').oninput=draw;
 
 // Load a chosen video: reset everything from the previous video, show the player and the options.
-function load(f){if(!f)return;doStop();TRAILER=null;$('#trl').classList.add('hide');file=f;AUD=null;ENV=null;cues=[];LAST=null;clips=[];
+function load(f){if(!f)return;closeShortPlayers();$('#list').replaceChildren();doStop();TRAILER=null;$('#trl').classList.add('hide');file=f;AUD=null;ENV=null;cues=[];LAST=null;clips=[];
  try{EL.v2&&EL.v2.remove()}catch(e){}EL={v2:null,a:null};
  if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);fname=f.name.replace(/\.[^.]+$/,'');v.src=url;say('');
  v.onloadedmetadata=()=>{$('#work').classList.remove('hide');$('#res').classList.add('hide');say(fmt(v.duration)+' video loaded.');projOffer()};
