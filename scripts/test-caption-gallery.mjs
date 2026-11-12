@@ -281,6 +281,28 @@ try{
  assert.equal(mobile.columns,2);
  assert.ok(mobile.height<=310 && mobile.scroll>mobile.height);
  assert.deepEqual(errors,[],"No uncaught browser errors");
+ // Per-caption timing editor must update the real cue and respect non-overlap.
+ assert.equal(await page.locator("#cfCapTimingPanel").count(),1);
+ await page.locator("#cfCapText").evaluate(el=>{
+  el.disabled=false;el.value="A clear first line\nA second caption";
+  el.dispatchEvent(new Event("input",{bubbles:true}));
+  el.dispatchEvent(new Event("blur",{bubbles:true}));
+ });
+ await page.locator("#cfCapTimingPanel summary").click();
+ assert.equal(await page.locator("#cfCapTimingList .cf-cap-timing-row").count(),2);
+ const timeRows=page.locator("#cfCapTimingList .cf-cap-timing-row");
+ assert.equal(await timeRows.nth(0).locator('input[aria-label="Caption 1 Start (s)"]').inputValue(),"0.00");
+ assert.equal(await timeRows.nth(1).locator('input[aria-label="Caption 2 Start (s)"]').inputValue(),"2.00");
+ await timeRows.nth(0).locator('input[aria-label="Caption 1 End (s)"]').fill("1.50");
+ await timeRows.nth(0).locator('input[aria-label="Caption 1 End (s)"]').press("Tab");
+ assert.equal(await timeRows.nth(0).locator('input[aria-label="Caption 1 End (s)"]').inputValue(),"1.50");
+ await timeRows.nth(1).locator('input[aria-label="Caption 2 Start (s)"]').fill("1.60");
+ await timeRows.nth(1).locator('input[aria-label="Caption 2 Start (s)"]').press("Tab");
+ assert.equal(await timeRows.nth(1).locator('input[aria-label="Caption 2 Start (s)"]').inputValue(),"1.60");
+ // Undo restores the last adjustment along with the caption text and look.
+ await page.locator("#cfCapUndo").click();
+ assert.equal(await page.locator("#cfCapTimingList .cf-cap-timing-row").nth(1)
+  .locator('input[aria-label="Caption 2 Start (s)"]').inputValue(),"2.00");
  console.log("ClipForge captions: 55 shared styles plus 8 studio-only motion/pro templates, movable/resizable captions, export renderer, Urdu/Hindi, Shorts and mobile layout passed.");
 }finally{
  if(browser)await browser.close();
