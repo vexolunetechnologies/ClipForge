@@ -149,6 +149,8 @@ const v=$('#src'),cv=$('#cv'),ctx=cv.getContext('2d');
 let S={n:'auto',len:'auto',mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'creator-yellow',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
 // Runtime state: clips (the plan), busy flag, RUN token (changing it cancels running work), loaded file info, and audio analysis data (ENV = loudness every 0.1 s).
 let clips=[],busy=false,RUN=0,url=null,fname='video',file=null,PL=30,cues=[],capOn=false,AUD=null,SHORTS_TRANSCRIPT=null,ENV=null,LAST=null,REC=null,ALL=false,RECING=false;
+// One active inline Short and the temporary object URLs for completed MP4 previews.
+let SHORT_ACTIVE=null,SHORT_RENDER_URLS=[];
 window.ClipForgeMainBusy=()=>busy;
 // Web Audio objects: actx = audio context, src = video as audio source, adest = stream that is recorded, outG = speaker volume, recG = recording volume.
 let actx=null,src=null,adest=null,outG=null,recG=null,EL={v2:null,a:null};
@@ -738,8 +740,6 @@ $('#shuf').onclick=()=>{if(busy||!LAST)return;if(LAST.semanticPool&&LAST.semanti
 
 // Generated Shorts: each result has one self-contained preview and an optional trim panel.
 // This deliberately does NOT use the main source player (#src) or scroll the page upward.
-let SHORT_ACTIVE=null;
-let SHORT_RENDER_URLS=[];
 function stopInlineShort(player=SHORT_ACTIVE){
  if(!player)return;
  try{player.pause()}catch(_){}
@@ -900,6 +900,11 @@ function render(){
      exportBtn.textContent='Export';exportBtn.classList.remove('p');
      r.querySelector('.cf-short-share')?.remove();
      note.textContent='Source preview';
+     const previousSrc=media.src;
+     if(previousSrc.startsWith('blob:')){
+      URL.revokeObjectURL(previousSrc);
+      SHORT_RENDER_URLS=SHORT_RENDER_URLS.filter(u=>u!==previousSrc);
+     }
      if(url){media.src=url+'#t='+(c.s+.1).toFixed(2);media.load()}
      progress.style.width='0%';
     }
