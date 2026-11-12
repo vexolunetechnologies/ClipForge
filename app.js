@@ -2094,7 +2094,7 @@ async function exportPro(){
   const settings={grade:grade(),motion:by('edMotion').value,strength:val('edMotionStrength'),speed:by('edMotionEase').value,transition:by('edTransition').value,titleMotion:by('edTitleMotion').value,titlePosition:by('edTitlePosition').value,titleColor:by('edTitleColor').value,titleSize:val('edTitleSize'),titleBg:by('edTitleBg').value,titleFont:by('edTitleFont').value};
   const title=by('edTitle').value.trim(),clips=state.clips.slice(),total=clips.reduce((n,c)=>n+c.end-c.start,0);let elapsed=0;if(musicEl)musicEl.play().catch(()=>{});
   for(let i=0;i<clips.length;i++){if(state.cancel)throw new Error('Export stopped.');const c=clips[i];video.src=c.url;video.load();await wait(video,'loadedmetadata');const seek=Math.min(c.start,Math.max(0,c.duration-.05));if(Math.abs(video.currentTime-seek)>.04){const p=wait(video,'seeked');video.currentTime=seek;await p;}await video.play();const dur=c.end-c.start;while(video.currentTime<c.end-.04&&!video.ended){if(state.cancel)throw new Error('Export stopped.');const t=Math.max(0,video.currentTime-c.start);draw(ctx,video,w,h,t,dur,settings,title);const doneSec=elapsed+t;bar.style.width=Math.min(99,doneSec/total*100)+'%';status('Rendering clip '+(i+1)+' of '+clips.length+' · '+fmt(doneSec)+' / '+fmt(total));await new Promise(r=>{raf=requestAnimationFrame(r);});}video.pause();elapsed+=dur;}
-  if(recorder.state!=='inactive')recorder.stop();await done;const blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<1500)throw new Error('Export is empty. Try a shorter clip or another browser.');state.outUrl=URL.createObjectURL(blob);const ext=mime.includes('mp4')?'mp4':'webm';out.innerHTML='<video controls playsinline src="'+state.outUrl+'"></video><div class="cf-row" style="margin-top:10px"><a class="sm p" style="text-decoration:none;padding:10px 14px" download="clipforge-editor-'+Date.now()+'.'+ext+'" href="'+state.outUrl+'">Download '+ext.toUpperCase()+'</a><span class="cf-muted">'+(blob.size/1048576).toFixed(1)+' MB · '+q+'p</span></div>';bar.style.width='100%';status('Export complete. Download your edit. Nothing was saved to a project library.');
+  if(recorder.state!=='inactive')recorder.stop();await done;const recorded=new Blob(chunks,{type:mime.split(';')[0]});if(recorded.size<1500)throw new Error('Export is empty. Try a shorter clip or another browser.');const result=await finalizeClipForgeMp4(recorded,p=>status('Finalizing MP4 metadata · '+p+'%'),()=>state.cancel);if(state.cancel)throw new Error('Export stopped.');const blob=result.blob;state.outUrl=URL.createObjectURL(blob);const ext=mime.includes('mp4')?'mp4':'webm';out.innerHTML='<video controls playsinline src="'+state.outUrl+'"></video><div class="cf-row" style="margin-top:10px"><a class="sm p" style="text-decoration:none;padding:10px 14px" download="clipforge-editor-'+Date.now()+'.'+ext+'" href="'+state.outUrl+'">Download '+ext.toUpperCase()+'</a><span class="cf-muted">'+(blob.size/1048576).toFixed(1)+' MB · '+q+'p</span></div>';bar.style.width='100%';status('Export complete. Download your edit. Nothing was saved to a project library.');
  }catch(e){if(recorder&&recorder.state!=='inactive'){try{recorder.stop();}catch(x){}}status(e.message||'Export failed.');}
  finally{cancelAnimationFrame(raf);if(video){video.pause();video.removeAttribute('src');video.load();}if(musicEl){musicEl.pause();musicEl.removeAttribute('src');}if(stream)stream.getTracks().forEach(t=>t.stop());if(audioCtx)audioCtx.close().catch(()=>{});state.busy=false;button.disabled=false;stop.style.display='none';}
 }
@@ -2363,16 +2363,20 @@ $('stExport').onclick=async()=>{
  catch(e){cleanup();msg('The browser encoder could not start.');return}
  const chunks=[];
  rec.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
- rec.onstop=()=>{
-  const cancelled=!!S.exportCancel;
-  if(cancelled){cleanup();S.exportCancel=false;msg('Export cancelled. Your original media and edit remain in this session.');return}
-  const blob=new Blob(chunks,{type:rec.mimeType||'video/webm'});
-  if(blob.size<1500){cleanup();msg('Export output was empty. Try a shorter clip or another browser.');return}
-  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;
-  const projectName=(document.getElementById('stProjectName')?.value||'clipforge-edit').trim().replace(/[^a-z0-9-_]+/gi,'-').replace(/^-+|-+$/g,'')||'clipforge-edit';
-  a.download=projectName+'.'+(rec.mimeType&&rec.mimeType.includes('mp4')?'mp4':'webm');a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
-  cleanup();msg('Export downloaded as '+(rec.mimeType&&rec.mimeType.includes('mp4')?'MP4':'WebM')+'.');
+ rec.onstop=async()=>{
+  if(S.exportCancel){cleanup();S.exportCancel=false;msg('Export cancelled. Your original media and edit remain in this session.');return}
+  try{
+   const recorded=new Blob(chunks,{type:rec.mimeType||'video/webm'});
+   if(recorded.size<1500)throw new Error('Export output was empty. Try a shorter clip or another browser.');
+   const result=await finalizeClipForgeMp4(recorded,p=>msg('Finalizing MP4 metadata · '+p+'%'),()=>S.exportCancel);
+   if(S.exportCancel){cleanup();S.exportCancel=false;msg('Export cancelled.');return}
+   const blob=result.blob,url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;
+   const projectName=(document.getElementById('stProjectName')?.value||'clipforge-edit').trim().replace(/[^a-z0-9-_]+/gi,'-').replace(/^-+|-+$/g,'')||'clipforge-edit';
+   const isMp4=blob.type.toLowerCase().includes('mp4');
+   a.download=projectName+'.'+(isMp4?'mp4':'webm');a.click();
+   setTimeout(()=>URL.revokeObjectURL(url),60000);
+   cleanup();msg('Export downloaded as '+(isMp4?'MP4':'WebM')+(isMp4&&!result.normalized?' (original browser metadata)':'')+'.');
+  }catch(error){cleanup();msg('Finalizing export failed: '+(error.message||error))}
  };
  rec.onerror=()=>{S.exportCancel=true;try{if(rec.state!=='inactive')rec.stop()}catch(e){cleanup();msg('Video export failed.')}};
  $('stExport').disabled=true;
