@@ -41,11 +41,11 @@ try{
  // mounted and capture-capable because MP4 export records from that canvas.
  const exportSurface=await page.evaluate(()=>{
   const canvas=document.querySelector("#cv");
-  const label=document.querySelector(".cf-live-preview-label");
+  const panel=document.querySelector("#cfLivePreviewBlock");
   const stream=canvas.captureStream(1);
   const result={
-   canvasHidden:getComputedStyle(canvas).display==="none",
-   labelHidden:!!label&&getComputedStyle(label).display==="none",
+   panelHidden:getComputedStyle(panel).display==="none",
+   canvasNotLaidOut:canvas.getClientRects().length===0,
    canvasStillMounted:canvas.isConnected,
    size:[canvas.width,canvas.height],
    captureTrack:stream.getVideoTracks().some(track=>track.readyState==="live")
@@ -54,7 +54,7 @@ try{
   return result;
  });
  assert.deepEqual(exportSurface,{
-  canvasHidden:true,labelHidden:true,canvasStillMounted:true,size:[720,1280],captureTrack:true
+  panelHidden:true,canvasNotLaidOut:true,canvasStillMounted:true,size:[720,1280],captureTrack:true
  },"Shorts should hide its redundant live preview without breaking the recording canvas");
 
  await page.evaluate(()=>{
