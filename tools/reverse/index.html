@@ -21,7 +21,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ClipForge Studio – Long video to Shorts</title>
 <!-- ===== CSS: look and layout ===== -->
-<link rel="stylesheet" href="/styles.css?v=20261112-guides-visibility-v1">
+<link rel="stylesheet" href="/styles.css?v=20261112-highlights-layout-v1">
 <!-- Fonts: Noto Naskh Arabic (Urdu / Arabic) and Noto Sans Devanagari (Hindi) for the captions -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,25 +94,32 @@
 </div></section>
 
 
-<!-- ===== HIGHLIGHTS STUDIO: independent AI highlight workflow ===== -->
+<!-- ===== HIGHLIGHTS STUDIO: same controls and media engine, montage-style workspace ===== -->
 <section id="highlightsTool" class="cf-workspace" style="display:none">
  <a class="cf-back" href="#tools">← All creative tools</a>
  <div class="cf-page-head"><div><div class="cf-kicker">CLIPFORGE / AI HIGHLIGHTS</div><h2>Highlights Studio</h2><p>Upload one long video, choose the final duration and let AI select short moments. Original dialogue stays muted in the finished video.</p></div><span class="cf-badge">AI-assisted workflow</span></div>
- <div class="cf-grid">
-  <div class="cf-panel">
+ <div class="cf-grid cf-hs-layout">
+  <div class="cf-panel cf-hs-media-panel">
+   <div class="cf-hs-panel-heading"><div class="cf-kicker">SOURCE &amp; PREVIEW</div><span class="cf-hs-panel-meta">ONE VIDEO</span></div>
    <div class="cf-field"><label for="hsVideo">SOURCE VIDEO</label><label class="cf-upload-btn" for="hsVideo">＋ Choose source video</label><input id="hsVideo" type="file" accept="video/*"><small id="hsVideoInfo" class="cf-muted">Current AI service: up to 6 hours per source, 2,500 transcript segments and 20 AI analyses per day per network. Device/browser limits may also apply.</small></div>
-   <video id="hsSourcePreview" class="cf-preview" controls playsinline muted style="display:none"></video>
-   <div class="cf-field"><label for="hsDuration">FINAL HIGHLIGHTS DURATION (SECONDS)</label><input id="hsDuration" type="number" min="5" max="300" step="1" value="30"><small class="cf-muted">Choose 5–300 seconds. AI will target this total duration using short scenes.</small></div>
-   <div class="cf-field"><label for="hsRatio">OUTPUT FORMAT</label><select id="hsRatio"><option value="9:16">9:16 · Reels / Shorts</option><option value="16:9">16:9 · YouTube</option><option value="1:1">1:1 · Square</option></select></div>
+   <div class="cf-hs-stage"><video id="hsSourcePreview" class="cf-preview" controls playsinline muted style="display:none"></video><div class="cf-hs-preview-empty" aria-hidden="true"><span class="cf-hs-preview-symbol">▶</span><strong>Your video preview</strong><small>Choose a source video to begin</small></div></div>
+   <div class="cf-hs-plan-area"><div class="cf-hs-panel-heading"><div class="cf-kicker">AI HIGHLIGHT PLAN</div><span class="cf-hs-panel-meta">SELECTED SCENES</span></div><div id="hsEmpty" class="cf-empty">Upload a video and choose your output duration to begin.</div><div id="hsPlan" class="cf-timeline"></div><div class="cf-stat"><b id="hsCount">0 scenes</b><span id="hsPlanDuration">No highlight plan yet</span></div></div>
+   <div class="cf-hs-result-area"><div class="cf-kicker">FINISHED HIGHLIGHT REEL</div><div id="hsOutput" class="cf-output"></div></div>
+  </div>
+  <div class="cf-panel cf-hs-settings-panel">
+   <div class="cf-kicker">OUTPUT SETTINGS</div>
+   <div class="cf-hs-settings-row">
+    <div class="cf-field"><label for="hsDuration">FINAL HIGHLIGHTS DURATION (SECONDS)</label><input id="hsDuration" type="number" min="5" max="300" step="1" value="30"><small class="cf-muted">Choose 5–300 seconds. AI will target this total duration using short scenes.</small></div>
+    <div class="cf-field"><label for="hsRatio">OUTPUT FORMAT</label><select id="hsRatio"><option value="9:16">9:16 · Reels / Shorts</option><option value="16:9">16:9 · YouTube</option><option value="1:1">1:1 · Square</option></select></div>
+   </div>
+   <div class="cf-hs-divider"><span>Music &amp; sound</span></div>
    <div class="cf-field"><label for="hsMood">BACKGROUND MUSIC MOOD</label><select id="hsMood"><option value="cinematic">Cinematic</option><option value="emotional">Emotional</option><option value="dramatic">Dramatic</option><option value="funny">Funny</option><option value="action">Action / Energetic</option><option value="suspense">Suspense</option><option value="none">No background music</option></select></div>
    <div class="cf-field"><label for="hsMusic">OR UPLOAD YOUR OWN MUSIC (OPTIONAL)</label><label class="cf-upload-btn cf-upload-btn-secondary" for="hsMusic">＋ Choose music file</label><input id="hsMusic" type="file" accept="audio/*"><small class="cf-muted" id="hsMusicInfo">Uploaded music replaces the simple synthesized mood backing.</small></div>
    <div class="cf-field"><label for="hsSfx">AUTOMATIC SOUND EFFECTS</label><select id="hsSfx"><option value="whoosh-impact">Whoosh + Impact between scenes</option><option value="whoosh">Whoosh only</option><option value="off">Off</option></select></div>
-   <button class="main" id="hsGenerate">Generate highlights</button><button class="sm" id="hsStop" style="display:none;margin-top:8px">Stop</button>
-   <div class="cf-progress"><i id="hsProgress"></i></div><div id="hsStatus" class="cf-status" role="status"></div>
+   <div class="cf-hs-actions"><button class="main" id="hsGenerate">Generate highlights</button><button class="sm" id="hsStop" style="display:none;margin-top:8px">Stop</button><div class="cf-progress"><i id="hsProgress"></i></div><div id="hsStatus" class="cf-status" role="status"></div></div>
   </div>
-  <div class="cf-panel"><div class="cf-kicker">AI HIGHLIGHT PLAN</div><div id="hsEmpty" class="cf-empty">Upload a video and choose your output duration to begin.</div><div id="hsPlan" class="cf-timeline"></div><div class="cf-stat"><b id="hsCount">0 scenes</b><span id="hsPlanDuration">No highlight plan yet</span></div><div id="hsOutput" class="cf-output"></div></div>
  </div>
- <p class="cf-muted">Scene selection is guided by AI analysis of the video's dialogue transcript. The original source audio is not included in the export. Use music you have permission to use.</p>
+ <p class="cf-muted cf-hs-footer-note">Scene selection is guided by AI analysis of the video's dialogue transcript. The original source audio is not included in the export. Use music you have permission to use.</p>
 </section>
 
 <!-- ===== MAIN TOOL PANEL (Shorts and Trailer share this panel; the CSS shows or hides parts per tool) ===== -->

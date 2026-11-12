@@ -58,6 +58,36 @@ try {
     assert.equal(await page.locator(".cf-lower-sections").isVisible(),false,
       tool+" must show only its tool-specific workspace without common marketing sections");
 
+    if(tool==="highlights") {
+      await page.waitForFunction(()=>document.getElementById("highlightsTool")?.dataset.ready==="1");
+      assert.equal(await page.locator("#highlightsTool .cf-hs-media-panel").count(),1,
+        "Highlights needs one Montage-style preview/scene panel");
+      assert.equal(await page.locator("#highlightsTool .cf-hs-settings-panel").count(),1,
+        "Highlights needs one separate output settings panel");
+      const layout=await page.evaluate(()=>{
+        const media=document.querySelector("#highlightsTool .cf-hs-media-panel").getBoundingClientRect(),
+              settings=document.querySelector("#highlightsTool .cf-hs-settings-panel").getBoundingClientRect();
+        return {mediaX:media.x,settingsX:settings.x,mediaRight:media.right,mediaY:media.y,
+          settingsY:settings.y,bodyWidth:document.documentElement.scrollWidth,viewport:innerWidth};
+      });
+      assert.ok(layout.settingsX>layout.mediaRight,
+        "Desktop Highlights must be two side-by-side Montage-style panels: "+JSON.stringify(layout));
+      assert.ok(layout.bodyWidth<=layout.viewport+2,
+        "Desktop Highlights should not overflow horizontally: "+JSON.stringify(layout));
+      for(const id of ["hsVideo","hsSourcePreview","hsPlan","hsOutput","hsDuration","hsRatio",
+        "hsMood","hsMusic","hsSfx","hsGenerate","hsStop","hsProgress","hsStatus"])
+        assert.equal(await page.locator("#"+id).count(),1,"Highlights must preserve control "+id);
+      const placeholder=page.locator("#highlightsTool .cf-hs-preview-empty");
+      assert.equal(await placeholder.isVisible(),true,"Preview needs a useful upload placeholder");
+      await page.evaluate(()=>document.getElementById("hsSourcePreview").style.display="block");
+      assert.equal(await placeholder.isVisible(),false,
+        "Placeholder must disappear when the existing JS reveals video");
+      await page.evaluate(()=>document.getElementById("hsSourcePreview").style.display="none");
+      await page.screenshot({path:"reports/highlights-workspace-desktop.png",fullPage:true});
+      await page.locator("#hsGenerate").click();
+      assert.equal((await page.locator("#hsStatus").textContent()).trim(),
+        "Choose a source video first.","Unchanged Generate behavior must remain wired");
+    }
     if (tool === "animator" || tool === "reverse") {
       const bounds = await page.locator("#" + visible).boundingBox();
       assert.ok(bounds && bounds.y < 180, tool + " retained the large top gap");
@@ -150,6 +180,38 @@ try {
     } finally {
       await screen.close();
     }
+  }
+
+  // The same Highlights workspace must remain usable and unclipped on phones.
+  for(const width of [390,320]){
+    const phone=await browser.newPage({viewport:{width,height:844},isMobile:true,hasTouch:true});
+    const problems=[];
+    phone.on("pageerror",e=>problems.push(String(e.message||e)));
+    try{
+      await phone.goto(base+"/tools/highlights/",{waitUntil:"domcontentloaded"});
+      await phone.waitForFunction(()=>document.body.dataset.tool==="highlights" &&
+        document.getElementById("highlightsTool")?.dataset.ready==="1");
+      const layout=await phone.evaluate(()=>{
+        const parent=document.querySelector("#highlightsTool"),
+              media=parent.querySelector(".cf-hs-media-panel").getBoundingClientRect(),
+              settings=parent.querySelector(".cf-hs-settings-panel").getBoundingClientRect(),
+              go=parent.querySelector("#hsGenerate").getBoundingClientRect();
+        return {media,settings,go,scroll:document.documentElement.scrollWidth,viewport:innerWidth};
+      });
+      assert.ok(layout.media.width>0&&layout.settings.width>0&&
+        layout.settings.top>=layout.media.bottom-3,
+        "Phone Highlights must stack preview then settings: "+JSON.stringify(layout));
+      assert.ok(layout.scroll<=width+2,
+        "Phone Highlights must not scroll horizontally: "+JSON.stringify(layout));
+      assert.ok(layout.go.width>180&&layout.go.right<=width+1,
+        "Phone Generate button must fit the screen: "+JSON.stringify(layout));
+      await phone.screenshot({path:"reports/highlights-workspace-mobile-"+width+".png",fullPage:true});
+      const choose=phone.waitForEvent("filechooser");
+      await phone.locator('#highlightsTool label.cf-upload-btn[for="hsVideo"]').click();
+      const picker=await choose;
+      assert.ok(picker,"Highlights source upload must still open device file selection");
+      assert.deepEqual(problems,[],"Highlights layout must have no JS errors");
+    }finally{await phone.close();}
   }
 
   assert.deepEqual(errors, [], "Unexpected browser runtime errors");

@@ -80,7 +80,7 @@ for (const tool of tools) {
   const direct = from("tools/" + tool + "/index.html");
   assert.ok(direct.includes('<div id="cfLivePreviewBlock">'),
     "Direct tool HTML must wrap the live preview canvas: " + tool);
-  assert.ok(direct.includes('href="/styles.css?v=20261112-guides-visibility-v1"'),
+  assert.ok(direct.includes('href="/styles.css?v=20261112-highlights-layout-v1"'),
     "Direct tool HTML needs fresh preview-hiding stylesheet: " + tool);
   const generated = from("public/tools/" + tool + "/index.html");
   assert.ok(generated.includes('<div id="cfLivePreviewBlock">'),
@@ -112,6 +112,26 @@ for (const [label, markup] of [
 // Creator guides belong only to Home and All Tools, not individual tool screens.
 assert.ok(rootHome.includes('id="learning-center" class="cf-learn"'),
  "The original guide section must remain available in the site.");
+// Highlights workspace is a visual-only rearrangement: all original bindings
+// remain available to the unmodified highlights-studio.js renderer.
+const highlightsIds = [
+  "hsVideo","hsVideoInfo","hsSourcePreview","hsDuration","hsRatio","hsMood",
+  "hsMusic","hsMusicInfo","hsSfx","hsGenerate","hsStop","hsProgress","hsStatus",
+  "hsEmpty","hsPlan","hsCount","hsPlanDuration","hsOutput"
+];
+for (const [label,markup] of [
+ ["source",rootHome],["built",page],
+ ...tools.map(t=>["direct "+t,from("tools/"+t+"/index.html")]),
+ ...tools.map(t=>["built "+t,from("public/tools/"+t+"/index.html")])
+]) {
+ assert.ok(markup.includes('class="cf-grid cf-hs-layout"'),label+" needs Highlights two-panel layout");
+ for (const id of highlightsIds)
+  assert.equal(markup.split('id="'+id+'"').length-1,1,label+" must retain Highlights binding "+id);
+ assert.ok(markup.indexOf('id="hsSourcePreview"')<markup.indexOf('id="hsPlan"'),
+  label+" should put source preview before AI plan");
+ assert.ok(markup.indexOf('id="hsOutput"')<markup.indexOf('id="hsGenerate"'),
+  label+" should group finished media with preview, not the settings panel");
+}
 const css = from("styles.css");
 assert.ok(css.includes('body[data-page="workspace"] .cf-lower-sections{display:none!important}'),
  "All workspace pages must hide promotional learning sections.");
@@ -173,7 +193,7 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261112-guides-visibility-v1"),
+assert.ok(rootHome.includes("/styles.css?v=20261112-highlights-layout-v1"),
   "Homepage should load the refreshed Shorts preview CSS version");
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");

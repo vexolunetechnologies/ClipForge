@@ -58,6 +58,14 @@ jobs:
           path: reports/compact-tools-*.png
           if-no-files-found: ignore
 
+      - name: Upload Highlights Studio UI review screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipforge-highlights-layout-review
+          path: reports/highlights-workspace-*.png
+          if-no-files-found: ignore
+
       - name: Test Phase 1 lazy previews and inactive view cleanup
         run: npm run test:phase1
       - name: Record local browser performance measurements
