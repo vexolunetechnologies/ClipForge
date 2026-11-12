@@ -42,6 +42,22 @@ try{
  const card=page.locator("#list .clip").first();
  assert.equal(await card.count(),1);
  assert.equal(await card.locator(".score").count(),0);
+ await page.locator("#res").evaluate(el=>el.classList.remove("hide"));
+ assert.equal(await card.locator("video.cf-short-media").count(),1,
+  "Every Short must have its own inline preview, not scroll to the source player");
+ assert.equal(await card.locator("button.cf-short-play").count(),1,
+  "Each Short must have only one visible preview button");
+ assert.equal(await card.locator("button.cf-short-trim-toggle").count(),1);
+ assert.equal(await card.locator(".cf-short-trim").isVisible(),false,
+  "Precise trim inputs must be collapsed by default");
+ assert.equal(await card.locator(".cf-short-actions button").count(),2,
+  "Only Edit trim and Export should be shown, not repetitive start/end buttons");
+ assert.equal(await card.locator("button:text('Preview trimmed')").count(),0);
+ assert.equal(await card.locator("button:text('start')").count(),0);
+ await card.locator(".cf-short-trim-toggle").click();
+ assert.equal(await card.locator(".cf-short-trim").isVisible(),true);
+ assert.equal(await card.locator(".cf-short-trim-toggle").getAttribute("aria-expanded"),"true");
+
  assert.match(await card.innerText(),/Transcript-based recovery/);
  const startSlider=card.locator('input[aria-label="Short 1 trim start"]');
  const endSlider=card.locator('input[aria-label="Short 1 trim end"]');
@@ -53,8 +69,21 @@ try{
  await endSlider.evaluate(input=>{input.value="42.5";input.dispatchEvent(new Event("input",{bubbles:true}))});
  assert.match(await card.locator(".cf-short-trim-readout").textContent(),/12\.5s – 42\.5s · 30\.0s/);
  assert.ok((await page.evaluate(()=>clips[0].e))===42.5,"Trim end must update export interval");
- assert.equal(await card.locator('button:text("Preview trimmed")').count(),1);
+ await card.locator(".cf-short-trim-toggle").click();
+ assert.equal(await card.locator(".cf-short-trim").isVisible(),false,
+  "Close trim restores the clean card without resetting selected boundaries");
+ assert.equal(await page.evaluate(()=>clips[0].e-clips[0].s),30);
+ await page.setViewportSize({width:390,height:844});
+ const geometry=await card.evaluate(el=>({
+  card:el.getBoundingClientRect().width,
+  preview:el.querySelector('.cf-short-preview').getBoundingClientRect().width,
+  doc:document.documentElement.scrollWidth,viewport:innerWidth
+ }));
+ assert.ok(geometry.preview>=100,"Preview must be large enough to use on a phone");
+ assert.ok(geometry.card<=geometry.viewport+1 && geometry.doc<=geometry.viewport+2,
+  "Short cards must not overflow mobile viewport: "+JSON.stringify(geometry));
+
  assert.equal(new URL(page.url()).hash,"");
  assert.deepEqual(errors,[]);
- console.log("ClipForge Shorts browser: fallback clip renders without fabricated score, with preview controls.");
+ console.log("ClipForge Shorts browser: professional inline cards, single preview control, collapsible trim and 390px mobile layout passed.");
 }finally{if(browser)await browser.close();await site.close()}

@@ -14,6 +14,7 @@
     "test:media": "node scripts/test-highlights-real-media.mjs",
     "test:caption-gallery": "node scripts/test-caption-gallery.mjs",
     "test:gallery-mp4": "node scripts/test-mp4-gallery-browser.mjs",
+    "test:shorts-inline": "node scripts/test-shorts-inline-media.mjs",
     "test:mobile-editor": "node scripts/test-mobile-studio-browser.mjs"
   },
   "devDependencies": {

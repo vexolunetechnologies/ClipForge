@@ -129,7 +129,7 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261112-caption-timing"),
+assert.ok(rootHome.includes("/styles.css?v=20261112-short-cards-v1"),
   "Homepage should load the refreshed mobile hero CSS version");
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");
@@ -166,7 +166,7 @@ assert.match(captionScript,/if\(look\.safe\)STUDIO\.drawSafeGuide/, "Preview-onl
 assert.ok(!from("caption-style-library.js").includes("drawSafeGuide"),
  "Shared Shorts caption renderer should not be altered");
 assert.match(from("app.js"),/cf-short-trim/,"Shorts preview trim UI must remain available");
-assert.match(rootHome,/\/app\.js\?v=20261112-gallery-duration-1/,"Home must load fresh MP4 Gallery metadata finalizer integration");
+assert.match(rootHome,/\/app\.js\?v=20261112-short-cards-v1/,"Home must load fresh MP4 Gallery metadata finalizer integration");
 assert.match(from("captions-studio.js"),/cfCapTimingList/,"Cue timing editor must remain included in Captions Studio");
 // Android Gallery duration fix: every raw MP4 recorder must finalize metadata before download.
 const galleryFinalizer=from("montage-mp4.js");
@@ -177,4 +177,9 @@ assert.match(from("app.js"),/Finalizing MP4 duration metadata for phone Gallery/
 assert.match(from("app.js"),/Finalizing MP4 duration for phone Gallery/);
 assert.match(from("highlights-studio.js"),/finalizeGalleryMp4/);
 assert.match(rootHome,/\/highlights-studio\.js\?v=20261112-gallery-duration-1/);
+const shortsCardCode=from("app.js");
+assert.match(shortsCardCode,/className='clip cf-short-card'/,"Each Short must get an inline card");
+assert.match(shortsCardCode,/function startInlineShort/,"Card previews must run locally");
+assert.match(shortsCardCode,/cf-short-trim-toggle/,"Professional Edit trim must remain available");
+assert.doesNotMatch(shortsCardCode,/\['◂ start','s',-1\]/,"Redundant Start\/End button row must be removed");
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");
