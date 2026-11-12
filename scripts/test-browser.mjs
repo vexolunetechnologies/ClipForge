@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, statSync, mkdirSync } from "node:fs";
 import { extname, join, resolve, sep } from "node:path";
 import { chromium } from "playwright";
 
@@ -72,6 +72,68 @@ try {
   await page.reload({waitUntil:"domcontentloaded"});
   await page.waitForFunction(() => document.body.dataset.tool === "shorts");
   assert.equal(new URL(page.url()).hash, "");
+
+
+  // All Tools compact-only redesign: responsive grid and untouched route behavior.
+  mkdirSync("reports", {recursive:true});
+  for (const width of [320, 390, 1440]) {
+    const screen = await browser.newPage({viewport:{width,height:900},hasTouch:width<901,isMobile:width<901});
+    const screenErrors=[];
+    screen.on("pageerror", error=>screenErrors.push(String(error.message||error)));
+    try {
+      await screen.goto(base + "/#tools",{waitUntil:"domcontentloaded"});
+      await screen.waitForFunction(()=>
+        document.body.dataset.page==="tools" &&
+        document.querySelectorAll("#tools a.toolcard").length===8 &&
+        !!document.querySelector("#tools a.toolcard .cf-card-summary"),
+        null,{timeout:10000});
+      const sizes=await screen.evaluate(()=>{
+        const section=document.querySelector("#tools");
+        const grid=section.querySelector(".tools");
+        const cards=Array.from(grid.querySelectorAll("a.toolcard"));
+        const computed=getComputedStyle(grid);
+        const boxes=cards.map(card=>{
+          const r=card.getBoundingClientRect();
+          return {left:Math.round(r.left),top:Math.round(r.top),
+            width:Math.round(r.width),height:Math.round(r.height),
+            hiddenList:getComputedStyle(card.querySelector("ul")).display==="none",
+            visibleTitle:card.querySelector("h3").getBoundingClientRect().height>0,
+            visibleDesc:card.querySelector(".cf-card-summary").getBoundingClientRect().height>0,
+            visibleAction:card.querySelector(".go").getBoundingClientRect().height>0,
+            icon:!!card.querySelector(".tool-icon")};
+        });
+        return {
+          columns:computed.gridTemplateColumns.split(" ").filter(Boolean).length,
+          cards:boxes,gridWidth:grid.clientWidth,gridScroll:grid.scrollWidth,
+          viewport:innerWidth,documentWidth:document.documentElement.scrollWidth
+        };
+      });
+      const expected=width>=1280?4:2;
+      assert.equal(sizes.columns,expected,width+"px must show "+expected+" compact card columns");
+      assert.equal(sizes.cards.length,8,"All original eight tool cards must remain");
+      assert.ok(sizes.gridScroll<=sizes.gridWidth+2,
+        "All Tools grid must not scroll sideways: "+width+" "+JSON.stringify(sizes));
+      assert.ok(sizes.documentWidth<=sizes.viewport+2,
+        "All Tools page must fit viewport: "+width);
+      assert.ok(sizes.cards.every(card=>
+        card.hiddenList && card.visibleTitle && card.visibleDesc && card.visibleAction &&
+        card.icon && card.height<=180 && card.width>0),
+        "All card content must be visible and compact at "+width+"px: "+JSON.stringify(sizes.cards));
+      if(width<901) {
+        const rows=new Set(sizes.cards.map(b=>b.top));
+        assert.equal(rows.size,4,"Eight cards must form 2 columns × 4 rows on mobile");
+      }
+      await screen.locator("#tools").screenshot({path:"reports/compact-tools-"+width+".png"});
+      if(width===390){
+        await screen.locator('#tools a.toolcard[href="#captions"]').click();
+        await screen.waitForFunction(()=>
+          location.pathname==="/tools/captions/" && document.body.dataset.tool==="captions");
+      }
+      assert.deepEqual(screenErrors,[],"No browser runtime error in compact All Tools at "+width);
+    } finally {
+      await screen.close();
+    }
+  }
 
   assert.deepEqual(errors, [], "Unexpected browser runtime errors");
   console.log("ClipForge: Chromium routing, eight workspaces, Back/Forward, refresh and clean URLs passed.");

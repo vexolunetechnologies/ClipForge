@@ -86,13 +86,14 @@ function mountEditorLayout(): void {
       '<span class="tool-icon">▥</span>' +
       '<span class="ttag">PROFESSIONAL MULTI-TRACK EDITOR</span>' +
       "<h3>Studio Editor</h3>" +
+      "<span class=\"cf-card-summary\">Edit videos on a timeline</span>" +
       "<p>A dedicated video-editing workspace with a real timeline, media library and precision controls.</p>" +
       "<ul>" +
       "<li>Layered video, image, overlay, caption and audio tracks</li>" +
       "<li>Trim, split, drag, snap, reorder and keyframe clips</li>" +
       "<li>Color looks, motion, titles, subtitles and transitions</li>" +
       "<li>Local project files and browser-based video export</li>" +
-      "</ul><span class=\"go\">Open Studio Editor ↗</span>";
+      "</ul><span class=\"go\">Open tool ↗</span>";
   }
 
   const input = byId<HTMLInputElement>("#stImport");
