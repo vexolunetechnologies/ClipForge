@@ -28,7 +28,7 @@
 <meta property="og:url" content="https://clipforgestudio.pages.dev/">
 <meta name="twitter:card" content="summary">
 <!-- ===== CSS: look and layout ===== -->
-<link rel="stylesheet" href="/styles.css?v=20261112-hide-shorts-preview">
+<link rel="stylesheet" href="/styles.css?v=20261112-shorts-count-1080-v1">
 <!-- Mobile editor presentation only. Isolated from app and export logic. -->
 <link rel="stylesheet" href="/editor-mobile-layout.css?v=capcut-reference-2">
 <!-- Scoped styles for help articles; video editor presentation remains unchanged. -->
@@ -199,12 +199,13 @@
    <div class="row" id="lens"></div><input type="number" id="cl" class="hide" min="10" max="90" placeholder="Enter seconds (10–90)" style="width:170px;margin-top:8px">
    <p class="note" style="margin:8px 0 0">Auto chooses each complete scene's natural length (usually 15–75 seconds, up to 110 seconds). Fixed lengths are flexible targets, not exact cuts. Every Short stays one continuous scene with complete dialogue.</p>
   </div>
-  <details class="optional-settings"><summary>Short count and extra options</summary>
-   <div class="lbl">How many shorts do you want?</div>
-   <div class="row" id="counts"></div>
+  <div class="cf-short-count-setting">
+   <div class="lbl">Number of Shorts <small>Auto recommended</small></div>
+   <div class="row" id="counts" role="group" aria-label="Number of Shorts"></div>
+   <p class="note cf-short-count-help">Choose Auto, a fixed count, or enter your own (1–50).</p>
    <p class="note hide" id="fullnote"><b>Full video:</b> turns the whole video into one 9:16 file. Export runs in real time, so a 30-minute video takes about 30 minutes and this screen must stay on. Choose <b>Fit + blur</b> to keep the whole picture (center crop cuts the sides). Smart reframe, captions and dialogue-only trim scan the entire video, so turn them off for long videos. Very long videos can run out of browser memory; 720p and under 30 minutes is safest.</p>
-  </details>
-  <div class="lbl">Export quality</div><div class="row"><button class="chip on" data-k="res" data-v="720">720p · faster</button><button class="chip" data-k="res" data-v="1080">1080p</button></div>
+  </div>
+  <div class="lbl">Export quality</div><div class="row"><button class="chip on" data-k="res" data-v="1080">1080p · recommended</button><button class="chip" data-k="res" data-v="720">720p · faster</button></div>
   <div class="lbl">Add captions?</div>
   <div class="row"><button class="chip on" data-k="cap" data-v="off">No captions</button><button class="chip" data-k="cap" data-v="auto">Auto-generate</button><button class="chip" data-k="cap" data-v="file">Subtitle file</button></div>
   <div id="capbox" class="hide"><div class="row" style="margin-top:8px"><label class="chip" for="subf">Choose .srt / .vtt</label><input type="file" id="subf" accept=".srt,.vtt"></div></div>
@@ -375,7 +376,7 @@
 
 <script src="/caption-style-library.js"></script>
 <script src="/captions-studio-enhancements.js?v=20261110-style-motion-v2"></script>
-<script src="/app.js?v=20261112-short-cards-v1"></script>
+<script src="/app.js?v=20261112-shorts-1080-v1"></script>
 <script src="/montage-enhancements.js?v=20261107"></script>
 <script src="/captions-studio.js?v=20261112-caption-timing"></script>
 <script src="/transcription-queue.js"></script>
