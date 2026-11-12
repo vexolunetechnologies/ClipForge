@@ -1286,9 +1286,18 @@ async function exportClip(i,forceWC){
 // Stop recording and wait for the file.
   alive(tok);v.pause();if(rec.state!=='inactive')rec.stop();await done;alive(tok);
 // Check that the finished file really plays, then store it.
-  if(rec.err)throw rec.err;const bl=rec.out||new Blob(parts,{type:'video/mp4'});say('Checking the finished file…');const vr=await verifyVideo(bl);if(!vr.ok)throw new Error('The finished file is not usable ('+(vr.why||'unknown problem')+'), so it was not saved. Choose 720p and try again, or use Chrome or Edge on a computer.');c.blob=bl;const chk=' File check: '+(vr.dur?vr.dur.toFixed(1)+' s, ':'length not readable, ')+vr.w+'×'+vr.h+(vr.seek?', plays to the end.':'.');say((c.planInfo&&c.planInfo.n?'Done. Faces found in '+c.planInfo.faces+' of '+c.planInfo.n+' frames, '+c.planInfo.cuts+' scene cuts.':'Done.')+chk)
+  if(rec.err)throw rec.err;
+  const raw=rec.out||new Blob(parts,{type:'video/mp4'});
+  say('Finalizing MP4 duration metadata for phone Gallery…');
+  const {finalizeGalleryMp4}=await guard(import('/montage-mp4.js'),45000,'MP4 finalizer');
+  const bl=await finalizeGalleryMp4(raw,{
+   isCancelled:()=>tok!==RUN,
+   onProgress:p=>say('Finalizing phone-compatible MP4 · '+p+'%')
+  });
+  alive(tok);say('Checking the finished file…');
+  const vr=await verifyVideo(bl);if(!vr.ok)throw new Error('The finished file is not usable ('+(vr.why||'unknown problem')+'), so it was not saved. Choose 720p and try again, or use Chrome or Edge on a computer.');c.blob=bl;const chk=' File check: '+(vr.dur?vr.dur.toFixed(1)+' s, ':'length not readable, ')+vr.w+'×'+vr.h+(vr.seek?', plays to the end.':'.');say((c.planInfo&&c.planInfo.n?'Done. Faces found in '+c.planInfo.faces+' of '+c.planInfo.n+' frames, '+c.planInfo.cuts+' scene cuts.':'Done.')+chk)
 // Report a failure.
- }catch(e){if(e.message!=='Stopped'){try{REC&&REC.state!=='inactive'&&REC.stop()}catch(_){}v.pause();
+ }catch(e){if(tok===RUN&&e.message!=='Stopped'){try{REC&&REC.state!=='inactive'&&REC.stop()}catch(_){}v.pause();
   // Native recorder gave an unusable file: try again once with the WebCodecs recorder.
   if(!forceWC&&mime&&WCok&&(/not usable|recorder|recording/i.test(e.message||''))){retry=true;say('The first export was not usable. Retrying with the compatibility encoder…')}else{say('Export failed: '+(e.message||e));err('Export failed: '+(e.message||e))}}}
  try{wl&&wl.release()}catch(e){}
@@ -1986,6 +1995,12 @@ function mountTimeline(prefix,mode){
      });
      if(state.cancel)throw new Error('Export stopped.');
      ext='mp4';
+   }else if(mime.includes('mp4')){
+     setStatus('Finalizing MP4 duration for phone Gallery…');
+     const {finalizeGalleryMp4}=await import('/montage-mp4.js?v=20261112-gallery-duration-1');
+     blob=await finalizeGalleryMp4(blob,{isCancelled:()=>state.cancel,
+      onProgress:percent=>setStatus('Finalizing MP4 · '+percent+'%')});
+     if(state.cancel)throw new Error('Export stopped.');
    }
    state.outUrl=URL.createObjectURL(blob);
    output.innerHTML='<video controls playsinline src="'+state.outUrl+'"></video><div class="cf-row" style="margin-top:10px"><a class="sm p" style="text-decoration:none;padding:10px 14px" download="clipforge-'+mode+'-'+Date.now()+'.'+ext+'" href="'+state.outUrl+'">Download '+ext.toUpperCase()+'</a><span class="cf-muted">'+(blob.size/1048576).toFixed(1)+' MB</span></div>';
@@ -2119,7 +2134,17 @@ async function exportPro(){
   const settings={grade:grade(),motion:by('edMotion').value,strength:val('edMotionStrength'),speed:by('edMotionEase').value,transition:by('edTransition').value,titleMotion:by('edTitleMotion').value,titlePosition:by('edTitlePosition').value,titleColor:by('edTitleColor').value,titleSize:val('edTitleSize'),titleBg:by('edTitleBg').value,titleFont:by('edTitleFont').value};
   const title=by('edTitle').value.trim(),clips=state.clips.slice(),total=clips.reduce((n,c)=>n+c.end-c.start,0);let elapsed=0;if(musicEl)musicEl.play().catch(()=>{});
   for(let i=0;i<clips.length;i++){if(state.cancel)throw new Error('Export stopped.');const c=clips[i];video.src=c.url;video.load();await wait(video,'loadedmetadata');const seek=Math.min(c.start,Math.max(0,c.duration-.05));if(Math.abs(video.currentTime-seek)>.04){const p=wait(video,'seeked');video.currentTime=seek;await p;}await video.play();const dur=c.end-c.start;while(video.currentTime<c.end-.04&&!video.ended){if(state.cancel)throw new Error('Export stopped.');const t=Math.max(0,video.currentTime-c.start);draw(ctx,video,w,h,t,dur,settings,title);const doneSec=elapsed+t;bar.style.width=Math.min(99,doneSec/total*100)+'%';status('Rendering clip '+(i+1)+' of '+clips.length+' · '+fmt(doneSec)+' / '+fmt(total));await new Promise(r=>{raf=requestAnimationFrame(r);});}video.pause();elapsed+=dur;}
-  if(recorder.state!=='inactive')recorder.stop();await done;const blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<1500)throw new Error('Export is empty. Try a shorter clip or another browser.');state.outUrl=URL.createObjectURL(blob);const ext=mime.includes('mp4')?'mp4':'webm';out.innerHTML='<video controls playsinline src="'+state.outUrl+'"></video><div class="cf-row" style="margin-top:10px"><a class="sm p" style="text-decoration:none;padding:10px 14px" download="clipforge-editor-'+Date.now()+'.'+ext+'" href="'+state.outUrl+'">Download '+ext.toUpperCase()+'</a><span class="cf-muted">'+(blob.size/1048576).toFixed(1)+' MB · '+q+'p</span></div>';bar.style.width='100%';status('Export complete. Download your edit. Nothing was saved to a project library.');
+  if(recorder.state!=='inactive')recorder.stop();await done;
+  let blob=new Blob(chunks,{type:mime.split(';')[0]});
+  if(blob.size<1500)throw new Error('Export is empty. Try a shorter clip or another browser.');
+  if(mime.includes('mp4')){
+   status('Finalizing MP4 duration for phone Gallery…');
+   const {finalizeGalleryMp4}=await import('/montage-mp4.js?v=20261112-gallery-duration-1');
+   blob=await finalizeGalleryMp4(blob,{isCancelled:()=>state.cancel,
+    onProgress:p=>status('Finalizing MP4 · '+p+'%')});
+   if(state.cancel)throw new Error('Export stopped.');
+  }
+  state.outUrl=URL.createObjectURL(blob);const ext=mime.includes('mp4')?'mp4':'webm';out.innerHTML='<video controls playsinline src="'+state.outUrl+'"></video><div class="cf-row" style="margin-top:10px"><a class="sm p" style="text-decoration:none;padding:10px 14px" download="clipforge-editor-'+Date.now()+'.'+ext+'" href="'+state.outUrl+'">Download '+ext.toUpperCase()+'</a><span class="cf-muted">'+(blob.size/1048576).toFixed(1)+' MB · '+q+'p</span></div>';bar.style.width='100%';status('Export complete. Download your edit. Nothing was saved to a project library.');
  }catch(e){if(recorder&&recorder.state!=='inactive'){try{recorder.stop();}catch(x){}}status(e.message||'Export failed.');}
  finally{cancelAnimationFrame(raf);if(video){video.pause();video.removeAttribute('src');video.load();}if(musicEl){musicEl.pause();musicEl.removeAttribute('src');}if(stream)stream.getTracks().forEach(t=>t.stop());if(audioCtx)audioCtx.close().catch(()=>{});state.busy=false;button.disabled=false;stop.style.display='none';}
 }
@@ -2388,11 +2413,20 @@ $('stExport').onclick=async()=>{
  catch(e){cleanup();msg('The browser encoder could not start.');return}
  const chunks=[];
  rec.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
- rec.onstop=()=>{
+ rec.onstop=async()=>{
   const cancelled=!!S.exportCancel;
   if(cancelled){cleanup();S.exportCancel=false;msg('Export cancelled. Your original media and edit remain in this session.');return}
-  const blob=new Blob(chunks,{type:rec.mimeType||'video/webm'});
+  let blob=new Blob(chunks,{type:rec.mimeType||'video/webm'});
   if(blob.size<1500){cleanup();msg('Export output was empty. Try a shorter clip or another browser.');return}
+  if(rec.mimeType&&rec.mimeType.includes('mp4')){
+   try{
+    msg('Finalizing MP4 duration for phone Gallery…');
+    const {finalizeGalleryMp4}=await import('/montage-mp4.js?v=20261112-gallery-duration-1');
+    blob=await finalizeGalleryMp4(blob,{isCancelled:()=>S.exportCancel,
+     onProgress:p=>msg('Finalizing MP4 · '+p+'%')});
+    if(S.exportCancel){cleanup();S.exportCancel=false;msg('Export cancelled.');return}
+   }catch(e){cleanup();msg('MP4 export failed: '+(e.message||e));return}
+  }
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;
   const projectName=(document.getElementById('stProjectName')?.value||'clipforge-edit').trim().replace(/[^a-z0-9-_]+/gi,'-').replace(/^-+|-+$/g,'')||'clipforge-edit';
   a.download=projectName+'.'+(rec.mimeType&&rec.mimeType.includes('mp4')?'mp4':'webm');a.click();

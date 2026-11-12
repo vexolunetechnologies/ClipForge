@@ -62,7 +62,7 @@ assert.match(from("public/dist/editor/layout.js"), /toolcard\[href="\/tools\/edi
 const rootHome = from("index.html");
 assert.match(rootHome, /src="\/navigation\.js"/);
 assert.match(rootHome, /src="\/transcription-queue\.js"/);
-assert.ok(rootHome.indexOf('src="/transcription-queue.js"') < rootHome.indexOf('src="/highlights-studio.js"'),"Queue must load before Highlights Studio");
+assert.ok(rootHome.indexOf('src="/transcription-queue.js"') < rootHome.indexOf('src="/highlights-studio.js?v=20261112-gallery-duration-1"'),"Queue must load before Highlights Studio");
 for (const tool of tools) {
   const standalone = "tools/" + tool + "/index.html";
   has(standalone);
@@ -166,6 +166,15 @@ assert.match(captionScript,/if\(look\.safe\)STUDIO\.drawSafeGuide/, "Preview-onl
 assert.ok(!from("caption-style-library.js").includes("drawSafeGuide"),
  "Shared Shorts caption renderer should not be altered");
 assert.match(from("app.js"),/cf-short-trim/,"Shorts preview trim UI must remain available");
-assert.match(rootHome,/\/app\.js\?v=20261112-shorts-trim-1/,"Home must use fresh Shorts trim logic");
+assert.match(rootHome,/\/app\.js\?v=20261112-gallery-duration-1/,"Home must load fresh MP4 Gallery metadata finalizer integration");
 assert.match(from("captions-studio.js"),/cfCapTimingList/,"Cue timing editor must remain included in Captions Studio");
+// Android Gallery duration fix: every raw MP4 recorder must finalize metadata before download.
+const galleryFinalizer=from("montage-mp4.js");
+assert.match(galleryFinalizer,/export async function finalizeGalleryMp4/);
+assert.match(galleryFinalizer,/function movieHeaderDuration/);
+assert.match(galleryFinalizer,/fastStart:'in-memory'/);
+assert.match(from("app.js"),/Finalizing MP4 duration metadata for phone Gallery/);
+assert.match(from("app.js"),/Finalizing MP4 duration for phone Gallery/);
+assert.match(from("highlights-studio.js"),/finalizeGalleryMp4/);
+assert.match(rootHome,/\/highlights-studio\.js\?v=20261112-gallery-duration-1/);
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");

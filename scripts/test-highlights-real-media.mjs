@@ -80,7 +80,17 @@ try {
  await page.locator("#hsSfx").selectOption("off");
  await page.locator("#hsRatio").selectOption("16:9");
  await page.locator("#hsGenerate").click();
- await page.waitForFunction(()=>document.querySelector("#hsOutput a[download]"),null,{timeout:90000});
+ try{await page.waitForFunction(()=>document.querySelector("#hsOutput a[download]"),null,{timeout:45000})}
+ catch(error){
+  const info=await page.evaluate(()=>({
+   status:document.querySelector("#hsStatus")?.textContent,
+   progress:document.querySelector("#hsProgress")?.style.width,
+   output:document.querySelector("#hsOutput")?.textContent?.slice(0,320),
+   mimeMP4:MediaRecorder.isTypeSupported("video/mp4"),
+   supportsH264:typeof VideoEncoder!=="undefined",
+  }));
+  throw Error("Highlights video download timed out: "+JSON.stringify({info,errors,requestCount:requests})+"; "+error.message);
+ }
  assert.equal(requests,3,"62-second source should produce three 30-second transcription chunks");
  assert.equal(maxActive,2,"Highlights should issue at most two simultaneous ASR requests");
  assert.ok(completions.indexOf(1)<completions.indexOf(0),"Fixture must exercise out-of-order completions");

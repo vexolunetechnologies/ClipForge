@@ -60,12 +60,13 @@ export async function finalizeMontageMp4(recording,{onProgress=()=>{},isCancelle
       if(audioTrack)await ensureAac(mb);
     }
     if(isCancelled())throw cancelledError();
-    const output=new mb.Output({format:new mb.Mp4OutputFormat(),target:new mb.BufferTarget()});
+    const output=new mb.Output({format:new mb.Mp4OutputFormat({fastStart:'in-memory'}),target:new mb.BufferTarget()});
     conversion=await mb.Conversion.init({
       input,output,tracks:"primary",
-      // Explicit H.264 and AAC avoids mislabeled MP4 and silent audio loss.
+      // Only create an audio output when the recording actually has audio.
+      // Highlights may intentionally have no music/SFX/audio track.
       video:{codec:"avc",forceTranscode:!nativeIsCompatible},
-      audio:{codec:"aac",forceTranscode:!nativeIsCompatible},
+      ...(audioTrack?{audio:{codec:"aac",forceTranscode:!nativeIsCompatible}}:{}),
     });
     if(!conversion.isValid||
        !conversion.utilizedTracks.includes(videoTrack)||
@@ -92,4 +93,126 @@ export async function finalizeMontageMp4(recording,{onProgress=()=>{},isCancelle
   }finally{
     try{await input.close?.();}catch(_){}
   }
+}
+
+
+/* Shared MP4 Gallery compatibility check for Shorts, Trailer and other raw
+ * MediaRecorder exports. Fragmented MP4 may play in Chrome but show 0:00 in
+ * Android Gallery, whose extractors often rely on the standard moov/mvhd
+ * duration. Parse the file's own metadata; player seekability alone is not
+ * enough. Fast-start, non-fragmented MP4s are returned untouched. */
+const BOX_SCAN_BYTES=4*1024*1024;
+function mp4Box(view,at,limit){
+ if(at+8>limit)return null;
+ let size=view.getUint32(at),header=8;
+ const type=String.fromCharCode(view.getUint8(at+4),view.getUint8(at+5),view.getUint8(at+6),view.getUint8(at+7));
+ if(size===1){
+  if(at+16>limit)return null;
+  const big=view.getBigUint64(at+8);
+  if(big>BigInt(Number.MAX_SAFE_INTEGER))return null;
+  size=Number(big);header=16;
+ }
+ if(size<header)return null;
+ return {type,start:at,end:at+size,header};
+}
+function movieHeaderDuration(view,box){
+ const at=box.start+box.header;
+ if(at+4>box.end)return null;
+ const version=view.getUint8(at);
+ let scale,duration;
+ if(version===0){
+  if(at+20>box.end)return null;
+  scale=view.getUint32(at+12);
+  duration=view.getUint32(at+16);
+ }else if(version===1){
+  if(at+32>box.end)return null;
+  scale=view.getUint32(at+20);
+  duration=Number(view.getBigUint64(at+24));
+ }else return null;
+ const seconds=duration/scale;
+ return scale>0&&Number.isFinite(seconds)?seconds:null;
+}
+export async function inspectMp4GalleryMetadata(blob){
+ const no={compatible:false,duration:null};
+ if(!(blob instanceof Blob)||blob.size<32)return no;
+ const prefix=new DataView(await blob.slice(0,Math.min(blob.size,BOX_SCAN_BYTES)).arrayBuffer());
+ let top=0,ftyp=false;
+ while(top+8<=prefix.byteLength){
+  const box=mp4Box(prefix,top,prefix.byteLength);
+  if(!box)return no;
+  if(box.type==="ftyp")ftyp=true;
+  if(box.type==="mdat"||box.type==="moof")return no; // Movie metadata must precede media.
+  if(box.type==="moov"){
+   if(!ftyp||box.end>prefix.byteLength)return no;
+   let at=box.start+box.header,mvhd=null,fragmented=false;
+   while(at+8<=box.end){
+    const child=mp4Box(prefix,at,box.end);
+    if(!child||child.end>box.end)return no;
+    if(child.type==="mvhd")mvhd=movieHeaderDuration(prefix,child);
+    if(child.type==="mvex")fragmented=true;
+    at=child.end;
+   }
+   return {compatible:!fragmented&&mvhd!==null&&mvhd>=.75,duration:mvhd};
+  }
+  if(box.end>prefix.byteLength)return no;
+  top=box.end;
+ }
+ return no;
+}
+export async function finalizeGalleryMp4(recording,options={}){
+ if(!(recording instanceof Blob)||recording.size<2000)throw new Error("The video recording was empty.");
+ if(options.isCancelled?.())throw cancelledError();
+ const original=await inspectMp4GalleryMetadata(recording);
+ if(original.compatible){options.onProgress?.(100);return recording;}
+ // A native MediaRecorder MP4 may contain VP9/AV1/HEVC even when the browser
+ // cannot encode H.264. Copy its existing elementary streams into a standard
+ // nonfragmented fast-start MP4; don't force a lossy H.264 transcode.
+ const mb=await bunny();
+ const input=new mb.Input({formats:mb.ALL_FORMATS,source:new mb.BlobSource(recording)});
+ let conversion=null,result=null,copyError=null;
+ try{
+  const video=await input.getPrimaryVideoTrack(),audio=await input.getPrimaryAudioTrack();
+  if(!video)throw Error("Recording has no video track.");
+  const videoCodec=await video.getCodec(),audioCodec=audio?await audio.getCodec():null;
+  const format=new mb.Mp4OutputFormat({fastStart:"in-memory"});
+  if(!format.getSupportedVideoCodecs().includes(videoCodec)||
+     (audio&&!format.getSupportedAudioCodecs().includes(audioCodec))){
+   throw Error("The recording codec cannot be copied into MP4.");
+  }
+  const output=new mb.Output({format,target:new mb.BufferTarget()});
+  conversion=await mb.Conversion.init({
+   input,output,tracks:"primary",
+   video:{codec:videoCodec,forceTranscode:false},
+   ...(audio?{audio:{codec:audioCodec,forceTranscode:false}}:{})
+  });
+  if(!conversion.isValid||!conversion.utilizedTracks.includes(video)||
+     (audio&&!conversion.utilizedTracks.includes(audio))){
+   throw Error("Source media tracks could not be preserved while remuxing.");
+  }
+  conversion.onProgress=p=>{
+   if(options.isCancelled?.()){conversion.cancel().catch(()=>{});return}
+   options.onProgress?.(Math.round(p*100));
+  };
+  options.onProgress?.(0);
+  await conversion.execute();
+  if(options.isCancelled?.())throw cancelledError();
+  result=new Blob([output.target.buffer],{type:"video/mp4"});
+ }catch(error){copyError=error}
+ finally{try{await input.close?.()}catch(_){}}
+ if(options.isCancelled?.())throw cancelledError();
+ if(result){
+  const repaired=await inspectMp4GalleryMetadata(result);
+  if(repaired.compatible)return result;
+  copyError=new Error("The MP4 movie header still has no valid duration.");
+ }
+ // Fallback only for unusual codecs that must be converted, when H.264/AAC
+ // is encodable. Never label WebM as MP4 or save an unrepaired 0:00 MP4.
+ try{
+  result=await finalizeMontageMp4(recording,options);
+  const repaired=await inspectMp4GalleryMetadata(result);
+  if(repaired.compatible)return result;
+ }catch(error){
+  throw new Error("Could not finalize MP4 for phone Gallery: "+(error.message||copyError?.message||error));
+ }
+ throw new Error("The MP4 duration metadata could not be finalized for phone Gallery.");
 }
