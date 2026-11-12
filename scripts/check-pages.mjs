@@ -80,12 +80,22 @@ for (const tool of tools) {
   const direct = from("tools/" + tool + "/index.html");
   assert.ok(direct.includes('<div id="cfLivePreviewBlock">'),
     "Direct tool HTML must wrap the live preview canvas: " + tool);
-  assert.ok(direct.includes('href="/styles.css?v=20261112-shorts-count-1080-v1"'),
+  assert.ok(direct.includes('href="/styles.css?v=20261112-processing-toast-v1"'),
     "Direct tool HTML needs fresh preview-hiding stylesheet: " + tool);
   const generated = from("public/tools/" + tool + "/index.html");
   assert.ok(generated.includes('<div id="cfLivePreviewBlock">'),
     "Generated tool HTML must also wrap the preview: " + tool);
 }
+for (const tool of tools) {
+ const html=from("tools/" + tool + "/index.html");
+ assert.ok(html.includes('id="toast" role="alert"'),"Direct "+tool+" page needs accessible toast");
+}
+assert.match(from("app.js"), /navigator\.wakeLock\.request\('screen'\)/,
+ "Screen Wake Lock support must remain available");
+assert.match(from("app.js"), /scanWake=await navigator\.wakeLock\.request\('screen'\)/,
+ "AI scanning should request a Wake Lock");
+assert.match(from("app.js"), /await scanWake\.release\(\)/,
+ "AI scan Wake Lock must be released");
 const css = from("styles.css");
 assert.ok(css.includes('body[data-tool="shorts"] #cfLivePreviewBlock{display:none!important}'),
   "Shorts must hide the wrapper rather than removing the export canvas");
@@ -143,7 +153,7 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261112-shorts-count-1080-v1"),
+assert.ok(rootHome.includes("/styles.css?v=20261112-processing-toast-v1"),
   "Homepage should load the refreshed Shorts preview CSS version");
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");
@@ -188,10 +198,10 @@ for (const tool of tools) {
  const direct=from("tools/" + tool + "/index.html");
  assert.ok(direct.includes('id="counts" role="group"'),"Direct "+tool+" page should show count controls");
  assert.ok(direct.includes('data-k="res" data-v="1080"'),"Direct "+tool+" page must expose 1080p");
- assert.ok(direct.includes('src="/app.js?v=20261112-shorts-1080-v1"'),"Direct "+tool+" page needs fresh Shorts logic");
+ assert.ok(direct.includes('src="/app.js?v=20261112-processing-wake-v1"'),"Direct "+tool+" page needs fresh Shorts logic");
 }
 assert.match(from("app.js"),/cf-short-trim/,"Shorts preview trim UI must remain available");
-assert.match(rootHome,/\/app\.js\?v=20261112-shorts-1080-v1/,"Home must load latest Shorts defaults and card features");
+assert.match(rootHome,/\/app\.js\?v=20261112-processing-wake-v1/,"Home must load latest Shorts defaults and card features");
 assert.match(from("captions-studio.js"),/cfCapTimingList/,"Cue timing editor must remain included in Captions Studio");
 // Android Gallery duration fix: every raw MP4 recorder must finalize metadata before download.
 const galleryFinalizer=from("montage-mp4.js");
