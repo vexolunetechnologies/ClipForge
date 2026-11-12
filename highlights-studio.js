@@ -181,7 +181,12 @@ async function exportMontage(){
    sourceVideo.pause();elapsed+=c.end-c.start;
   }
   if(recorder.state!=='inactive')recorder.stop();await finished;
-  const blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<2000)throw new Error('The exported video was empty.');
+  let blob=new Blob(chunks,{type:mime.split(';')[0]});if(blob.size<2000)throw new Error('The exported video was empty.');
+  if(mime.includes('mp4')){
+   say('Finalizing MP4 duration for phone Gallery…');
+   const {finalizeGalleryMp4}=await import('/montage-mp4.js');
+   blob=await finalizeGalleryMp4(blob,{isCancelled:()=>state.cancel,onProgress:p=>say('Finalizing MP4 · '+p+'%')});
+  }
   if(state.outputUrl)URL.revokeObjectURL(state.outputUrl);state.outputUrl=URL.createObjectURL(blob);
   const ext=mime.includes('mp4')?'mp4':'webm';
   el.output.innerHTML='<video controls playsinline src="'+state.outputUrl+'"></video><div class="cf-row" style="margin-top:10px"><a class="sm p" style="text-decoration:none;padding:10px 14px" download="clipforge-highlights-'+Date.now()+'.'+ext+'" href="'+state.outputUrl+'">Download '+ext.toUpperCase()+'</a><span class="cf-muted">'+(blob.size/1048576).toFixed(1)+' MB</span></div>';
