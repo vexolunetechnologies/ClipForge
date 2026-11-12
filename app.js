@@ -474,13 +474,13 @@ async function logoFilter(tok){if(LAST&&LAST.semanticPool){LAST.logoNote='AI-sel
 // ZOOM, SHX, SHY = trailer punch-in zoom and camera shake; WIDEREC = recording 16:9; _langSave / _modeSave = settings remembered while a tool is open.
 let _langSave=null,ZOOM=1,SHX=0,SHY=0,WIDEREC=false,_modeSave=null;
 // Switch between tools (shorts / trailer / animator): updates the page, the tabs and the options for the selected tool.
-function setTool(t,scroll){S.tool=t;document.body.dataset.tool=t;
+function setTool(t,scroll){if(t!=='shorts')stopInlineShort();S.tool=t;document.body.dataset.tool=t;
  $$('#tooltabs [data-tool]').forEach(b=>{const on=b.dataset.tool===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
  if(t==='trailer'){if(S.lang==='auto'){_langSave='auto';S.lang='urdu';$$('[data-k=lang]').forEach(c=>c.classList.toggle('on',c.dataset.v==='urdu'))}if(S.mode!=='best'){_modeSave=S.mode;S.mode='best'}$('#go').textContent='Analyze video'}
  else{if(_langSave){S.lang=_langSave;_langSave=null;$$('[data-k=lang]').forEach(c=>c.classList.toggle('on',c.dataset.v===S.lang))}if(_modeSave){S.mode=_modeSave;_modeSave=null}$('#go').textContent='Find AI-selected moments'}
  if(scroll)$('#tool').scrollIntoView({behavior:'smooth'})}
 // Address-hash routing: #shorts, #trailer, #animator and #tools decide which tool is shown.
-function route(){const h=window.ClipForgeNavigation.current();
+function route(){const h=window.ClipForgeNavigation.current();if(h!=='shorts')stopInlineShort();
  if(h==='shorts'||h==='trailer'){document.body.classList.add('solo');setTool(h);document.title=(h==='trailer'?'Trailer / Promo':'Long Video → Shorts')+' – ClipForge Studio';window.scrollTo(0,0)}
  else if(h===''||h==='tools'){document.body.classList.remove('solo');document.title='ClipForge Studio'}}
 // Re-route whenever the address hash changes, and once at start-up (see route() below).
@@ -736,72 +736,194 @@ $('#go').onclick=async()=>{
 // "Different picks" button: build a new plan with some random variety.
 $('#shuf').onclick=()=>{if(busy||!LAST)return;if(LAST.semanticPool&&LAST.semanticPool.length){const pool=LAST.semanticPool,n=S.n==='auto'?Math.min(10,Math.max(3,Math.round((LAST.dur||180)/180))):Math.max(1,Math.min(50,+S.n||3)),start=LAST.semanticCursor||0;clips=Array.from({length:Math.min(n,pool.length)},(_,i)=>{const q=pool[(start+i)%pool.length];return{...q,tags:[...q.tags],blob:null,pcm:null,cap:false}});LAST.semanticCursor=(start+clips.length)%pool.length;render();say(LAST.selectionMode==='transcript-fallback'?'Showing another set of transcript-based dialogue sections. Preview before export.':'Showing another set of AI-selected dialogue moments.')}else{clips=doPlan(true);render();say('New set of picks.')}};
 
-// Draw the list of shorts (thumbnail, score, tags, Export / Save buttons).
+// Generated Shorts: each result has one self-contained preview and an optional trim panel.
+// This deliberately does NOT use the main source player (#src) or scroll the page upward.
+let SHORT_ACTIVE=null;
+let SHORT_RENDER_URLS=[];
+function stopInlineShort(player=SHORT_ACTIVE){
+ if(!player)return;
+ try{player.pause()}catch(_){}
+ const card=player.closest('.cf-short-card');
+ if(card){
+  card.classList.remove('is-playing');
+  const button=card.querySelector('.cf-short-play');
+  if(button){button.textContent='▶';button.setAttribute('aria-label','Play this Short')}
+ }
+ if(SHORT_ACTIVE===player)SHORT_ACTIVE=null;
+}
+function closeShortPlayers(){
+ stopInlineShort();
+ SHORT_RENDER_URLS.forEach(u=>URL.revokeObjectURL(u));
+ SHORT_RENDER_URLS=[];
+}
+function startInlineShort(c,media){
+ if(busy)return;
+ const card=media.closest('.cf-short-card'),button=card?.querySelector('.cf-short-play');
+ if(SHORT_ACTIVE===media&&!media.paused){stopInlineShort(media);return}
+ // Only one card can play; stop the uploaded source player and trailer previews too.
+ stopInlineShort();
+ if(typeof PRV==='function')PRV();
+ v.pause();
+ SHORT_ACTIVE=media;
+ const begin=c.blob?0:c.s,finish=c.blob?Number.POSITIVE_INFINITY:c.e;
+ if(!c.blob&&Number.isFinite(media.duration)&&media.duration>0){
+  if(media.currentTime<begin-.15||media.currentTime>=finish-.08)media.currentTime=begin;
+ }
+ media.muted=false;
+ const play=media.play();
+ if(play?.catch)play.catch(()=>{
+  if(SHORT_ACTIVE===media){SHORT_ACTIVE=null;card?.classList.remove('is-playing')}
+  if(button){button.textContent='▶';button.setAttribute('aria-label','Play this Short')}
+  say('Tap the preview again if your browser blocks video playback.');
+ });
+}
 function render(){
- const L=$('#list');L.innerHTML='';$('#rtitle').textContent=clips.length+' shorts';$('#shuf').classList.toggle('hide',!LAST);
- clips.forEach((c,i)=>{const r=document.createElement('div');r.className='clip';
-  r.innerHTML='<video class="thumb" muted playsinline preload="metadata"></video><div class="info"><b>'+(c.full?'Full video':'Short '+(i+1))+(c.score!=null?' <span class="score">'+c.score+'</span>':'')+c.tags.map(t=>'<span class="tag">'+t+'</span>').join('')+'</b><span class="t">'+fmt(c.s)+' – '+fmt(c.e)+' ('+Math.round(c.e-c.s)+'s)</span><div class="bar"><i></i></div></div>';
-  if(c.ai&&c.reason){const why=document.createElement('span');why.className='ai-reason';why.textContent=c.reason;r.querySelector('.info').append(why)}
-  const th=r.querySelector('.thumb');
-  if(c.blob){th.src=URL.createObjectURL(c.blob);th.onclick=()=>th.paused?th.play():th.pause();r.querySelector('.bar i').style.width='100%'}else th.src=url+'#t='+(c.s+.1);
-  const tr=document.createElement('div');tr.className='row';tr.style.marginTop='6px';
-  [['◂ start','s',-1],['start ▸','s',1],['◂ end','e',-1],['end ▸','e',1]].forEach(([t,k2,d])=>{const x=document.createElement('button');x.className='sm';x.style.cssText='padding:3px 7px;font-size:12px';x.textContent=t;
-   x.onclick=()=>{if(busy)return;const o={s:c.s,e:c.e};o[k2]+=d;if(o.s<0||o.e>v.duration||o.e-o.s<3)return;c.s=o.s;c.e=o.e;c.blob=null;c.pcm=null;c.plan=null;c.cap=S.cap==='file';render()};tr.append(x)});
-  // Frame-accurate, bounded trim controls for the selected Short. Existing +/-1s buttons remain.
-  // Dual ranges use the full source-video timeline, and never alter other clips.
+ const L=$('#list');
+ closeShortPlayers();
+ L.replaceChildren();
+ $('#rtitle').textContent=clips.length+' shorts';
+ $('#shuf').classList.toggle('hide',!LAST);
+ clips.forEach((c,i)=>{
+  const r=document.createElement('article');
+  r.className='clip cf-short-card';r.dataset.short=String(i+1);
+  r.innerHTML='<div class="cf-short-preview"><video class="thumb cf-short-media" playsinline preload="metadata" aria-label="Short preview"></video><button type="button" class="cf-short-play" aria-label="Play this Short">▶</button><span class="cf-short-preview-label"></span><div class="cf-short-play-progress"><i></i></div></div><div class="info cf-short-info"><div class="cf-short-heading"><strong class="cf-short-name"></strong><span class="cf-short-duration"></span></div><div class="cf-short-tags"></div><span class="t cf-short-time"></span><p class="cf-short-reason"></p><div class="bar"><i></i></div><div class="cf-short-actions"></div></div>';
+  const media=r.querySelector('.cf-short-media'),poster=r.querySelector('.cf-short-preview');
+  const playBtn=r.querySelector('.cf-short-play'),progress=r.querySelector('.cf-short-play-progress i');
+  const title=r.querySelector('.cf-short-name'),duration=r.querySelector('.cf-short-duration');
+  const time=r.querySelector('.cf-short-time'),tags=r.querySelector('.cf-short-tags');
+  title.textContent=c.full?'Full video':'Short '+String(i+1).padStart(2,'0');
+  const refreshTime=()=>{
+   duration.textContent=Math.round(c.e-c.s)+' sec';
+   time.textContent=fmt(c.s)+' – '+fmt(c.e);
+  };
+  refreshTime();
+  if(c.score!=null){
+   const score=document.createElement('span');score.className='score';
+   score.textContent='AI '+c.score;tags.append(score);
+  }
+  for(const value of c.tags||[]){
+   const tag=document.createElement('span');tag.className='tag';
+   tag.textContent=String(value);tags.append(tag);
+  }
+  if(!tags.childElementCount)tags.hidden=true;
+  const reason=r.querySelector('.cf-short-reason');
+  if(c.ai&&c.reason)reason.textContent=c.reason;
+  else if(c.reason)reason.textContent=c.reason;
+  else reason.hidden=true;
+  const note=r.querySelector('.cf-short-preview-label');
+  note.textContent=c.blob?'Exported video':'Source preview';
+  if(c.blob){
+   const objectUrl=URL.createObjectURL(c.blob);
+   SHORT_RENDER_URLS.push(objectUrl);
+   media.src=objectUrl;
+   r.classList.add('is-exported');
+   r.querySelector('.bar i').style.width='100%';
+  }else if(url)media.src=url+'#t='+(c.s+.1).toFixed(2);
+  const previewEnd=()=>{
+   if(!c.blob&&media.currentTime>=c.e-.05){
+    stopInlineShort(media);
+    try{media.currentTime=Math.max(0,c.s)}catch(_){}
+    progress.style.width='0%';
+   }
+  };
+  media.addEventListener('loadedmetadata',()=>{
+   if(!c.blob&&Number.isFinite(media.duration)&&c.s<media.duration){
+    try{media.currentTime=Math.max(0,c.s)}catch(_){}
+   }
+  });
+  media.addEventListener('timeupdate',()=>{
+   previewEnd();
+   const begin=c.blob?0:c.s,end=c.blob?media.duration:c.e;
+   if(Number.isFinite(end)&&end>begin&&media.currentTime>=begin&&SHORT_ACTIVE===media)
+    progress.style.width=Math.max(0,Math.min(100,(media.currentTime-begin)/(end-begin)*100))+'%';
+  });
+  media.addEventListener('ended',()=>{
+   stopInlineShort(media);progress.style.width='0%';
+  });
+  media.addEventListener('play',()=>{
+   if(SHORT_ACTIVE&&SHORT_ACTIVE!==media)stopInlineShort();
+   SHORT_ACTIVE=media;
+   r.classList.add('is-playing');
+   playBtn.textContent='Ⅱ';playBtn.setAttribute('aria-label','Pause this Short');
+  });
+  media.addEventListener('pause',()=>{
+   r.classList.remove('is-playing');
+   playBtn.textContent='▶';playBtn.setAttribute('aria-label','Play this Short');
+  });
+  playBtn.onclick=()=>startInlineShort(c,media);
+  media.onclick=()=>startInlineShort(c,media);
+  const actions=r.querySelector('.cf-short-actions');
   if(!c.full){
-   const wrap=document.createElement('div');wrap.className='cf-short-trim';
-   const title=document.createElement('div');title.className='cf-short-trim-title';
-   title.textContent='Preview trim · adjust the beginning and ending';
-   wrap.append(title);
+   const trimBtn=document.createElement('button');
+   trimBtn.type='button';trimBtn.className='sm cf-short-trim-toggle';
+   trimBtn.textContent='✂ Edit trim';trimBtn.setAttribute('aria-expanded','false');
+   const wrap=document.createElement('div');wrap.className='cf-short-trim';wrap.hidden=true;
+   trimBtn.onclick=()=>{
+    wrap.hidden=!wrap.hidden;
+    trimBtn.setAttribute('aria-expanded',String(!wrap.hidden));
+    trimBtn.textContent=wrap.hidden?'✂ Edit trim':'✓ Close trim';
+   };
+   const hint=document.createElement('p');hint.className='cf-short-trim-title';
+   hint.textContent='Fine-tune this moment before exporting';
    const row=document.createElement('div');row.className='cf-short-trim-row';
-   const startLabel=document.createElement('label');startLabel.textContent='Start';
-   const startInput=document.createElement('input');startInput.type='range';startInput.min='0';
-   startInput.max=String(Math.max(0,Math.round((v.duration||c.e)*10)/10));
-   startInput.step='.1';startInput.value=String(c.s);startInput.setAttribute('aria-label','Short '+(i+1)+' trim start');
-   const endLabel=document.createElement('label');endLabel.textContent='End';
-   const endInput=document.createElement('input');endInput.type='range';endInput.min='0';
-   endInput.max=startInput.max;endInput.step='.1';endInput.value=String(c.e);
-   endInput.setAttribute('aria-label','Short '+(i+1)+' trim end');
    const output=document.createElement('output');output.className='cf-short-trim-readout';
-   const updateOutput=()=>{output.textContent=c.s.toFixed(1)+'s – '+c.e.toFixed(1)+'s · '+(c.e-c.s).toFixed(1)+'s'};
-   updateOutput();
-   const trim=(key,input)=>{
+   const makeSlider=(key,caption)=>{
+    const label=document.createElement('label');
+    const header=document.createElement('span');header.textContent=caption;
+    const value=document.createElement('output');value.className='cf-short-trim-value';
+    const input=document.createElement('input');
+    input.type='range';input.min='0';
+    input.max=String(Math.max(c.e,Number.isFinite(v.duration)?v.duration:c.e));
+    input.step='.1';input.value=String(c[key]);
+    input.setAttribute('aria-label','Short '+(i+1)+' trim '+(key==='s'?'start':'end'));
+    label.append(header,value,input);
+    const display=()=>{value.textContent=c[key].toFixed(1)+'s'};
+    display();
+    return {label,input,display};
+   };
+   const beginning=makeSlider('s','In point'),ending=makeSlider('e','Out point');
+   const updateReadout=()=>{output.textContent=c.s.toFixed(1)+'s – '+c.e.toFixed(1)+'s · '+(c.e-c.s).toFixed(1)+'s'};
+   updateReadout();
+   const trim=(key,control)=>{
     if(busy)return;
-    const val=Number(input.value),oldS=c.s,oldE=c.e;
+    const val=Number(control.input.value),oldS=c.s,oldE=c.e;
     if(!Number.isFinite(val))return;
     if(key==='s')c.s=Math.max(0,Math.min(val,c.e-3));
-    else c.e=Math.min(Number(v.duration)||c.e,Math.max(val,c.s+3));
+    else c.e=Math.min(Number.isFinite(v.duration)?v.duration:c.e,Math.max(val,c.s+3));
     c.s=Math.round(c.s*10)/10;c.e=Math.round(c.e*10)/10;
-    input.value=String(c[key]);updateOutput();
-    if(oldS!==c.s||oldE!==c.e){c.blob=null;c.pcm=null;c.plan=null;c.cap=S.cap==='file';
-     const time=r.querySelector('.info .t');if(time)time.textContent=fmt(c.s)+' – '+fmt(c.e)+' ('+Math.round(c.e-c.s)+'s)';
-     r.querySelector('.bar i').style.width='0%';b.textContent='Export';b.classList.remove('p');
+    control.input.value=String(c[key]);beginning.display();ending.display();updateReadout();refreshTime();
+    if(oldS!==c.s||oldE!==c.e){
+     stopInlineShort(media);
+     c.blob=null;c.pcm=null;c.plan=null;c.cap=S.cap==='file';
+     r.classList.remove('is-exported');
+     r.querySelector('.bar i').style.width='0%';
+     exportBtn.textContent='Export';exportBtn.classList.remove('p');
      r.querySelector('.cf-short-share')?.remove();
-     if(url)th.src=url+'#t='+(c.s+.1);}
+     note.textContent='Source preview';
+     if(url){media.src=url+'#t='+(c.s+.1).toFixed(2);media.load()}
+     progress.style.width='0%';
+    }
    };
-   startInput.oninput=()=>trim('s',startInput);
-   endInput.oninput=()=>trim('e',endInput);
-   // Persist once after the gesture, not on every mobile slider frame.
-   startInput.onchange=projSave;endInput.onchange=projSave;
-   const previewButton=document.createElement('button');previewButton.className='sm';
-   previewButton.type='button';previewButton.textContent='▶ Preview trimmed';
-   previewButton.onclick=()=>previewSeg(c.s,c.e);
-   for(const [lab,input] of [[startLabel,startInput],[endLabel,endInput]]){
-    lab.append(input);row.append(lab);
-   }
-   wrap.append(row,output,previewButton);
-   r.querySelector('.info').append(wrap);
+   beginning.input.oninput=()=>trim('s',beginning);
+   ending.input.oninput=()=>trim('e',ending);
+   beginning.input.onchange=projSave;ending.input.onchange=projSave;
+   row.append(beginning.label,ending.label);
+   wrap.append(hint,row,output);
+   actions.append(trimBtn);
+   r.querySelector('.cf-short-info').append(wrap);
   }
-  // Preview: plays this short in the player above, from its start to its end.
-  {const pv=document.createElement('button');pv.className='sm';pv.style.cssText='padding:3px 7px;font-size:12px';pv.textContent='▶ preview';pv.onclick=()=>previewSeg(c.s,c.e);tr.append(pv)}
-  r.querySelector('.info').append(tr);
-  // After export: share buttons.
-  if(c.blob)r.querySelector('.info').append(shareRow(c,i));
-  const b=document.createElement('button');b.className='sm exp'+(c.blob?' p':'');b.textContent=c.blob?'Save':'Export';b.onclick=()=>{if(c.blob)save(c,i);else exportClip(i)};
-  r.append(b);c._el=r;L.append(r)});
- // Automatic save of the plan.
- projSave()}
+  const exportBtn=document.createElement('button');
+  exportBtn.type='button';
+  exportBtn.className='sm exp'+(c.blob?' p':'');
+  exportBtn.textContent=c.blob?'Save MP4':'Export';
+  exportBtn.onclick=()=>{if(c.blob)save(c,i);else exportClip(i)};
+  actions.append(exportBtn);
+  if(c.blob)r.querySelector('.cf-short-info').append(shareRow(c,i));
+  c._el=r;
+  L.append(r);
+ });
+ projSave();
+}
 
 /* ---------- drawing ---------- */
 // Smart-reframe camera: x = current position, tx = target, keys = camera keyframes, ww = crop width as a fraction of the video width.
