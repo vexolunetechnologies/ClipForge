@@ -777,10 +777,13 @@ function render(){
     if(oldS!==c.s||oldE!==c.e){c.blob=null;c.pcm=null;c.plan=null;c.cap=S.cap==='file';
      const time=r.querySelector('.info .t');if(time)time.textContent=fmt(c.s)+' – '+fmt(c.e)+' ('+Math.round(c.e-c.s)+'s)';
      r.querySelector('.bar i').style.width='0%';b.textContent='Export';b.classList.remove('p');
-     projSave();}
+     r.querySelector('.cf-short-share')?.remove();
+     if(url)th.src=url+'#t='+(c.s+.1);}
    };
    startInput.oninput=()=>trim('s',startInput);
    endInput.oninput=()=>trim('e',endInput);
+   // Persist once after the gesture, not on every mobile slider frame.
+   startInput.onchange=projSave;endInput.onchange=projSave;
    const previewButton=document.createElement('button');previewButton.className='sm';
    previewButton.type='button';previewButton.textContent='▶ Preview trimmed';
    previewButton.onclick=()=>previewSeg(c.s,c.e);
@@ -1319,7 +1322,7 @@ function save(c,i){const a=document.createElement('a');a.href=URL.createObjectUR
 // Share a finished file. "Share…" opens the phone's own share menu (YouTube, Instagram, Facebook, WhatsApp...) with the video attached.
 // The site buttons save the file first, then open that site's upload page in a new tab (a web page cannot upload to your account by itself: you pick the saved file there).
 const SHARE_SITES=[['YouTube','https://www.youtube.com/upload'],['Facebook','https://www.facebook.com/reels/create'],['Instagram','https://www.instagram.com/'],['TikTok','https://www.tiktok.com/upload']];
-function shareRow(c,i){const d=document.createElement('div');d.className='row';d.style.marginTop='6px';
+function shareRow(c,i){const d=document.createElement('div');d.className='row cf-short-share';d.style.marginTop='6px';
  const mk=(txt,fn)=>{const x=document.createElement('button');x.className='sm';x.style.cssText='padding:3px 8px;font-size:12px';x.textContent=txt;x.onclick=fn;d.append(x)};
  const nm=()=>fname+(c.trailer?'-trailer':c.full?'-full-9x16':'-short-'+(i+1))+'.'+ext;
  const fl=()=>new File([c.blob],nm(),{type:(c.blob.type||'video/mp4').split(';')[0]});
