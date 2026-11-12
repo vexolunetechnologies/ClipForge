@@ -3483,6 +3483,24 @@ body[data-tool="shorts"] #counts .chip{min-width:48px;min-height:42px}
 body[data-tool="shorts"] #counts #custom{box-sizing:border-box;flex:0 1 112px;width:112px;min-width:96px;max-width:128px;height:42px;margin:0}
 body[data-tool="shorts"] #soBox .cf-short-count-help{font-size:12px;line-height:1.45;margin:7px 0 0}
 
+/* Global processing/error toast must clear the 252px desktop sidebar.
+   This is a floating notification, not a blocking full-width banner. */
+#toast{
+ z-index:250!important;
+ color:#fff!important;
+ box-sizing:border-box!important;
+ max-width:560px;
+ line-height:1.5;
+ overflow-wrap:anywhere;
+ box-shadow:0 14px 36px rgba(0,0,0,.36);
+}
+@media(min-width:901px){
+ #toast{left:calc(252px + 16px)!important;right:16px!important;margin-inline:auto!important}
+}
+@media(max-width:900px){
+ #toast{left:12px!important;right:12px!important;max-width:none!important;margin-inline:0!important}
+}
+
 /* Shorts workspace: one in-card portrait preview, compact actions, edit-only trims.
    No trailer/editor/captions styles are affected. */
 body[data-tool="shorts"] #list{

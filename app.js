@@ -700,6 +700,10 @@ $('#trlgo').onclick=async()=>{if(busy)return;if(!LAST)return err('Run "Find shor
 // "Analyze & create plan" button (Shorts and Trailer): scans the video, scores every second, then builds the plan.
 $('#go').onclick=async()=>{
  if(busy)return;const tok=RUN;busy=true;lock(true);$('#res').classList.add('hide');PL=lenVal()||45;prog(.01);
+ // Keep the screen awake during AI analysis when the browser/device permits.
+ // Background tab video capture still cannot be guaranteed.
+ let scanWake=null;
+ try{if(navigator.wakeLock&&!document.hidden)scanWake=await navigator.wakeLock.request('screen')}catch(_){}
  try{
   const dur=v.duration,D=Math.ceil(dur);LAST=null;
   if(S.len==='full'){clips=[{s:0,e:dur,score:null,tags:['Full video'],full:1,blob:null,pcm:null}];const mb=Math.round((S.res==='1080'?8:4)/8*dur);say('Full video: '+Math.round(dur/60)+' min of real-time export, roughly '+mb+' MB. Keep this screen on.')}
@@ -734,6 +738,7 @@ $('#go').onclick=async()=>{
    else say(clips.length<S.n?'Only '+clips.length+' non-overlapping shorts fit. Try a shorter length.':'Found '+clips.length+' moments spread across the video. Tap "Different picks" for another set.')}
   prog(1);render();if(S.tool==='trailer')say('Analysis done. Choose the length and format below, then make your trailer.');$('#res').classList.remove('hide');$('#trl').classList.remove('hide');TRAILER=null;renderTrailer();$('#res').scrollIntoView({behavior:'smooth'})
  }catch(e){if(e.message!=='Stopped'){say('Analysis failed: '+(e.message||e));err('Analysis failed: '+(e.message||e))}}
+ try{if(scanWake)await scanWake.release()}catch(_){}
  if(tok===RUN){setTimeout(()=>$('#pbar').classList.add('hide'),600);busy=false;lock(false)}};
 // "Different picks" button: build a new plan with some random variety.
 $('#shuf').onclick=()=>{if(busy||!LAST)return;if(LAST.semanticPool&&LAST.semanticPool.length){const pool=LAST.semanticPool,n=S.n==='auto'?Math.min(10,Math.max(3,Math.round((LAST.dur||180)/180))):Math.max(1,Math.min(50,+S.n||3)),start=LAST.semanticCursor||0;clips=Array.from({length:Math.min(n,pool.length)},(_,i)=>{const q=pool[(start+i)%pool.length];return{...q,tags:[...q.tags],blob:null,pcm:null,cap:false}});LAST.semanticCursor=(start+clips.length)%pool.length;render();say(LAST.selectionMode==='transcript-fallback'?'Showing another set of transcript-based dialogue sections. Preview before export.':'Showing another set of AI-selected dialogue moments.')}else{clips=doPlan(true);render();say('New set of picks.')}};
@@ -1474,7 +1479,7 @@ $('#all').onclick=async()=>{if(busy)return;const tok=RUN;ALL=true;
  try{for(let i=0;i<clips.length;i++){if(tok!==RUN)break;if(!clips[i].blob)await exportClip(i)}}finally{if(tok===RUN)ALL=false}
  if(tok===RUN)say('Done. Tap Save on each short.')};
 // Warn if the tab is hidden while recording or scanning.
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&busy)err('Keep this tab open and the screen on while it works, otherwise recording and scanning can break.')});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&busy)err('ClipForge may pause in the background. Return to this tab for reliable scanning and export.')});
 /* ===== 13. PROJECT SAVE AND PREVIEW ===== */
 // Saved plans live in this browser only (localStorage). The video itself is NOT saved: open the same file again and tap "Restore".
 var PRV=null;

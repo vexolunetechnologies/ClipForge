@@ -210,6 +210,68 @@ try{
   if(directPage)await directPage.close();
   await directSite.close();
  }
+ // Test notification visibility on phone and desktop, including the sidebar.
+ const toastSite=await serveLocalSite({rootDir:"."});
+ const warningMobile=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+ try{
+ await warningMobile.goto(toastSite.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
+ await warningMobile.evaluate(()=>err("Test processing warning"));
+ const mobileToast=await warningMobile.evaluate(()=>{
+  const box=document.querySelector("#toast").getBoundingClientRect();
+  return {left:box.left,right:box.right,viewport:innerWidth,
+   z:Number(getComputedStyle(document.querySelector("#toast")).zIndex),
+   headerZ:Number(getComputedStyle(document.querySelector("header")).zIndex),
+   color:getComputedStyle(document.querySelector("#toast")).color};
+ });
+ assert.ok(mobileToast.left>=0&&mobileToast.right<=mobileToast.viewport+1,
+  "Toast must fit mobile viewport: "+JSON.stringify(mobileToast));
+ assert.ok(mobileToast.z>mobileToast.headerZ,"Toast should be above mobile navigation");
+ const desktop=await browser.newPage({viewport:{width:1440,height:900}});
+ try{
+  await desktop.goto(toastSite.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
+  await desktop.evaluate(()=>err("Test processing warning"));
+  const placement=await desktop.evaluate(()=>{
+   const toast=document.querySelector("#toast"),header=document.querySelector("header");
+   return {left:toast.getBoundingClientRect().left,right:toast.getBoundingClientRect().right,
+    sidebarRight:header.getBoundingClientRect().right,viewport:innerWidth,
+    toastZ:Number(getComputedStyle(toast).zIndex),sidebarZ:Number(getComputedStyle(header).zIndex),
+    color:getComputedStyle(toast).color};
+  });
+  assert.ok(placement.left>=placement.sidebarRight&&placement.right<=placement.viewport,
+   "Toast must not be hidden behind desktop sidebar: "+JSON.stringify(placement));
+  assert.ok(placement.toastZ>placement.sidebarZ,"Toast must stack above desktop sidebar");
+  assert.equal(placement.color,"rgb(255, 255, 255)","Warning must retain readable white text");
+ }finally{await desktop.close()}
+ }finally{
+  await warningMobile.close();
+  await toastSite.close();
+ }
+
+ // Mock only the browser Wake Lock API, then exercise the real Analyze click.
+ // Analysis is stopped before contacting any external AI service.
+ const scanPage=await browser.newPage({viewport:{width:390,height:844}});
+ try{
+  await scanPage.addInitScript(()=>{
+   window.__scanWake={requested:0,released:0};
+   Object.defineProperty(navigator,"wakeLock",{configurable:true,value:{
+    request:async type=>{
+     if(type!=="screen")throw Error("Wrong wake lock type");
+     window.__scanWake.requested++;
+     return {release:async()=>{window.__scanWake.released++}};
+    }
+   }});
+  });
+  await scanPage.goto(site.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
+  await scanPage.locator("#file").setInputFiles(source);
+  await scanPage.waitForFunction(()=>document.querySelector("#src")?.readyState>=1,null,{timeout:16000});
+  await scanPage.evaluate(()=>{
+   decodeFullAudioForAI=async()=>{throw Error("Test-only early exit")};
+   document.querySelector("#go").click();
+  });
+  await scanPage.waitForFunction(()=>window.__scanWake?.released===1,null,{timeout:10000});
+  assert.deepEqual(await scanPage.evaluate(()=>window.__scanWake),{requested:1,released:1},
+   "AI scanning should acquire and release a browser screen wake lock");
+ }finally{await scanPage.close()}
  console.log("Shorts inline preview: hidden redundant canvas remains capture-ready on built and direct routes, real local video playback, source player isolation, one active preview, in/out limit, collapsed edit, export state, mobile 9:16 and navigation passed.");
 }finally{
  if(browser)await browser.close();
