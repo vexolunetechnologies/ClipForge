@@ -129,8 +129,8 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261112-short-cards-v1"),
-  "Homepage should load the refreshed mobile hero CSS version");
+assert.ok(rootHome.includes("/styles.css?v=20261112-hide-shorts-preview"),
+  "Homepage should load the refreshed Shorts preview CSS version");
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");
 assert.match(captionsPage,/src="\/assets\/js\/tools\/captions-studio-enhancements\.js\?v=20261110-style-motion-v2"/);
