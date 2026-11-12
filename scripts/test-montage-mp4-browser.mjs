@@ -192,12 +192,15 @@ try{
    const header=String.fromCharCode(...new Uint8Array(await blob.slice(4,8).arrayBuffer()));
    const mb=await import("https://cdn.jsdelivr.net/npm/mediabunny@1.62.1/+esm");
    const input=new mb.Input({source:new mb.BlobSource(blob),formats:mb.ALL_FORMATS});
+   const {inspectMp4GalleryMetadata}=await import("/montage-mp4.js?v=20261112-gallery-duration-1");
+   const gallery=await inspectMp4GalleryMetadata(blob);
    try{
     const video=await input.getPrimaryVideoTrack(),audio=await input.getPrimaryAudioTrack();
     return {
      header,size:blob.size,
      codec:await video?.getCodec(),width:await video?.getCodedWidth(),height:await video?.getCodedHeight(),
-     audio:await audio?.getCodec(),duration:await input.computeDuration()
+     audio:await audio?.getCodec(),duration:await input.computeDuration(),
+     metadataDuration:await input.getDurationFromMetadata(),gallery
     };
    }finally{await input.close?.();}
   });
@@ -207,6 +210,8 @@ try{
   assert.equal(check.width,width);assert.equal(check.height,height);
   assert.equal(check.audio,"aac","Export must preserve AAC audio");
   assert.ok(check.duration>1&&check.duration<4,"MP4 needs valid nonzero duration: "+check.duration);
+  assert.ok(check.gallery.compatible&&check.gallery.duration>1,"Gallery movie header must have duration metadata");
+  assert.ok(check.metadataDuration>1,"Android Gallery needs duration encoded in the MP4 header");
   const download=page.waitForEvent("download",{timeout:12000});
   await anchor.click();const file=await download;
   assert.match(file.suggestedFilename(),/\.mp4$/);
