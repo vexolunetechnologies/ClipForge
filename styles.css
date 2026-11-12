@@ -3045,6 +3045,13 @@ body[data-page="workspace"][data-tool="reverse"] #top.wrap {
 
 /* Trailer rendering canvas stays available for export, without a duplicate preview UI. */
 body[data-tool="trailer"] #cfLivePreviewBlock{display:none!important}
+/* Generated Shorts already have one preview in each result card. Hide the redundant
+   large preview UI only, retaining #cv in the DOM for canvas-based MP4 export.
+   Handle both the homepage (#cfLivePreviewBlock) and direct /tools/* pages. */
+body[data-tool="shorts"] #cfLivePreviewBlock,
+body[data-tool="shorts"] .cf-live-preview-label,
+body[data-tool="shorts"] #cv,
+body[data-tool="shorts"] #pnote{display:none!important}
 
 /* ClipForge mobile editor: one authoritative layout for the actual nested editor DOM.
    Earlier mobile rules assumed stage/monitor were direct grid contents and
