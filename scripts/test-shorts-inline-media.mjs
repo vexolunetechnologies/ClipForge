@@ -157,7 +157,35 @@ try{
  assert.deepEqual(refreshed,{cards:0,active:true,objectUrls:0,planned:0},
   "A fresh upload must not retain stale Short previews or outdated trim/export cards");
  assert.deepEqual(errors,[],"No uncaught errors while previewing, trimming, exporting and switching");
- console.log("Shorts inline preview: hidden redundant canvas remains capture-ready, real local video playback, source player isolation, one active preview, in/out limit, collapsed edit, export state, mobile 9:16 and navigation passed.");
+ // A Cloudflare deployment can expose the checked-in /tools/ HTML sources
+ // directly rather than the public/ build output. Test that exact route too.
+ const directSite=await serveLocalSite({rootDir:"."});
+ let directPage;
+ try{
+  directPage=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+  await directPage.goto(directSite.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
+  const directPreview=await directPage.evaluate(()=>{
+   const panel=document.getElementById("cfLivePreviewBlock");
+   const canvas=document.getElementById("cv");
+   const stream=canvas.captureStream(1);
+   const summary={
+    panelExists:!!panel,panelHidden:getComputedStyle(panel).display==="none",
+    canvasAttached:canvas.isConnected,
+    canvasNotLaidOut:canvas.getClientRects().length===0,
+    videoTrack:stream.getVideoTracks().some(t=>t.readyState==="live")
+   };
+   stream.getTracks().forEach(t=>t.stop());
+   return summary;
+  });
+  assert.deepEqual(directPreview,{
+   panelExists:true,panelHidden:true,canvasAttached:true,
+   canvasNotLaidOut:true,videoTrack:true
+  },"Direct /tools/shorts/ must hide the redundant canvas without breaking export");
+ }finally{
+  if(directPage)await directPage.close();
+  await directSite.close();
+ }
+ console.log("Shorts inline preview: hidden redundant canvas remains capture-ready on built and direct routes, real local video playback, source player isolation, one active preview, in/out limit, collapsed edit, export state, mobile 9:16 and navigation passed.");
 }finally{
  if(browser)await browser.close();
  await site.close();
