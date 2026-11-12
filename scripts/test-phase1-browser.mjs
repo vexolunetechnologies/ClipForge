@@ -41,6 +41,23 @@ try {
   assert.equal(await page.locator("#cfCapTemplateGrid button.is-selected").count(),1,
     "Selecting a different caption style must preserve selected state");
 
+  // Repeated mobile caption-preview updates must not resize a full video
+  // canvas every time, which reallocates GPU/bitmap memory on low-end phones.
+  await page.setViewportSize({width:390,height:844});
+  const reuse=await page.evaluate(()=>{
+   const canvas=document.getElementById("cfCapLive"),video=document.getElementById("cfCapVideo");
+   video.dispatchEvent(new Event("timeupdate")); // Set up the canvas once.
+   const w=Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype,"width");
+   const h=Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype,"height");
+   let writes=0;
+   Object.defineProperty(canvas,"width",{configurable:true,get(){return w.get.call(this)},set(n){writes++;w.set.call(this,n)}});
+   Object.defineProperty(canvas,"height",{configurable:true,get(){return h.get.call(this)},set(n){writes++;h.set.call(this,n)}});
+   for(let i=0;i<8;i++)video.dispatchEvent(new Event("timeupdate"));
+   return {writes,width:canvas.width,height:canvas.height};
+  });
+  assert.equal(reuse.writes,0,"Mobile caption preview must reuse its canvas across timeupdates");
+  assert.ok(reuse.width>0&&reuse.height>0,"Caption preview canvas should remain initialized");
+  await page.setViewportSize({width:1365,height:820});
   const urlBefore=page.url();
   await page.locator('[data-tool-route="animator"]').click();
   await page.waitForFunction(()=>location.pathname==="/tools/animator/");
