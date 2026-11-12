@@ -80,7 +80,7 @@ for (const tool of tools) {
   const direct = from("tools/" + tool + "/index.html");
   assert.ok(direct.includes('<div id="cfLivePreviewBlock">'),
     "Direct tool HTML must wrap the live preview canvas: " + tool);
-  assert.ok(direct.includes('href="/styles.css?v=20261112-direct-preview-fix-v2"'),
+  assert.ok(direct.includes('href="/styles.css?v=20261112-shorts-count-1080-v1"'),
     "Direct tool HTML needs fresh preview-hiding stylesheet: " + tool);
   const generated = from("public/tools/" + tool + "/index.html");
   assert.ok(generated.includes('<div id="cfLivePreviewBlock">'),
@@ -143,7 +143,7 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261112-hide-shorts-preview"),
+assert.ok(rootHome.includes("/styles.css?v=20261112-shorts-count-1080-v1"),
   "Homepage should load the refreshed Shorts preview CSS version");
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");
