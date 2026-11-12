@@ -3788,3 +3788,9 @@ body[data-tool="shorts"] #list .cf-short-info .cf-short-share{flex-wrap:wrap;mar
   #tools .section-heading p{display:none!important}
 }
 @media(prefers-reduced-motion:reduce){#tools .toolcard{transition:none!important}}
+
+/* Keep general learning content out of individual editing workspaces.
+   The guide section remains accessible on Home and All Tools and all
+   standalone /guides/ article URLs remain unchanged. */
+body[data-page="workspace"] .cf-lower-sections{display:none!important}
+body:not([data-page="home"]):not([data-page="tools"]) #learning-center{display:none!important}
