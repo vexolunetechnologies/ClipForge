@@ -15,6 +15,7 @@ const files = [
   ["app.js", "public/assets/js/core/app.js"],
   ["navigation.js", "public/navigation.js"],
   ["navigation.js", "public/assets/js/core/navigation.js"],
+  ["ux-guide.js", "public/assets/js/core/ux-guide.js"],
   ["editor-loader.js", "public/editor-loader.js"],
   ["animator-idle.js", "public/animator-idle.js"],
   ["editor-loader.js", "public/assets/js/core/editor-loader.js"],
@@ -80,7 +81,7 @@ for (const tool of tools) {
   const direct = from("tools/" + tool + "/index.html");
   assert.ok(direct.includes('<div id="cfLivePreviewBlock">'),
     "Direct tool HTML must wrap the live preview canvas: " + tool);
-  assert.ok(direct.includes('href="/styles.css?v=20261112-processing-toast-v1"'),
+  assert.ok(direct.includes('href="/styles.css?v=20261112-easier-ux-v1"'),
     "Direct tool HTML needs fresh preview-hiding stylesheet: " + tool);
   const generated = from("public/tools/" + tool + "/index.html");
   assert.ok(generated.includes('<div id="cfLivePreviewBlock">'),
@@ -96,6 +97,17 @@ assert.match(from("app.js"), /scanWake=await navigator\.wakeLock\.request\('scre
  "AI scanning should request a Wake Lock");
 assert.match(from("app.js"), /await scanWake\.release\(\)/,
  "AI scan Wake Lock must be released");
+// UX add-on remains consistent across all eight direct and generated tool pages.
+assert.ok(rootHome.includes('src="/ux-guide.js?v=20261112-easier-ux-v1"'),
+  "Homepage must load the UX guide");
+for (const tool of tools) {
+ const direct=from("tools/"+tool+"/index.html"),built=from("public/tools/"+tool+"/index.html");
+ assert.ok(direct.includes('src="/ux-guide.js?v=20261112-easier-ux-v1"'),
+   "Direct "+tool+" must load the helper");
+ assert.match(built,/src="\/assets\/js\/core\/ux-guide\.js\?v=20261112-easier-ux-v1"/,
+   "Generated "+tool+" must load the UX helper");
+}
+assert.match(from("ux-guide.js"),/var workflows=\{/,"UX guide config must exist");
 const css = from("styles.css");
 assert.ok(css.includes('body[data-tool="shorts"] #cfLivePreviewBlock{display:none!important}'),
   "Shorts must hide the wrapper rather than removing the export canvas");
@@ -153,7 +165,7 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261112-processing-toast-v1"),
+assert.ok(rootHome.includes("/styles.css?v=20261112-easier-ux-v1"),
   "Homepage should load the refreshed Shorts preview CSS version");
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");

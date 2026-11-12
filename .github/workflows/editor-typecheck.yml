@@ -32,6 +32,7 @@ jobs:
         run: |
           node --check public/assets/js/core/app.js
           node --check public/assets/js/core/navigation.js
+          node --check public/assets/js/core/ux-guide.js
           node --check navigation.js
           node --check editor-loader.js
           node --check animator-idle.js
@@ -49,6 +50,14 @@ jobs:
         run: npx playwright install chromium
       - name: Test no-reload navigation in a real browser
         run: npm run test:browser
+
+      - name: Upload UX review screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipforge-ux-phase1-preview
+          path: reports/ux-review-*.png
+          if-no-files-found: ignore
 
       - name: Test Phase 1 lazy previews and inactive view cleanup
         run: npm run test:phase1
