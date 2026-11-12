@@ -847,6 +847,8 @@ function render(){
    playBtn.textContent='Ⅱ';playBtn.setAttribute('aria-label','Pause this Short');
   });
   media.addEventListener('pause',()=>{
+   // Navigation pauses inactive tool videos; discard the stale active pointer.
+   if(SHORT_ACTIVE===media)SHORT_ACTIVE=null;
    r.classList.remove('is-playing');
    playBtn.textContent='▶';playBtn.setAttribute('aria-label','Play this Short');
   });
