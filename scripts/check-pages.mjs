@@ -153,7 +153,7 @@ assert.doesNotMatch(studioCode, /<span>✥ Drag caption<\/span>/, "Floating drag
 assert.match(studioCode, /id="cfCapMoveHandle"/, "Dragging must remain available");
 assert.match(studioCode, /<option value="1080" selected>1080p/, "1080p must be the default export quality");
 assert.match(studioCode, /<option value="720">720p/, "720p alternative must stay available");
-assert.match(rootHome, /\/captions-studio\.js\?v=20261110-style-motion-v2/, "Load fresh caption UI script after change");
+assert.match(rootHome, /\/captions-studio\.js\?v=20261112-caption-timing/, "Load fresh caption UI script after change");
 // New controls remain scoped to Captions Studio, never the shared Shorts renderer.
 for(const id of ["cfCapUndo","cfCapRedo","cfCapFont","cfCapColor","cfCapCustomColor",
  "cfCapOutline","cfCapShadow","cfCapBackground","cfCapTracking",
