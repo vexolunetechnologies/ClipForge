@@ -129,12 +129,12 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261110-style-motion-v2"),
+assert.ok(rootHome.includes("/styles.css?v=20261112-caption-timing"),
   "Homepage should load the refreshed mobile hero CSS version");
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");
 assert.match(captionsPage,/src="\/assets\/js\/tools\/captions-studio-enhancements\.js\?v=20261110-style-motion-v2"/);
-assert.match(captionsPage,/src="\/assets\/js\/tools\/captions-studio\.js\?v=20261110-style-motion-v2"/);
+assert.match(captionsPage,/src="\/assets\/js\/tools\/captions-studio\.js\?v=20261112-caption-timing"/);
 assert.ok(captionsPage.indexOf("captions-studio-enhancements.js")<captionsPage.indexOf("captions-studio.js"),
  "Caption template renderer must load before workspace setup");
 const captionScript=from("captions-studio.js"),captionExtras=from("captions-studio-enhancements.js");
@@ -153,7 +153,7 @@ assert.doesNotMatch(studioCode, /<span>✥ Drag caption<\/span>/, "Floating drag
 assert.match(studioCode, /id="cfCapMoveHandle"/, "Dragging must remain available");
 assert.match(studioCode, /<option value="1080" selected>1080p/, "1080p must be the default export quality");
 assert.match(studioCode, /<option value="720">720p/, "720p alternative must stay available");
-assert.match(rootHome, /\/captions-studio\.js\?v=20261110-style-motion-v2/, "Load fresh caption UI script after change");
+assert.match(rootHome, /\/captions-studio\.js\?v=20261112-caption-timing/, "Load fresh caption UI script after change");
 // New controls remain scoped to Captions Studio, never the shared Shorts renderer.
 for(const id of ["cfCapUndo","cfCapRedo","cfCapFont","cfCapColor","cfCapCustomColor",
  "cfCapOutline","cfCapShadow","cfCapBackground","cfCapTracking",
@@ -165,4 +165,5 @@ assert.match(captionExtras,/function decorateContext/, "Custom text styling rend
 assert.match(captionScript,/if\(look\.safe\)STUDIO\.drawSafeGuide/, "Preview-only guide integration missing");
 assert.ok(!from("caption-style-library.js").includes("drawSafeGuide"),
  "Shared Shorts caption renderer should not be altered");
+assert.match(from("captions-studio.js"),/cfCapTimingList/,"Cue timing editor must remain included in Captions Studio");
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");
