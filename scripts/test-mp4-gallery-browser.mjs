@@ -95,6 +95,29 @@ try{
  assert.ok(silent.duration>1.7&&silent.duration<3,"Video-only MP4 duration incorrect");
  assert.equal(silent.hasAudio,false,"Muted Highlights must remain video-only");
  assert.equal(silent.codec,"avc");
+ // A native browser may record VP9 inside MP4 without an H.264 encoder.
+ // The duration fix must COPY its video stream, not demand AVC encoding.
+ const vp9Fragment=execFileSync("ffmpeg",[
+  "-hide_banner","-loglevel","error",
+  "-f","lavfi","-i","testsrc2=size=256x144:rate=15",
+  "-t","1.8","-c:v","libvpx-vp9","-deadline","realtime","-cpu-used","8",
+  "-b:v","350k","-an","-movflags","frag_keyframe+empty_moov","-f","mp4","pipe:1"
+ ],{maxBuffer:10*1024*1024});
+ const vp9=await page.evaluate(async source=>{
+  const {finalizeGalleryMp4,inspectMp4GalleryMetadata}=await import("/montage-mp4.js");
+  const fixed=await finalizeGalleryMp4(new Blob([new Uint8Array(source)],{type:"video/mp4"}));
+  const meta=await inspectMp4GalleryMetadata(fixed);
+  const mb=await import("https://cdn.jsdelivr.net/npm/mediabunny@1.62.1/+esm");
+  const input=new mb.Input({source:new mb.BlobSource(fixed),formats:mb.ALL_FORMATS});
+  const video=await input.getPrimaryVideoTrack(),audio=await input.getPrimaryAudioTrack();
+  const codec=await video?.getCodec(),duration=await input.getDurationFromMetadata();
+  await input.close?.();
+  return {meta,codec,duration,hasAudio:!!audio};
+ },[...vp9Fragment]);
+ assert.equal(vp9.meta.compatible,true,"VP9 MP4 must gain valid Gallery duration");
+ assert.equal(vp9.codec,"vp9","Keep native VP9 MP4 stream without requiring an AVC encoder");
+ assert.ok(vp9.duration>1.4&&vp9.duration<2.5);
+ assert.equal(vp9.hasAudio,false);
  assert.deepEqual(errors,[],"No browser runtime errors during MP4 repair");
  console.log("Gallery MP4 duration repair passed: real fMP4 → nonfragmented fast-start H.264/AAC MP4, mvhd "+
   report.after.duration.toFixed(2)+"s, ffprobe "+details.format.duration+"s, no-op and corruption checks.");
