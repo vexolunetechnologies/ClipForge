@@ -39,8 +39,8 @@ try{
  }
  await page.evaluate(()=>{
   clips=[
-   {s:1,e:3.6,score:88,tags:["Conversation"],reason:"Complete dialogue",blob:null,pcm:null},
-   {s:5,e:7.6,score:null,tags:["Dialogue review"],reason:"Natural scene ending",blob:null,pcm:null}
+   {s:1,e:5.6,score:88,tags:["Conversation"],reason:"Complete dialogue",blob:null,pcm:null},
+   {s:6,e:8.6,score:null,tags:["Dialogue review"],reason:"Natural scene ending",blob:null,pcm:null}
   ];
   render();
   document.querySelector("#res").classList.remove("hide");
@@ -73,13 +73,13 @@ try{
  await second.locator(".cf-short-play").click();
  await page.waitForFunction(()=>{
   const v=document.querySelectorAll("#list .cf-short-card video")[1];
-  return v&&!v.paused&&v.currentTime>=5;
+  return v&&!v.paused&&v.currentTime>=6;
  },null,{timeout:12000});
  assert.equal(await first.locator("video").evaluate(v=>v.paused),true,
   "Playing another Short must pause the previous preview");
  // A preview stops at the selected Short's out-point, not the end of the source.
  await second.locator("video").evaluate(v=>{
-  v.currentTime=7.58;
+  v.currentTime=8.58;
   v.dispatchEvent(new Event("timeupdate"));
  });
  await page.waitForFunction(()=>{
@@ -101,7 +101,7 @@ try{
   el.dispatchEvent(new Event("change",{bubbles:true}));
  });
  assert.equal(await page.evaluate(()=>clips[0].s),1.4);
- assert.match(await first.locator(".cf-short-trim-readout").textContent(),/1\.4s – 3\.6s/);
+ assert.match(await first.locator(".cf-short-trim-readout").textContent(),/1\.4s – 5\.6s/);
  await first.locator(".cf-short-trim-toggle").click();
  assert.equal(await first.locator(".cf-short-trim").isVisible(),false);
  assert.equal(await first.locator(".cf-short-actions button.exp").count(),1);
@@ -114,7 +114,7 @@ try{
  assert.equal(await cards.nth(0).locator(".cf-short-share").count(),1);
  await cards.nth(0).locator(".cf-short-trim-toggle").click();
  await cards.nth(0).locator('input[aria-label="Short 1 trim end"]').evaluate(el=>{
-  el.value="3.2";el.dispatchEvent(new Event("input",{bubbles:true}));
+  el.value="5.2";el.dispatchEvent(new Event("input",{bubbles:true}));
  });
  assert.equal(await page.evaluate(()=>clips[0].blob),null,
   "Trim after export must invalidate stale exported MP4");
