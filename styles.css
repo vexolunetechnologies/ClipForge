@@ -3794,3 +3794,189 @@ body[data-tool="shorts"] #list .cf-short-info .cf-short-share{flex-wrap:wrap;mar
    standalone /guides/ article URLs remain unchanged. */
 body[data-page="workspace"] .cf-lower-sections{display:none!important}
 body:not([data-page="home"]):not([data-page="tools"]) #learning-center{display:none!important}
+
+/* Highlights Studio presentation refresh: match Montage's media-first layout.
+   Scoped to #highlightsTool; all control IDs, data and export behavior unchanged. */
+#highlightsTool .cf-hs-layout{
+  grid-template-columns:minmax(0,1.4fr) minmax(290px,.85fr)!important;
+  align-items:start!important;
+  gap:16px!important;
+}
+#highlightsTool .cf-hs-layout>.cf-panel{
+  min-width:0!important;
+  margin:0!important;
+  padding:18px!important;
+  border-radius:16px!important;
+}
+#highlightsTool .cf-hs-panel-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:14px;
+}
+#highlightsTool .cf-hs-panel-meta{
+  color:var(--muted);
+  font-size:10px;
+  font-weight:750;
+  letter-spacing:.08em;
+}
+#highlightsTool .cf-hs-media-panel>.cf-field{margin:0 0 13px}
+#highlightsTool .cf-hs-stage{
+  display:grid;
+  place-items:center;
+  min-height:240px;
+  overflow:hidden;
+  border-radius:13px;
+  border:1px solid var(--line);
+  background:linear-gradient(145deg,rgba(13,22,41,.94),rgba(12,17,29,.98));
+  box-sizing:border-box;
+}
+#highlightsTool .cf-hs-stage #hsSourcePreview{
+  width:100%;
+  max-height:440px;
+  margin:0;
+  border-radius:12px;
+  background:#05070d;
+}
+#highlightsTool .cf-hs-preview-empty{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  text-align:center;
+  padding:26px 16px;
+  color:var(--muted);
+  font-size:12px;
+}
+#highlightsTool .cf-hs-preview-symbol{
+  display:grid;
+  place-items:center;
+  width:46px;height:46px;
+  margin-bottom:5px;
+  border-radius:13px;
+  border:1px solid rgba(139,124,255,.28);
+  background:rgba(139,124,255,.12);
+  color:var(--accent-2);
+  font-size:20px;
+}
+#highlightsTool .cf-hs-preview-empty strong{color:var(--text);font-size:14px}
+#highlightsTool .cf-hs-preview-empty small{color:var(--muted);font-size:12px}
+#highlightsTool .cf-hs-stage #hsSourcePreview[style*="display: block"] + .cf-hs-preview-empty{
+  display:none;
+}
+#highlightsTool .cf-hs-plan-area{
+  min-width:0;
+  padding-top:18px;
+  margin-top:18px;
+  border-top:1px solid var(--line);
+}
+#highlightsTool .cf-hs-plan-area .cf-empty{
+  margin:0 0 10px;
+  border:1px dashed var(--line);
+  border-radius:12px;
+  padding:18px;
+  text-align:center;
+}
+#highlightsTool #hsPlan{
+  display:flex;
+  min-width:0;
+  max-width:100%;
+  gap:9px;
+  overflow-x:auto;
+  padding:6px 0 12px;
+}
+#highlightsTool #hsPlan .cf-clip{
+  min-width:185px;
+  max-width:250px;
+  border-radius:11px;
+  padding:12px;
+}
+#highlightsTool .cf-hs-plan-area .cf-stat{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:8px;
+  padding:11px 13px;
+}
+#highlightsTool .cf-hs-plan-area .cf-stat b{font-size:16px}
+#highlightsTool .cf-hs-result-area{
+  min-width:0;
+  margin-top:18px;
+  padding-top:18px;
+  border-top:1px solid var(--line);
+}
+#highlightsTool .cf-hs-result-area:has(#hsOutput:empty){display:none}
+#highlightsTool #hsOutput{min-width:0;max-width:100%;margin-top:10px}
+#highlightsTool #hsOutput video{
+  width:100%;
+  max-height:460px;
+  background:#05070d;
+  object-fit:contain;
+  border-radius:12px;
+}
+#highlightsTool .cf-hs-settings-panel>.cf-kicker{margin-bottom:13px}
+#highlightsTool .cf-hs-settings-panel .cf-field{min-width:0;margin:12px 0}
+#highlightsTool .cf-hs-settings-panel .cf-field select,
+#highlightsTool .cf-hs-settings-panel .cf-field input:not([type="file"]){
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+}
+#highlightsTool .cf-hs-settings-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  column-gap:12px;
+  align-items:start;
+}
+#highlightsTool .cf-hs-divider{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:15px 0 8px;
+  font-size:11px;
+  text-transform:uppercase;
+  font-weight:750;
+  letter-spacing:.09em;
+  color:var(--muted);
+}
+#highlightsTool .cf-hs-divider:after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--line);
+}
+#highlightsTool .cf-hs-actions{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+}
+#highlightsTool .cf-hs-actions #hsGenerate{width:100%;min-height:44px}
+#highlightsTool .cf-hs-actions #hsStop{width:100%}
+#highlightsTool .cf-hs-actions #hsStatus{overflow-wrap:anywhere}
+#highlightsTool .cf-hs-footer-note{margin-top:14px;max-width:870px;line-height:1.55}
+@media(max-width:1100px){
+  #highlightsTool .cf-hs-layout{
+    grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr)!important;
+  }
+  #highlightsTool .cf-hs-settings-row{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:900px){
+  #highlightsTool .cf-hs-layout{grid-template-columns:minmax(0,1fr)!important}
+  #highlightsTool .cf-hs-layout>.cf-panel{width:100%;padding:14px!important}
+  #highlightsTool .cf-hs-settings-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #highlightsTool .cf-hs-stage{min-height:210px}
+}
+@media(max-width:560px){
+  #highlightsTool .cf-hs-layout{gap:12px!important}
+  #highlightsTool .cf-hs-layout>.cf-panel{padding:12px!important}
+  #highlightsTool .cf-hs-settings-row{grid-template-columns:minmax(0,1fr)}
+  #highlightsTool .cf-hs-stage{min-height:186px}
+  #highlightsTool .cf-hs-panel-heading{margin-bottom:11px}
+  #highlightsTool .cf-hs-plan-area{margin-top:14px;padding-top:14px}
+  #highlightsTool .cf-hs-preview-empty{padding:19px 10px}
+  #highlightsTool .cf-hs-plan-area .cf-stat b{font-size:15px}
+}
