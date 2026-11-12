@@ -69,7 +69,7 @@ for (const tool of tools) {
   const html = from(standalone);
   assert.doesNotMatch(html, /data-cf-tool-bootstrap|data-cf-link-bridge/);
   assert.ok(html.includes("https://clipforgestudio.pages.dev/tools/" + tool + "/"), "Missing canonical route");
-  assert.match(html, /src="\/app\.js"/);
+  assert.match(html, /src="\/app\.js(?:\?[^"]+)?"/);
   assert.match(html, /src="\/navigation\.js"/);
   assert.match(html, /href="#editor"/);
 }
