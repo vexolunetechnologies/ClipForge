@@ -34,6 +34,13 @@ try {
   await page.waitForFunction(() => !!window.ClipForgeNavigation &&
     !!window.ClipForgeEditor && !!document.getElementById("cfCaptionsWorkspace"));
   await page.evaluate(() => { window.__clipForgeBrowserMarker = "same-document"; });
+  assert.equal(await page.locator("#learning-center").isVisible(),true,
+    "Free Creator Guides must remain visible on homepage");
+  await page.locator('[data-route="tools"]').click();
+  await page.waitForFunction(()=>document.body.dataset.page==="tools");
+  assert.equal(await page.locator("#learning-center").isVisible(),true,
+    "Free Creator Guides must remain visible on All Tools");
+
 
   const tools = ["shorts","trailer","animator","reverse","montage","highlights","captions","editor"];
   for (const tool of tools) {
@@ -46,6 +53,11 @@ try {
     const visible = {shorts:"tool",trailer:"tool",animator:"iaTool",reverse:"rvTool",
       montage:"vmTool",highlights:"highlightsTool",captions:"cfCaptionsWorkspace",editor:"editorTool"}[tool];
     assert.equal(await page.locator("#" + visible).isVisible(), true, tool + " workspace not visible");
+    assert.equal(await page.locator("#learning-center").isVisible(),false,
+      tool+" must not show the Free Creator Guides section");
+    assert.equal(await page.locator(".cf-lower-sections").isVisible(),false,
+      tool+" must show only its tool-specific workspace without common marketing sections");
+
     if (tool === "animator" || tool === "reverse") {
       const bounds = await page.locator("#" + visible).boundingBox();
       assert.ok(bounds && bounds.y < 180, tool + " retained the large top gap");
@@ -124,10 +136,15 @@ try {
         assert.equal(rows.size,4,"Eight cards must form 2 columns × 4 rows on mobile");
       }
       await screen.locator("#tools").screenshot({path:"reports/compact-tools-"+width+".png"});
+      assert.equal(await screen.locator("#learning-center").isVisible(),true,
+        "All Tools guides should be visible on "+width+"px screens");
       if(width===390){
         await screen.locator('#tools a.toolcard[href="#captions"]').click();
         await screen.waitForFunction(()=>
           location.pathname==="/tools/captions/" && document.body.dataset.tool==="captions");
+        assert.equal(await screen.locator("#learning-center").isVisible(),false,
+          "Individual Captions Studio must not show guides on mobile");
+
       }
       assert.deepEqual(screenErrors,[],"No browser runtime error in compact All Tools at "+width);
     } finally {
