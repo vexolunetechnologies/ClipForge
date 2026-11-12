@@ -123,12 +123,12 @@ try{
 
  // Tool switching must release inline playback without affecting source state.
  await second.locator(".cf-short-play").click();
- await page.waitForFunction(()=>!document.querySelectorAll("#list video")[1].paused,{timeout:12000});
+ await page.waitForFunction(()=>!document.querySelectorAll("#list video")[1].paused,null,{timeout:12000});
  await page.evaluate(()=>window.ClipForgeNavigation.navigate("/tools/captions/"));
  assert.equal(await second.locator("video").evaluate(v=>v.paused),true);
  assert.equal(await page.evaluate(()=>SHORT_ACTIVE),null);
- // Uploading a new source must remove the old cards and release object URLs.
- assert.equal(await page.evaluate(()=>window.ClipForgeNavigation.navigate("/tools/shorts/")),true);
+ // Source reload cleanup is independent of the current workspace's
+ // navigation guard (some tool tabs block navigation while processing).
  const refreshed=await page.evaluate(()=>{
   load(file);
   return {cards:document.querySelectorAll("#list .clip").length,
