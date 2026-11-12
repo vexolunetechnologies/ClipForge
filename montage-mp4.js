@@ -164,13 +164,55 @@ export async function finalizeGalleryMp4(recording,options={}){
  if(options.isCancelled?.())throw cancelledError();
  const original=await inspectMp4GalleryMetadata(recording);
  if(original.compatible){options.onProgress?.(100);return recording;}
- // Remux to standard fast-start MP4 with a populated movie header duration.
- // Conversion stream-copies compatible H.264/AAC tracks and only re-encodes
- // unsupported codecs. A failed remux must NOT silently save the bad original.
- const result=await finalizeMontageMp4(recording,options);
- const repaired=await inspectMp4GalleryMetadata(result);
- if(!repaired.compatible){
-  throw new Error("The MP4 duration metadata could not be finalized for phone Gallery. Please retry on an updated Chrome or Edge browser.");
+ // A native MediaRecorder MP4 may contain VP9/AV1/HEVC even when the browser
+ // cannot encode H.264. Copy its existing elementary streams into a standard
+ // nonfragmented fast-start MP4; don't force a lossy H.264 transcode.
+ const mb=await bunny();
+ const input=new mb.Input({formats:mb.ALL_FORMATS,source:new mb.BlobSource(recording)});
+ let conversion=null,result=null,copyError=null;
+ try{
+  const video=await input.getPrimaryVideoTrack(),audio=await input.getPrimaryAudioTrack();
+  if(!video)throw Error("Recording has no video track.");
+  const videoCodec=await video.getCodec(),audioCodec=audio?await audio.getCodec():null;
+  const format=new mb.Mp4OutputFormat({fastStart:"in-memory"});
+  if(!format.getSupportedVideoCodecs().includes(videoCodec)||
+     (audio&&!format.getSupportedAudioCodecs().includes(audioCodec))){
+   throw Error("The recording codec cannot be copied into MP4.");
+  }
+  const output=new mb.Output({format,target:new mb.BufferTarget()});
+  conversion=await mb.Conversion.init({
+   input,output,tracks:"primary",
+   video:{codec:videoCodec,forceTranscode:false},
+   ...(audio?{audio:{codec:audioCodec,forceTranscode:false}}:{})
+  });
+  if(!conversion.isValid||!conversion.utilizedTracks.includes(video)||
+     (audio&&!conversion.utilizedTracks.includes(audio))){
+   throw Error("Source media tracks could not be preserved while remuxing.");
+  }
+  conversion.onProgress=p=>{
+   if(options.isCancelled?.()){conversion.cancel().catch(()=>{});return}
+   options.onProgress?.(Math.round(p*100));
+  };
+  options.onProgress?.(0);
+  await conversion.execute();
+  if(options.isCancelled?.())throw cancelledError();
+  result=new Blob([output.target.buffer],{type:"video/mp4"});
+ }catch(error){copyError=error}
+ finally{try{await input.close?.()}catch(_){}}
+ if(options.isCancelled?.())throw cancelledError();
+ if(result){
+  const repaired=await inspectMp4GalleryMetadata(result);
+  if(repaired.compatible)return result;
+  copyError=new Error("The MP4 movie header still has no valid duration.");
  }
- return result;
+ // Fallback only for unusual codecs that must be converted, when H.264/AAC
+ // is encodable. Never label WebM as MP4 or save an unrepaired 0:00 MP4.
+ try{
+  result=await finalizeMontageMp4(recording,options);
+  const repaired=await inspectMp4GalleryMetadata(result);
+  if(repaired.compatible)return result;
+ }catch(error){
+  throw new Error("Could not finalize MP4 for phone Gallery: "+(error.message||copyError?.message||error));
+ }
+ throw new Error("The MP4 duration metadata could not be finalized for phone Gallery.");
 }
