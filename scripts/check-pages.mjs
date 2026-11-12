@@ -104,7 +104,7 @@ for (const tool of tools) {
  const direct=from("tools/"+tool+"/index.html"),built=from("public/tools/"+tool+"/index.html");
  assert.ok(direct.includes('src="/ux-guide.js?v=20261112-easier-ux-v1"'),
    "Direct "+tool+" must load the helper");
- assert.match(built,/src="\/ux-guide\.js\?v=20261112-easier-ux-v1"/,
+ assert.match(built,/src="\/assets\/js\/core\/ux-guide\.js\?v=20261112-easier-ux-v1"/,
    "Generated "+tool+" must load the UX helper");
 }
 assert.match(from("ux-guide.js"),/var workflows=\{/,"UX guide config must exist");
