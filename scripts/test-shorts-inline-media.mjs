@@ -1,0 +1,124 @@
+import assert from "node:assert/strict";
+import {execFileSync} from "node:child_process";
+import {mkdtempSync,mkdirSync,rmSync} from "node:fs";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+import {chromium} from "playwright";
+import {serveLocalSite} from "./test-http-server.mjs";
+
+const temp=mkdtempSync(join(tmpdir(),"clipforge-shorts-card-"));
+const source=join(temp,"short-preview-fixture.mp4");
+execFileSync("ffmpeg",[
+ "-hide_banner","-loglevel","error","-y",
+ "-f","lavfi","-i","testsrc2=size=320x180:rate=15",
+ "-f","lavfi","-i","sine=frequency=490:sample_rate=48000",
+ "-t","9","-c:v","libx264","-pix_fmt","yuv420p",
+ "-preset","ultrafast","-c:a","aac","-b:a","64k",
+ "-movflags","+faststart",source
+],{maxBuffer:10*1024*1024});
+const site=await serveLocalSite({rootDir:"public"});
+let browser;
+try{
+ browser=await chromium.launch({headless:true,args:["--no-sandbox"]});
+ const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+ const errors=[];page.on("pageerror",e=>errors.push(e.message));
+ await page.goto(site.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
+ await page.locator("#file").setInputFiles(source);
+ await page.waitForFunction(()=>document.querySelector("#src")?.readyState>=1,{timeout:15000});
+ await page.evaluate(()=>{
+  clips=[
+   {s:1,e:3.6,score:88,tags:["Conversation"],reason:"Complete dialogue",blob:null,pcm:null},
+   {s:5,e:7.6,score:null,tags:["Dialogue review"],reason:"Natural scene ending",blob:null,pcm:null}
+  ];
+  render();
+  document.querySelector("#res").classList.remove("hide");
+ });
+ const cards=page.locator("#list .cf-short-card");
+ assert.equal(await cards.count(),2);
+ const first=cards.nth(0),second=cards.nth(1);
+ const width=await first.evaluate(el=>({
+  video:el.querySelector(".cf-short-preview").getBoundingClientRect().width,
+  height:el.querySelector(".cf-short-preview").getBoundingClientRect().height,
+  card:el.getBoundingClientRect().width,
+  page:document.documentElement.scrollWidth,viewport:innerWidth,
+  sourcePreview:el.querySelector(".cf-short-preview-label").textContent
+ }));
+ assert.ok(width.video>=100&&Math.abs(width.video/width.height-9/16)<.02,
+  "Short preview must be a touch-friendly 9:16 portrait: "+JSON.stringify(width));
+ assert.ok(width.card<width.viewport+1&&width.page<=width.viewport+2,
+  "No horizontal mobile overflow: "+JSON.stringify(width));
+ assert.equal(width.sourcePreview,"Source preview");
+
+ // The only Preview control plays this card's source, not the top upload player.
+ await first.locator(".cf-short-play").click();
+ await page.waitForFunction(()=>{
+  const v=document.querySelector("#list .cf-short-card:first-child video");
+  return v&&!v.paused&&v.currentTime>=1.02;
+ },{timeout:12000});
+ assert.equal(await page.locator("#src").evaluate(v=>v.paused),true,
+  "In-card preview must not restart the source player at the top");
+ assert.equal(await first.locator(".cf-short-play").getAttribute("aria-label"),"Pause this Short");
+ await second.locator(".cf-short-play").click();
+ await page.waitForFunction(()=>{
+  const v=document.querySelectorAll("#list .cf-short-card video")[1];
+  return v&&!v.paused&&v.currentTime>=5;
+ },{timeout:12000});
+ assert.equal(await first.locator("video").evaluate(v=>v.paused),true,
+  "Playing another Short must pause the previous preview");
+ // A preview stops at the selected Short's out-point, not the end of the source.
+ await second.locator("video").evaluate(v=>{
+  v.currentTime=7.58;
+  v.dispatchEvent(new Event("timeupdate"));
+ });
+ await page.waitForFunction(()=>{
+  const v=document.querySelectorAll("#list .cf-short-card video")[1];
+  return v.paused;
+ },{timeout:4000});
+ assert.equal(await second.locator(".cf-short-play").getAttribute("aria-label"),"Play this Short");
+ await first.screenshot({path:join(temp,"card.png")});
+ mkdirSync("reports",{recursive:true});
+ // Only UI screenshot; no source media file saved to reports.
+ await first.screenshot({path:"reports/shorts-inline-mobile.png"});
+
+ // Real trim controls are hidden by default; changing them updates export boundaries.
+ assert.equal(await first.locator(".cf-short-trim").isVisible(),false);
+ await first.locator(".cf-short-trim-toggle").click();
+ assert.equal(await first.locator(".cf-short-trim").isVisible(),true);
+ await first.locator('input[aria-label="Short 1 trim start"]').evaluate(el=>{
+  el.value="1.4";el.dispatchEvent(new Event("input",{bubbles:true}));
+  el.dispatchEvent(new Event("change",{bubbles:true}));
+ });
+ assert.equal(await page.evaluate(()=>clips[0].s),1.4);
+ assert.match(await first.locator(".cf-short-trim-readout").textContent(),/1\.4s – 3\.6s/);
+ await first.locator(".cf-short-trim-toggle").click();
+ assert.equal(await first.locator(".cf-short-trim").isVisible(),false);
+ assert.equal(await first.locator(".cf-short-actions button.exp").count(),1);
+ assert.equal(await first.locator(".cf-short-actions button").count(),2);
+
+ // Once exported, playback is still in the same card and download/share stay.
+ await page.evaluate(()=>{clips[0].blob=file;render()});
+ assert.equal(await cards.nth(0).locator(".cf-short-preview-label").textContent(),"Exported video");
+ assert.equal(await cards.nth(0).locator("button.exp").textContent(),"Save MP4");
+ assert.equal(await cards.nth(0).locator(".cf-short-share").count(),1);
+ await cards.nth(0).locator(".cf-short-trim-toggle").click();
+ await cards.nth(0).locator('input[aria-label="Short 1 trim end"]').evaluate(el=>{
+  el.value="3.2";el.dispatchEvent(new Event("input",{bubbles:true}));
+ });
+ assert.equal(await page.evaluate(()=>clips[0].blob),null,
+  "Trim after export must invalidate stale exported MP4");
+ assert.equal(await cards.nth(0).locator("button.exp").textContent(),"Export");
+ assert.equal(await cards.nth(0).locator(".cf-short-share").count(),0);
+
+ // Tool switching must release inline playback without affecting source state.
+ await second.locator(".cf-short-play").click();
+ await page.waitForFunction(()=>!document.querySelectorAll("#list video")[1].paused,{timeout:12000});
+ await page.evaluate(()=>window.ClipForgeNavigation.navigate("/tools/captions/"));
+ assert.equal(await second.locator("video").evaluate(v=>v.paused),true);
+ assert.equal(await page.evaluate(()=>SHORT_ACTIVE),null);
+ assert.deepEqual(errors,[],"No uncaught errors while previewing, trimming, exporting and switching");
+ console.log("Shorts inline preview: real MP4 playback, source player isolation, one active preview, in/out limit, collapsed edit, export state, mobile 9:16 and navigation passed.");
+}finally{
+ if(browser)await browser.close();
+ await site.close();
+ rmSync(temp,{recursive:true,force:true});
+}
