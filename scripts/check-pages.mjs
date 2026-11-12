@@ -62,7 +62,7 @@ assert.match(from("public/dist/editor/layout.js"), /toolcard\[href="\/tools\/edi
 const rootHome = from("index.html");
 assert.match(rootHome, /src="\/navigation\.js"/);
 assert.match(rootHome, /src="\/transcription-queue\.js"/);
-assert.ok(rootHome.indexOf('src="/transcription-queue.js"') < rootHome.indexOf('src="/highlights-studio.js"'),"Queue must load before Highlights Studio");
+assert.ok(rootHome.indexOf('src="/transcription-queue.js"') < rootHome.indexOf('src="/highlights-studio.js?v=20261112-gallery-duration-1"'),"Queue must load before Highlights Studio");
 for (const tool of tools) {
   const standalone = "tools/" + tool + "/index.html";
   has(standalone);
