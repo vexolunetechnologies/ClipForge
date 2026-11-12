@@ -146,7 +146,7 @@ function snapSeg(pcm,t0,t1){
 // Main elements: v = the video player, cv = preview / recording canvas, ctx = its 2D drawing context.
 const v=$('#src'),cv=$('#cv'),ctx=cv.getContext('2d');
 // S = every user setting (count, length, framing, captions, trailer options...). Option buttons write into it through their data-k / data-v attributes.
-let S={n:'auto',len:'auto',mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'creator-yellow',res:'720',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
+let S={n:'auto',len:'auto',mode:'best',deep:'0',fit:'smart',cap:'off',lang:'auto',model:'base',cs:'creator-yellow',res:'1080',tr:'off',logo:'on',tl:'60',cin:'off',tstyle:'clean',align:'off',tasp:'wide',tres:'720',tool:'shorts',sfx:'off',ovl:'on',vr:'spread',skip:'on'};
 // Runtime state: clips (the plan), busy flag, RUN token (changing it cancels running work), loaded file info, and audio analysis data (ENV = loudness every 0.1 s).
 let clips=[],busy=false,RUN=0,url=null,fname='video',file=null,PL=30,cues=[],capOn=false,AUD=null,SHORTS_TRANSCRIPT=null,ENV=null,LAST=null,REC=null,ALL=false,RECING=false;
 // One active inline Short and the temporary object URLs for completed MP4 previews.
@@ -203,9 +203,9 @@ function stat(k,t){ST[k]=t;const s=Object.values(ST).filter(Boolean).join(' · '
 function chips(box,vals,key,fmtL){vals.forEach(n=>{const b=document.createElement('button');b.className='chip'+(S[key]===n?' on':'');b.textContent=fmtL(n);
  b.onclick=()=>{S[key]=n;box.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c===b));if(key==='n')$('#custom').value=''};box.append(b)})}
 // "How many shorts" chips.
-chips($('#counts'),[1,3,5,8,10,'auto'],'n',n=>n==='auto'?'Auto':n);
+chips($('#counts'),['auto',1,3,5,8,10],'n',n=>n==='auto'?'Auto':n);
 // Custom count box (1-50).
-const ci=document.createElement('input');ci.type='number';ci.id='custom';ci.min=1;ci.max=50;ci.placeholder='Other';
+const ci=document.createElement('input');ci.type='number';ci.id='custom';ci.min=1;ci.max=50;ci.placeholder='Custom';ci.setAttribute('aria-label','Custom Shorts count, 1 to 50');
 ci.oninput=()=>{const n=Math.max(1,Math.min(50,+ci.value||0));if(n){S.n=n;$$('#counts .chip').forEach(c=>c.classList.remove('on'))}};$('#counts').append(ci);
 // "Length of each short" chips (15/30/45/60/90 s, custom, auto, full video).
 chips($('#lens'),[15,30,45,60,90,'custom','auto','full'],'len',n=>n==='custom'?'Custom':n==='auto'?'Auto':n==='full'?'Full video':n+'s');
