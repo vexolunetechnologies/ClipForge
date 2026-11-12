@@ -1286,9 +1286,18 @@ async function exportClip(i,forceWC){
 // Stop recording and wait for the file.
   alive(tok);v.pause();if(rec.state!=='inactive')rec.stop();await done;alive(tok);
 // Check that the finished file really plays, then store it.
-  if(rec.err)throw rec.err;const bl=rec.out||new Blob(parts,{type:'video/mp4'});say('Checking the finished file…');const vr=await verifyVideo(bl);if(!vr.ok)throw new Error('The finished file is not usable ('+(vr.why||'unknown problem')+'), so it was not saved. Choose 720p and try again, or use Chrome or Edge on a computer.');c.blob=bl;const chk=' File check: '+(vr.dur?vr.dur.toFixed(1)+' s, ':'length not readable, ')+vr.w+'×'+vr.h+(vr.seek?', plays to the end.':'.');say((c.planInfo&&c.planInfo.n?'Done. Faces found in '+c.planInfo.faces+' of '+c.planInfo.n+' frames, '+c.planInfo.cuts+' scene cuts.':'Done.')+chk)
+  if(rec.err)throw rec.err;
+  const raw=rec.out||new Blob(parts,{type:'video/mp4'});
+  say('Finalizing MP4 duration metadata for phone Gallery…');
+  const {finalizeGalleryMp4}=await guard(import('/montage-mp4.js'),45000,'MP4 finalizer');
+  const bl=await finalizeGalleryMp4(raw,{
+   isCancelled:()=>tok!==RUN,
+   onProgress:p=>say('Finalizing phone-compatible MP4 · '+p+'%')
+  });
+  alive(tok);say('Checking the finished file…');
+  const vr=await verifyVideo(bl);if(!vr.ok)throw new Error('The finished file is not usable ('+(vr.why||'unknown problem')+'), so it was not saved. Choose 720p and try again, or use Chrome or Edge on a computer.');c.blob=bl;const chk=' File check: '+(vr.dur?vr.dur.toFixed(1)+' s, ':'length not readable, ')+vr.w+'×'+vr.h+(vr.seek?', plays to the end.':'.');say((c.planInfo&&c.planInfo.n?'Done. Faces found in '+c.planInfo.faces+' of '+c.planInfo.n+' frames, '+c.planInfo.cuts+' scene cuts.':'Done.')+chk)
 // Report a failure.
- }catch(e){if(e.message!=='Stopped'){try{REC&&REC.state!=='inactive'&&REC.stop()}catch(_){}v.pause();
+ }catch(e){if(tok===RUN&&e.message!=='Stopped'){try{REC&&REC.state!=='inactive'&&REC.stop()}catch(_){}v.pause();
   // Native recorder gave an unusable file: try again once with the WebCodecs recorder.
   if(!forceWC&&mime&&WCok&&(/not usable|recorder|recording/i.test(e.message||''))){retry=true;say('The first export was not usable. Retrying with the compatibility encoder…')}else{say('Export failed: '+(e.message||e));err('Export failed: '+(e.message||e))}}}
  try{wl&&wl.release()}catch(e){}
