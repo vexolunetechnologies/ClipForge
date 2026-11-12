@@ -281,6 +281,9 @@ try{
  assert.equal(mobile.columns,2);
  assert.ok(mobile.height<=310 && mobile.scroll>mobile.height);
  assert.deepEqual(errors,[],"No uncaught browser errors");
+ // Return from the Shorts gallery to Captions Studio before interacting with timing controls.
+ await page.evaluate(()=>window.ClipForgeNavigation.navigate("/tools/captions/"));
+ await page.waitForFunction(()=>getComputedStyle(document.querySelector("#cfCaptionsWorkspace")).display!=="none");
  // Per-caption timing editor must update the real cue and respect non-overlap.
  assert.equal(await page.locator("#cfCapTimingPanel").count(),1);
  await page.locator("#cfCapText").evaluate(el=>{
