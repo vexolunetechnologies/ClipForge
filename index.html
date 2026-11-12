@@ -28,7 +28,7 @@
 <meta property="og:url" content="https://clipforgestudio.pages.dev/">
 <meta name="twitter:card" content="summary">
 <!-- ===== CSS: look and layout ===== -->
-<link rel="stylesheet" href="/styles.css?v=20261112-short-cards-v1">
+<link rel="stylesheet" href="/styles.css?v=20261112-hide-shorts-preview">
 <!-- Mobile editor presentation only. Isolated from app and export logic. -->
 <link rel="stylesheet" href="/editor-mobile-layout.css?v=capcut-reference-2">
 <!-- Scoped styles for help articles; video editor presentation remains unchanged. -->
@@ -239,7 +239,7 @@
   <div hidden><div class="lbl">Logo / banner scenes</div><div class="row"><button class="chip on" data-k="logo" data-v="on">Skip them</button><button class="chip" data-k="logo" data-v="off">Don't check</button></div></div>
 </div></details>
 
-<!-- Canvas stays mounted for recording; only the redundant trailer preview is hidden. -->
+<!-- Canvas stays mounted for video export; the redundant live preview is hidden in Shorts. -->
   <div id="cfLivePreviewBlock"><div class="lbl">Live preview <small id="cfPreviewRatio">9:16</small></div><canvas id="cv" width="720" height="1280"></canvas><p class="note" id="pnote"></p></div>
 </div>
 <!-- Trailer only: short explanation of step 1 -->

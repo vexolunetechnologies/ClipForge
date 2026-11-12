@@ -37,6 +37,26 @@ try{
   }));
   throw Error("Inline preview fixture failed to decode: "+JSON.stringify(diag)+"; "+error.message);
  }
+ // The giant Shorts Live preview is redundant; its canvas must remain
+ // mounted and capture-capable because MP4 export records from that canvas.
+ const exportSurface=await page.evaluate(()=>{
+  const canvas=document.querySelector("#cv");
+  const panel=document.querySelector("#cfLivePreviewBlock");
+  const stream=canvas.captureStream(1);
+  const result={
+   panelHidden:getComputedStyle(panel).display==="none",
+   canvasNotLaidOut:canvas.getClientRects().length===0,
+   canvasStillMounted:canvas.isConnected,
+   size:[canvas.width,canvas.height],
+   captureTrack:stream.getVideoTracks().some(track=>track.readyState==="live")
+  };
+  stream.getTracks().forEach(track=>track.stop());
+  return result;
+ });
+ assert.deepEqual(exportSurface,{
+  panelHidden:true,canvasNotLaidOut:true,canvasStillMounted:true,size:[720,1280],captureTrack:true
+ },"Shorts should hide its redundant live preview without breaking the recording canvas");
+
  await page.evaluate(()=>{
   clips=[
    {s:1,e:5.6,score:88,tags:["Conversation"],reason:"Complete dialogue",blob:null,pcm:null},
@@ -137,7 +157,7 @@ try{
  assert.deepEqual(refreshed,{cards:0,active:true,objectUrls:0,planned:0},
   "A fresh upload must not retain stale Short previews or outdated trim/export cards");
  assert.deepEqual(errors,[],"No uncaught errors while previewing, trimming, exporting and switching");
- console.log("Shorts inline preview: real local video playback, source player isolation, one active preview, in/out limit, collapsed edit, export state, mobile 9:16 and navigation passed.");
+ console.log("Shorts inline preview: hidden redundant canvas remains capture-ready, real local video playback, source player isolation, one active preview, in/out limit, collapsed edit, export state, mobile 9:16 and navigation passed.");
 }finally{
  if(browser)await browser.close();
  await site.close();
