@@ -7,14 +7,16 @@ import {chromium} from "playwright";
 import {serveLocalSite} from "./test-http-server.mjs";
 
 const temp=mkdtempSync(join(tmpdir(),"clipforge-shorts-card-"));
-const source=join(temp,"short-preview-fixture.mp4");
+// Chromium installed via Playwright may not ship proprietary H.264 decoders.
+ // A genuine VP8/Opus WebM fixture tests the *preview workflow* consistently;
+ // H.264/AAC MP4 export is verified in the separate Gallery/Montage regression.
+const source=join(temp,"short-preview-fixture.webm");
 execFileSync("ffmpeg",[
  "-hide_banner","-loglevel","error","-y",
  "-f","lavfi","-i","testsrc2=size=320x180:rate=15",
  "-f","lavfi","-i","sine=frequency=490:sample_rate=48000",
- "-t","9","-c:v","libx264","-pix_fmt","yuv420p",
- "-preset","ultrafast","-c:a","aac","-b:a","64k",
- "-movflags","+faststart",source
+ "-t","9","-c:v","libvpx","-deadline","realtime","-cpu-used","8",
+ "-b:v","360k","-c:a","libopus","-b:a","64k",source
 ],{maxBuffer:10*1024*1024});
 const site=await serveLocalSite({rootDir:"public"});
 let browser;
@@ -24,7 +26,17 @@ try{
  const errors=[];page.on("pageerror",e=>errors.push(e.message));
  await page.goto(site.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
  await page.locator("#file").setInputFiles(source);
- await page.waitForFunction(()=>document.querySelector("#src")?.readyState>=1,{timeout:15000});
+ try{await page.waitForFunction(()=>document.querySelector("#src")?.readyState>=1,null,{timeout:16000})}
+ catch(error){
+  const diag=await page.evaluate(()=>({
+   hasFile:!!file,videoSrc:document.querySelector("#src")?.currentSrc,
+   readyState:document.querySelector("#src")?.readyState,
+   error:document.querySelector("#src")?.error?.message,
+   workHidden:document.querySelector("#work")?.classList.contains("hide"),
+   message:document.querySelector("#msg")?.textContent
+  }));
+  throw Error("Inline preview fixture failed to decode: "+JSON.stringify(diag)+"; "+error.message);
+ }
  await page.evaluate(()=>{
   clips=[
    {s:1,e:3.6,score:88,tags:["Conversation"],reason:"Complete dialogue",blob:null,pcm:null},
@@ -54,7 +66,7 @@ try{
  await page.waitForFunction(()=>{
   const v=document.querySelector("#list .cf-short-card:first-child video");
   return v&&!v.paused&&v.currentTime>=1.02;
- },{timeout:12000});
+ },null,{timeout:12000});
  assert.equal(await page.locator("#src").evaluate(v=>v.paused),true,
   "In-card preview must not restart the source player at the top");
  assert.equal(await first.locator(".cf-short-play").getAttribute("aria-label"),"Pause this Short");
@@ -62,7 +74,7 @@ try{
  await page.waitForFunction(()=>{
   const v=document.querySelectorAll("#list .cf-short-card video")[1];
   return v&&!v.paused&&v.currentTime>=5;
- },{timeout:12000});
+ },null,{timeout:12000});
  assert.equal(await first.locator("video").evaluate(v=>v.paused),true,
   "Playing another Short must pause the previous preview");
  // A preview stops at the selected Short's out-point, not the end of the source.
@@ -73,7 +85,7 @@ try{
  await page.waitForFunction(()=>{
   const v=document.querySelectorAll("#list .cf-short-card video")[1];
   return v.paused;
- },{timeout:4000});
+ },null,{timeout:4000});
  assert.equal(await second.locator(".cf-short-play").getAttribute("aria-label"),"Play this Short");
  await first.screenshot({path:join(temp,"card.png")});
  mkdirSync("reports",{recursive:true});
@@ -116,7 +128,7 @@ try{
  assert.equal(await second.locator("video").evaluate(v=>v.paused),true);
  assert.equal(await page.evaluate(()=>SHORT_ACTIVE),null);
  assert.deepEqual(errors,[],"No uncaught errors while previewing, trimming, exporting and switching");
- console.log("Shorts inline preview: real MP4 playback, source player isolation, one active preview, in/out limit, collapsed edit, export state, mobile 9:16 and navigation passed.");
+ console.log("Shorts inline preview: real local video playback, source player isolation, one active preview, in/out limit, collapsed edit, export state, mobile 9:16 and navigation passed.");
 }finally{
  if(browser)await browser.close();
  await site.close();
