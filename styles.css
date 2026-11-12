@@ -3475,6 +3475,14 @@ body[data-tool="shorts"] #list .cf-short-trim button{justify-self:start;min-heig
 @media(max-width:560px){#cfCaptionsWorkspace .cf-cap-timing-list{padding:6px}#cfCaptionsWorkspace .cf-cap-timing-row{grid-template-columns:26px minmax(0,1fr) minmax(0,1fr);gap:6px}#cfCaptionsWorkspace .cf-cap-timing-row .sm{grid-column:2/-1;justify-self:start}#cfCaptionsWorkspace .cf-cap-timing-text{grid-column:2/-1}}
 
 
+/* Shorts: keep count selection visible and finger-friendly without an extra panel. */
+body[data-tool="shorts"] #soBox .cf-short-count-setting{margin:14px 0 18px;min-width:0}
+body[data-tool="shorts"] #soBox .cf-short-count-setting .lbl{margin-bottom:8px}
+body[data-tool="shorts"] #counts{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
+body[data-tool="shorts"] #counts .chip{min-width:48px;min-height:42px}
+body[data-tool="shorts"] #counts #custom{box-sizing:border-box;flex:0 1 112px;width:112px;min-width:96px;max-width:128px;height:42px;margin:0}
+body[data-tool="shorts"] #soBox .cf-short-count-help{font-size:12px;line-height:1.45;margin:7px 0 0}
+
 /* Shorts workspace: one in-card portrait preview, compact actions, edit-only trims.
    No trailer/editor/captions styles are affected. */
 body[data-tool="shorts"] #list{
