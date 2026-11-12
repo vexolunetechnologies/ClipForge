@@ -464,10 +464,13 @@ function livePreview(){
  const canvas=$('cfCapLive'),box=videoBox();
  if(!canvas||!box)return;
  const rect=video.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
- canvas.width=Math.max(1,Math.round(rect.width*dpr));
- canvas.height=Math.max(1,Math.round(rect.height*dpr));
+ // Do not reallocate the whole video-sized canvas on each timeupdate/frame.
+ const pixelWidth=Math.max(1,Math.round(rect.width*dpr)),pixelHeight=Math.max(1,Math.round(rect.height*dpr));
+ if(canvas.width!==pixelWidth)canvas.width=pixelWidth;
+ if(canvas.height!==pixelHeight)canvas.height=pixelHeight;
  const ctx=canvas.getContext('2d');if(!ctx)return;
  ctx.setTransform(dpr,0,0,dpr,0,0);
+ ctx.clearRect(0,0,rect.width,rect.height);
  ctx.save();ctx.translate(box.x,box.y);
  ctx.beginPath();ctx.rect(0,0,box.w,box.h);ctx.clip();
  const active=cues.find(q=>video.currentTime>=q.s&&video.currentTime<=q.e);
