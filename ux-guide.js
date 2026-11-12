@@ -87,7 +87,11 @@
   var key=document.body.dataset.page==='workspace'?document.body.dataset.tool:null;
   if(!key||!workflows[key])return;
   var panel=document.getElementById(panels[key]);
-  if(!panel||panel.querySelector('.cf-ux-guide[data-ux-for="'+key+'"]'))return;
+  if(!panel)return;
+  // Shorts and Trailer share #tool. Keep just one relevant guide visible.
+  var old=panel.querySelectorAll('.cf-ux-guide');
+  for(var i=0;i<old.length;i++)if(old[i].dataset.uxFor!==key)old[i].remove();
+  if(panel.querySelector('.cf-ux-guide[data-ux-for="'+key+'"]'))return;
   var guide=makeGuide(key);
   if(key==='editor'){
    var toolbar=panel.querySelector('.st-appbar, .cf-studio-topbar');
