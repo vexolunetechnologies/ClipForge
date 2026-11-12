@@ -63,9 +63,10 @@ export async function finalizeMontageMp4(recording,{onProgress=()=>{},isCancelle
     const output=new mb.Output({format:new mb.Mp4OutputFormat({fastStart:'in-memory'}),target:new mb.BufferTarget()});
     conversion=await mb.Conversion.init({
       input,output,tracks:"primary",
-      // Explicit H.264 and AAC avoids mislabeled MP4 and silent audio loss.
+      // Only create an audio output when the recording actually has audio.
+      // Highlights may intentionally have no music/SFX/audio track.
       video:{codec:"avc",forceTranscode:!nativeIsCompatible},
-      audio:{codec:"aac",forceTranscode:!nativeIsCompatible},
+      ...(audioTrack?{audio:{codec:"aac",forceTranscode:!nativeIsCompatible}}:{}),
     });
     if(!conversion.isValid||
        !conversion.utilizedTracks.includes(videoTrack)||
