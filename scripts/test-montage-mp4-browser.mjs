@@ -207,6 +207,27 @@ try{
   assert.equal(check.width,width);assert.equal(check.height,height);
   assert.equal(check.audio,"aac","Export must preserve AAC audio");
   assert.ok(check.duration>1&&check.duration<4,"MP4 needs valid nonzero duration: "+check.duration);
+  if(quality==="720"){
+   // Re-finalize an already compatible MP4 using the exact helper wired to
+   // Shorts and Studio Editor. Duration must remain nonzero after remux.
+   const verify=await page.evaluate(async()=>{
+    const url=document.querySelector('#vmOutput a[download$=".mp4"]').href;
+    const original=await (await fetch(url)).blob();
+    const result=await finalizeClipForgeMp4(original);
+    const mb=await import("https://cdn.jsdelivr.net/npm/mediabunny@1.62.1/+esm");
+    const input=new mb.Input({source:new mb.BlobSource(result.blob),formats:mb.ALL_FORMATS});
+    let duration=0;
+    try{duration=await input.computeDuration()}finally{await input.close?.();}
+    const webm=new Blob(["webm"],{type:"video/webm"});
+    const untouched=await finalizeClipForgeMp4(webm);
+    return {duration,mp4:result.blob.type,webmSame:untouched.blob===webm,webmUnsupported:untouched.unsupported};
+   });
+   assert.ok(verify.duration>1&&verify.duration<4,
+    "Shared MP4 metadata finalizer must retain finite Gallery-compatible duration");
+   assert.equal(verify.mp4,"video/mp4");
+   assert.equal(verify.webmSame,true,"WebM fallback must not be renamed to MP4");
+   assert.equal(verify.webmUnsupported,true);
+  }
   const download=page.waitForEvent("download",{timeout:12000});
   await anchor.click();const file=await download;
   assert.match(file.suggestedFilename(),/\.mp4$/);

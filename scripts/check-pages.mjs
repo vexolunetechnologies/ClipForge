@@ -69,7 +69,7 @@ for (const tool of tools) {
   const html = from(standalone);
   assert.doesNotMatch(html, /data-cf-tool-bootstrap|data-cf-link-bridge/);
   assert.ok(html.includes("https://clipforgestudio.pages.dev/tools/" + tool + "/"), "Missing canonical route");
-  assert.match(html, /src="\/app\.js"/);
+  assert.match(html, /src="\/app\.js(?:\?[^"]+)?"/);
   assert.match(html, /src="\/navigation\.js"/);
   assert.match(html, /href="#editor"/);
 }
@@ -165,4 +165,6 @@ assert.match(captionExtras,/function decorateContext/, "Custom text styling rend
 assert.match(captionScript,/if\(look\.safe\)STUDIO\.drawSafeGuide/, "Preview-only guide integration missing");
 assert.ok(!from("caption-style-library.js").includes("drawSafeGuide"),
  "Shared Shorts caption renderer should not be altered");
+assert.match(from("app.js"),/function finalizeClipForgeMp4/,"MP4 metadata normalization helper must exist");
+assert.match(rootHome,/\/app\.js\?v=20261112-mp4-metadata/,"Load fresh export metadata code");
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");
