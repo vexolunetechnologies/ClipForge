@@ -1997,7 +1997,7 @@ function mountTimeline(prefix,mode){
      ext='mp4';
    }else if(mime.includes('mp4')){
      setStatus('Finalizing MP4 duration for phone Gallery…');
-     const {finalizeGalleryMp4}=await import('/montage-mp4.js');
+     const {finalizeGalleryMp4}=await import('/montage-mp4.js?v=20261112-gallery-duration-1');
      blob=await finalizeGalleryMp4(blob,{isCancelled:()=>state.cancel,
       onProgress:percent=>setStatus('Finalizing MP4 · '+percent+'%')});
      if(state.cancel)throw new Error('Export stopped.');
@@ -2139,7 +2139,7 @@ async function exportPro(){
   if(blob.size<1500)throw new Error('Export is empty. Try a shorter clip or another browser.');
   if(mime.includes('mp4')){
    status('Finalizing MP4 duration for phone Gallery…');
-   const {finalizeGalleryMp4}=await import('/montage-mp4.js');
+   const {finalizeGalleryMp4}=await import('/montage-mp4.js?v=20261112-gallery-duration-1');
    blob=await finalizeGalleryMp4(blob,{isCancelled:()=>state.cancel,
     onProgress:p=>status('Finalizing MP4 · '+p+'%')});
    if(state.cancel)throw new Error('Export stopped.');
@@ -2421,7 +2421,7 @@ $('stExport').onclick=async()=>{
   if(rec.mimeType&&rec.mimeType.includes('mp4')){
    try{
     msg('Finalizing MP4 duration for phone Gallery…');
-    const {finalizeGalleryMp4}=await import('/montage-mp4.js');
+    const {finalizeGalleryMp4}=await import('/montage-mp4.js?v=20261112-gallery-duration-1');
     blob=await finalizeGalleryMp4(blob,{isCancelled:()=>S.exportCancel,
      onProgress:p=>msg('Finalizing MP4 · '+p+'%')});
     if(S.exportCancel){cleanup();S.exportCancel=false;msg('Export cancelled.');return}
