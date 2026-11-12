@@ -129,7 +129,7 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261110-style-motion-v2"),
+assert.ok(rootHome.includes("/styles.css?v=20261112-shorts-trim-1"),
   "Homepage should load the refreshed mobile hero CSS version");
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");
@@ -165,4 +165,6 @@ assert.match(captionExtras,/function decorateContext/, "Custom text styling rend
 assert.match(captionScript,/if\(look\.safe\)STUDIO\.drawSafeGuide/, "Preview-only guide integration missing");
 assert.ok(!from("caption-style-library.js").includes("drawSafeGuide"),
  "Shared Shorts caption renderer should not be altered");
+assert.match(from("app.js"),/cf-short-trim/,"Shorts preview trim UI must remain available");
+assert.match(rootHome,/\/app\.js\?v=20261112-shorts-trim-1/,"Home must use fresh Shorts trim logic");
 console.log("ClipForge: static build checks passed for all eight routes, assets and Worker APIs.");
