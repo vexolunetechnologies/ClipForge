@@ -79,7 +79,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version
           ffprobe -version
-      - name: Verify professional inline Shorts preview on Android-size Chromium with real MP4
+      - name: Verify professional inline Shorts preview on Android-size Chromium with real local video
         run: npm run test:shorts-inline
       - name: Upload Shorts mobile preview snapshot
         if: always()
