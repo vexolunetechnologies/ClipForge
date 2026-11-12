@@ -12,7 +12,9 @@ try{
  await page.waitForFunction(()=>typeof window.semanticShortPlan==="function"&&!!document.getElementById("list"));
  assert.equal(await page.evaluate(()=>S.len),"auto","Auto Duration must be the default");
  assert.match(await page.locator("#lens .chip.on").innerText(),/Auto/);
+ let lastAutoRequest=null;
  await page.route("**/api/v1/shorts/semantic-plan",async route=>{
+  lastAutoRequest=route.request().postDataJSON();
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
    selectionMode:"transcript-fallback",clips:[{start:10,end:50,score:null,category:"Dialogue review",
     reason:"Transcript-based recovery, not an AI quality score."}]
@@ -30,6 +32,9 @@ try{
   return {mode:LAST.selectionMode,count:candidates.length,score:candidates[0].score,
    tags:candidates[0].tags,reason:candidates[0].reason};
  });
+ assert.equal(lastAutoRequest.autoDuration,true,"Auto mode must reach Worker as Auto");
+ assert.equal(Object.hasOwn(lastAutoRequest,"targetLength"),false,
+  "Auto Shorts must never send the old hidden 45-second target");
  assert.equal(output.mode,"transcript-fallback");
  assert.equal(output.score,null,"Do not show a fictitious AI ranking for fallback clips");
  assert.equal(output.count,1);
