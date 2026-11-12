@@ -1187,6 +1187,23 @@ async function makeWC(aTrack,br){
   R.onstop&&R.onstop()};
  return R}
 
+/* Normalize native browser MP4 metadata before download.
+ * Some Android Gallery apps show 0:00 for browser recordings even when they play.
+ * Reuse the Montage H.264/AAC MP4 remuxer; do not transcode a compatible stream.
+ * Gracefully retain the original on unsupported/offline devices, and never rename WebM.
+ */
+async function finalizeClipForgeMp4(recorded,progress=()=>{},isCancelled=()=>false){
+ if(!recorded?.type?.toLowerCase().includes("mp4"))return {blob:recorded,normalized:false,unsupported:true};
+ try{
+  const mod=await import('/montage-mp4.js');
+  if(isCancelled())throw new Error("Stopped");
+  const blob=await mod.finalizeMontageMp4(recorded,{onProgress:progress,isCancelled});
+  return {blob,normalized:blob!==recorded,unsupported:false};
+ }catch(error){
+  if(isCancelled())throw new Error("Stopped");
+  return {blob:recorded,normalized:false,unsupported:false,warning:String(error?.message||error)};
+ }
+}
 /* ---------- export ---------- */
 // Record one clip (or the trailer when i is "T") in real time and put the finished file in the list.
 async function exportClip(i,forceWC){
@@ -1240,7 +1257,11 @@ async function exportClip(i,forceWC){
 // Stop recording and wait for the file.
   alive(tok);v.pause();if(rec.state!=='inactive')rec.stop();await done;alive(tok);
 // Check that the finished file really plays, then store it.
-  if(rec.err)throw rec.err;const bl=rec.out||new Blob(parts,{type:'video/mp4'});say('Checking the finished file…');const vr=await verifyVideo(bl);if(!vr.ok)throw new Error('The finished file is not usable ('+(vr.why||'unknown problem')+'), so it was not saved. Choose 720p and try again, or use Chrome or Edge on a computer.');c.blob=bl;const chk=' File check: '+(vr.dur?vr.dur.toFixed(1)+' s, ':'length not readable, ')+vr.w+'×'+vr.h+(vr.seek?', plays to the end.':'.');say((c.planInfo&&c.planInfo.n?'Done. Faces found in '+c.planInfo.faces+' of '+c.planInfo.n+' frames, '+c.planInfo.cuts+' scene cuts.':'Done.')+chk)
+  if(rec.err)throw rec.err;const raw=rec.out||new Blob(parts,{type:'video/mp4'});
+  say('Finalizing MP4 duration metadata…');
+  const finalMp4=await finalizeClipForgeMp4(raw,p=>say('Finalizing MP4 metadata · '+p+'%'),()=>tok!==RUN);
+  alive(tok);const bl=finalMp4.blob;
+  say('Checking the finished file…');const vr=await verifyVideo(bl);if(!vr.ok)throw new Error('The finished file is not usable ('+(vr.why||'unknown problem')+'), so it was not saved. Choose 720p and try again, or use Chrome or Edge on a computer.');c.blob=bl;const chk=' File check: '+(vr.dur?vr.dur.toFixed(1)+' s, ':'length not readable, ')+vr.w+'×'+vr.h+(vr.seek?', plays to the end.':'.');say((c.planInfo&&c.planInfo.n?'Done. Faces found in '+c.planInfo.faces+' of '+c.planInfo.n+' frames, '+c.planInfo.cuts+' scene cuts.':'Done.')+chk)
 // Report a failure.
  }catch(e){if(e.message!=='Stopped'){try{REC&&REC.state!=='inactive'&&REC.stop()}catch(_){}v.pause();
   // Native recorder gave an unusable file: try again once with the WebCodecs recorder.
