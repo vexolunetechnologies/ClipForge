@@ -80,7 +80,7 @@ for (const tool of tools) {
   const direct = from("tools/" + tool + "/index.html");
   assert.ok(direct.includes('<div id="cfLivePreviewBlock">'),
     "Direct tool HTML must wrap the live preview canvas: " + tool);
-  assert.ok(direct.includes('href="/styles.css?v=20261112-compact-tools-v1"'),
+  assert.ok(direct.includes('href="/styles.css?v=20261112-guides-visibility-v1"'),
     "Direct tool HTML needs fresh preview-hiding stylesheet: " + tool);
   const generated = from("public/tools/" + tool + "/index.html");
   assert.ok(generated.includes('<div id="cfLivePreviewBlock">'),
@@ -109,7 +109,14 @@ for (const [label, markup] of [
  assert.ok(markup.includes('href="#editor"')||markup.includes('href="/tools/editor/"'),
   label+" must preserve Studio Editor navigation");
 }
+// Creator guides belong only to Home and All Tools, not individual tool screens.
+assert.ok(rootHome.includes('id="learning-center" class="cf-learn"'),
+ "The original guide section must remain available in the site.");
 const css = from("styles.css");
+assert.ok(css.includes('body[data-page="workspace"] .cf-lower-sections{display:none!important}'),
+ "All workspace pages must hide promotional learning sections.");
+assert.ok(css.includes('body:not([data-page="home"]):not([data-page="tools"]) #learning-center{display:none!important}'),
+ "Guide section must only show on Home and All Tools.");
 assert.ok(css.includes('body[data-tool="shorts"] #cfLivePreviewBlock{display:none!important}'),
   "Shorts must hide the wrapper rather than removing the export canvas");
 assert.match(css, /body\[data-page="workspace"\]\[data-tool="animator"\] #top\.wrap/);
@@ -166,7 +173,7 @@ assert.match(from("public/guides.css"), /\.cf-guide-page > \.cf-guide-header/, "
 // Mobile hero regression: legacy .hero zeroes horizontal padding below 760px.
 assert.match(css, /body:not\(\.studio-app\) \.hero\.hero-banner\s*\{\s*padding:clamp\(20px,5vw,28px\)!important;/,
   "Mobile hero must override legacy zero-horizontal-padding rule");
-assert.ok(rootHome.includes("/styles.css?v=20261112-compact-tools-v1"),
+assert.ok(rootHome.includes("/styles.css?v=20261112-guides-visibility-v1"),
   "Homepage should load the refreshed Shorts preview CSS version");
 // Captions Studio-only enhancements must be wired in preview and export while Shorts remains independent.
 const captionsPage=from("public/tools/captions/index.html");
