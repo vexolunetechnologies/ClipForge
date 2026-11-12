@@ -37,6 +37,31 @@ try{
   }));
   throw Error("Inline preview fixture failed to decode: "+JSON.stringify(diag)+"; "+error.message);
  }
+ // Shorts count is a primary setting, not hidden inside an optional accordion.
+ assert.equal(await page.locator("#counts").isVisible(),true);
+ assert.equal(await page.locator("#counts").evaluate(el=>!!el.closest("details")),false);
+ assert.equal(await page.locator("#counts .chip.on").textContent(),"Auto");
+ assert.equal(await page.evaluate(()=>S.n),"auto");
+ assert.equal(await page.locator('[data-k="res"][data-v="1080"]').getAttribute("class").then(x=>x.includes("on")),true);
+ assert.equal(await page.evaluate(()=>S.res),"1080","Actual Shorts export quality should default to 1080p");
+ await page.locator('[data-k="res"][data-v="720"]').click();
+ assert.equal(await page.evaluate(()=>S.res),"720","User can choose faster 720p");
+ await page.locator('[data-k="res"][data-v="1080"]').click();
+ assert.equal(await page.evaluate(()=>S.res),"1080");
+ await page.locator("#counts .chip").filter({hasText:"3"}).click();
+ assert.equal(await page.evaluate(()=>S.n),3);
+ await page.locator("#custom").fill("7");
+ assert.equal(await page.evaluate(()=>S.n),7);
+ await page.locator("#counts .chip").first().click();
+ assert.equal(await page.evaluate(()=>S.n),"auto");
+ await page.locator("#lens .chip").filter({hasText:"Full video"}).click();
+ assert.equal(await page.locator("#fullnote").isVisible(),true,
+  "Full-video guidance must be visible rather than trapped in a closed menu");
+ await page.locator("#lens .chip").filter({hasText:"Auto"}).click();
+ assert.equal(await page.locator("#fullnote").isVisible(),false);
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),
+  "Visible Shorts count controls must not overflow a narrow phone viewport");
+
  // The giant Shorts Live preview is redundant; its canvas must remain
  // mounted and capture-capable because MP4 export records from that canvas.
  const exportSurface=await page.evaluate(()=>{
