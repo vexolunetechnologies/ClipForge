@@ -69,6 +69,32 @@ try{
   "ffprobe must detect nonzero duration from exported MP4");
  assert.ok(details.streams.some(x=>x.codec_name==="h264"));
  assert.ok(details.streams.some(x=>x.codec_name==="aac"));
+ // Highlights with music/SFX disabled produces VIDEO ONLY. Verify the
+ // Gallery metadata repair doesn't invent an audio track or stall forever.
+ const videoOnly=execFileSync("ffmpeg",[
+  "-hide_banner","-loglevel","error",
+  "-f","lavfi","-i","testsrc2=size=320x180:rate=20",
+  "-t","2.1","-c:v","libx264","-pix_fmt","yuv420p",
+  "-preset","ultrafast","-an",
+  "-movflags","frag_keyframe+empty_moov","-f","mp4","pipe:1"
+ ],{maxBuffer:10*1024*1024});
+ const silent=await page.evaluate(async source=>{
+  const {finalizeGalleryMp4,inspectMp4GalleryMetadata}=await import("/montage-mp4.js");
+  const raw=new Blob([new Uint8Array(source)],{type:"video/mp4"});
+  const fixed=await finalizeGalleryMp4(raw);
+  const meta=await inspectMp4GalleryMetadata(fixed);
+  const mb=await import("https://cdn.jsdelivr.net/npm/mediabunny@1.62.1/+esm");
+  const input=new mb.Input({source:new mb.BlobSource(fixed),formats:mb.ALL_FORMATS});
+  const audio=await input.getPrimaryAudioTrack(),video=await input.getPrimaryVideoTrack();
+  const duration=await input.getDurationFromMetadata();
+  const codec=await video?.getCodec();
+  await input.close?.();
+  return {meta,duration,hasAudio:!!audio,codec};
+ },[...videoOnly]);
+ assert.equal(silent.meta.compatible,true,"Video-only MP4 must have finite Gallery metadata");
+ assert.ok(silent.duration>1.7&&silent.duration<3,"Video-only MP4 duration incorrect");
+ assert.equal(silent.hasAudio,false,"Muted Highlights must remain video-only");
+ assert.equal(silent.codec,"avc");
  assert.deepEqual(errors,[],"No browser runtime errors during MP4 repair");
  console.log("Gallery MP4 duration repair passed: real fMP4 → nonfragmented fast-start H.264/AAC MP4, mvhd "+
   report.after.duration.toFixed(2)+"s, ffprobe "+details.format.duration+"s, no-op and corruption checks.");
