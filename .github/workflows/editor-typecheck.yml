@@ -79,6 +79,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version
           ffprobe -version
+      - name: Verify MP4 phone Gallery duration metadata with real fragmented H.264/AAC input
+        run: npm run test:gallery-mp4
       - name: Test mobile editor with real video import, playback, split and undo
         run: node scripts/test-mobile-editor-media.mjs
       - name: Upload imported-video mobile Studio screenshot
