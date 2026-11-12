@@ -3778,4 +3778,13 @@ body[data-tool="shorts"] #list .cf-short-info .cf-short-share{flex-wrap:wrap;mar
   #tools .toolcard > .go{font-size:11px!important;margin-top:4px!important}
   #tools .section-heading{margin-bottom:12px!important}
 }
+@media(max-width:560px){
+  /* Free phone space for the complete two-column tool grid. */
+  #tools .section-heading h2{
+    font-size:clamp(21px,6vw,26px)!important;
+    line-height:1.18!important;
+    margin:7px 0 9px!important;
+  }
+  #tools .section-heading p{display:none!important}
+}
 @media(prefers-reduced-motion:reduce){#tools .toolcard{transition:none!important}}
