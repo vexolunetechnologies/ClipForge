@@ -74,7 +74,21 @@ for (const tool of tools) {
   assert.match(html, /href="#editor"/);
 }
 
+// Deployment fallback regression: direct tool HTML may be served without running
+// the public/ generator. Both layouts must wrap the redundant recording canvas.
+for (const tool of tools) {
+  const direct = from("tools/" + tool + "/index.html");
+  assert.ok(direct.includes('<div id="cfLivePreviewBlock">'),
+    "Direct tool HTML must wrap the live preview canvas: " + tool);
+  assert.ok(direct.includes('href="/styles.css?v=20261112-direct-preview-fix-v2"'),
+    "Direct tool HTML needs fresh preview-hiding stylesheet: " + tool);
+  const generated = from("public/tools/" + tool + "/index.html");
+  assert.ok(generated.includes('<div id="cfLivePreviewBlock">'),
+    "Generated tool HTML must also wrap the preview: " + tool);
+}
 const css = from("styles.css");
+assert.ok(css.includes('body[data-tool="shorts"] #cfLivePreviewBlock{display:none!important}'),
+  "Shorts must hide the wrapper rather than removing the export canvas");
 assert.match(css, /body\[data-page="workspace"\]\[data-tool="animator"\] #top\.wrap/);
 assert.match(css, /body\[data-page="workspace"\]\[data-tool="reverse"\] #top\.wrap/);
 assert.match(css, /display:none!important;/);
