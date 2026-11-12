@@ -207,7 +207,7 @@ try {
         "Phone Generate button must fit the screen: "+JSON.stringify(layout));
       await phone.screenshot({path:"reports/highlights-workspace-mobile-"+width+".png",fullPage:true});
       const choose=phone.waitForEvent("filechooser");
-      await phone.locator('label[for="hsVideo"]').click();
+      await phone.locator('#highlightsTool label.cf-upload-btn[for="hsVideo"]').click();
       const picker=await choose;
       assert.ok(picker,"Highlights source upload must still open device file selection");
       assert.deepEqual(problems,[],"Highlights layout must have no JS errors");
