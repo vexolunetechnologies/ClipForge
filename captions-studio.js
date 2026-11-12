@@ -146,7 +146,7 @@ function status(t){$('cfCapStatus').textContent=t}
 function enabled(){const ready=!!cues.length;$('cfCapFile').disabled=busy;$('cfCapQuality').disabled=busy;$('cfCapLang').disabled=busy;$('cfCapDensity').disabled=busy;$('cfCapTranscribe').disabled=!file||busy;$('cfCapExport').disabled=!file||!ready||busy;$('cfCapText').disabled=!ready||busy;$('cfCapSrt').disabled=!ready||busy;$('cfCapVtt').disabled=!ready||busy;$('cfCapStop').disabled=!busy;const gridHost=$('cfCapTemplateGrid');if(gridHost)gridHost.querySelectorAll('button').forEach(b=>b.disabled=busy);['cfCapSize','cfCapPosX','cfCapPosY','cfCapResetPlace','cfCapResetLook','cfCapFont',
 'cfCapColor','cfCapCustomColor','cfCapOutlineColor','cfCapOutline','cfCapShadow',
 'cfCapBackground','cfCapTracking','cfCapEffect','cfCapDuration','cfCapSpeed','cfCapSafe','cfCapPlatform'
-].forEach(id=>{if($(id))$(id).disabled=busy});renderCaptionTimings();updateHistoryButtons()}
+].forEach(id=>{if($(id))$(id).disabled=busy});document.querySelectorAll('#cfCapTimingList input,#cfCapTimingList button').forEach(el=>el.disabled=busy);updateHistoryButtons()}
 function wav(pcm){const b=new Uint8Array(44+pcm.length*2),v=new DataView(b.buffer),put=(o,s)=>{for(let i=0;i<s.length;i++)b[o+i]=s.charCodeAt(i)};put(0,'RIFF');v.setUint32(4,36+pcm.length*2,true);put(8,'WAVE');put(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);put(36,'data');v.setUint32(40,pcm.length*2,true);for(let i=0;i<pcm.length;i++){let x=Math.max(-1,Math.min(1,pcm[i]));v.setInt16(44+i*2,x<0?x*32768:x*32767,true)}let z='';for(let i=0;i<b.length;i+=32768)z+=String.fromCharCode.apply(null,b.subarray(i,Math.min(b.length,i+32768)));return btoa(z)}
 function mono(buf,start,end){const sr=buf.sampleRate,a=Array.from({length:buf.numberOfChannels},(_,i)=>buf.getChannelData(i)),from=Math.floor(start*sr),to=Math.min(buf.length,Math.ceil(end*sr)),step=sr/16000,n=Math.floor((to-from)/step),o=new Float32Array(n);for(let i=0;i<n;i++){let p=from+i*step,j=Math.floor(p),f=p-j,v=0;for(const ch of a)v+=(ch[j]||0)+((ch[Math.min(to-1,j+1)]||0)-(ch[j]||0))*f; o[i]=v/a.length}return o}
 function normalizeWords(words,segment){
@@ -263,7 +263,7 @@ async function transcribe(){
   status('Transcription complete · '+cues.length+' short captions. '+(timed+' of '+sourceCues.length+' speech segments include word-level timing.')+' Review the text before export.');
  }catch(e){status('Could not transcribe: '+e.message)}finally{busy=false;enabled()}
 }
-function sync(){const lines=$('cfCapText').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),old=cues.slice();cues=lines.map((text,i)=>old[i]?{...old[i],text}:{s:old.length?old[old.length-1].e:0,e:(old.length?old[old.length-1].e:0)+2,text});enabled();renderCaptionTimings()}
+function sync(){const lines=$('cfCapText').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),old=cues.slice();cues=lines.map((text,i)=>old[i]?{...old[i],text}:{s:old.length?old[old.length-1].e:0,e:(old.length?old[old.length-1].e:0)+2,text});enabled();if(document.activeElement!==$('cfCapText'))renderCaptionTimings()}
 function stamp(t,dot){let n=Math.round(Math.max(0,t)*1000),h=Math.floor(n/3600000),m=Math.floor(n%3600000/60000),s=Math.floor(n%60000/1000),ms=n%1000;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+(dot?'.':',')+String(ms).padStart(3,'0')}
 function download(name,type,text){const u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1200)}
 function subs(vtt){sync();const text=vtt?'WEBVTT\n\n'+cues.map(q=>stamp(q.s,true)+' --> '+stamp(q.e,true)+'\n'+q.text).join('\n\n'):cues.map((q,i)=>(i+1)+'\n'+stamp(q.s,false)+' --> '+stamp(q.e,false)+'\n'+q.text).join('\n\n');download((file.name||'captions').replace(/\.[^.]+$/,'')+(vtt?'.vtt':'.srt'),vtt?'text/vtt':'application/x-subrip',text)}
@@ -615,6 +615,7 @@ function init(){
  };
  $('cfCapTimingPrev').onclick=()=>{if(timingPage>0){timingPage--;renderCaptionTimings()}};
  $('cfCapTimingNext').onclick=()=>{if((timingPage+1)*timingPageSize<cues.length){timingPage++;renderCaptionTimings()}};
+ $('cfCapText').addEventListener('blur',renderCaptionTimings);
  $('cfCapText').oninput=()=>{sync();livePreview()};$('cfCapSrt').onclick=()=>subs(false);$('cfCapVtt').onclick=()=>subs(true);$('cfCapExport').onclick=exportVideo;$('cfCapStop').onclick=()=>{stop=true;try{if(activeInput&&!activeInput.disposed)activeInput.dispose()}catch(e){}try{if(activeOutput&&activeOutput.state!=='finalized'&&activeOutput.state!=='canceled')activeOutput.cancel().catch(()=>{})}catch(e){}};
  function refresh(force=false){grid($('cfCapTemplateGrid'),$('cfCapLang').value,style,k=>{const before=captureEdit();style=k;refresh();livePreview();recordEdit(before)},force)}
  refreshStyles=()=>refresh();
