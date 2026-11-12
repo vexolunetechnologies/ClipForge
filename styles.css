@@ -3456,3 +3456,17 @@ body[data-tool="shorts"] #list .cf-short-trim-row input[type="range"]{display:bl
 body[data-tool="shorts"] #list .cf-short-trim-readout{font-size:12px;font-variant-numeric:tabular-nums;color:var(--text)}
 body[data-tool="shorts"] #list .cf-short-trim button{justify-self:start;min-height:34px}
 @media(max-width:560px){body[data-tool="shorts"] #list .cf-short-trim{padding:10px}body[data-tool="shorts"] #list .cf-short-trim-row{grid-template-columns:minmax(0,1fr)}}
+
+/* Captions Studio-only paged timing editor, compact on phones. */
+#cfCaptionsWorkspace .cf-cap-timing{margin:13px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+#cfCaptionsWorkspace .cf-cap-timing summary{padding:13px 14px;cursor:pointer;font-weight:750;font-size:13px;color:var(--text)}
+#cfCaptionsWorkspace .cf-cap-timing > p{font-size:11px;line-height:1.5;padding:0 14px}
+#cfCaptionsWorkspace .cf-cap-timing-list{display:grid;gap:7px;padding:10px;max-height:360px;overflow:auto}
+#cfCaptionsWorkspace .cf-cap-timing-row{display:grid;grid-template-columns:30px minmax(75px,1fr) minmax(75px,1fr) auto;align-items:center;gap:8px;padding:9px;border-radius:8px;border:1px solid var(--line);min-width:0}
+#cfCaptionsWorkspace .cf-cap-timing-row label{display:grid;gap:4px;font-size:11px;min-width:0}
+#cfCaptionsWorkspace .cf-cap-timing-row input[type="number"]{box-sizing:border-box;min-width:0;width:100%;height:36px;padding:6px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--text);font-variant-numeric:tabular-nums}
+#cfCaptionsWorkspace .cf-cap-timing-row .sm{min-height:34px}
+#cfCaptionsWorkspace .cf-cap-timing-number{font-size:12px;font-weight:750}
+#cfCaptionsWorkspace .cf-cap-timing-text{grid-column:2/-1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--text)}
+#cfCaptionsWorkspace .cf-cap-timing-footer{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:space-between;padding:10px 13px;border-top:1px solid var(--line)}
+@media(max-width:560px){#cfCaptionsWorkspace .cf-cap-timing-list{padding:6px}#cfCaptionsWorkspace .cf-cap-timing-row{grid-template-columns:26px minmax(0,1fr) minmax(0,1fr);gap:6px}#cfCaptionsWorkspace .cf-cap-timing-row .sm{grid-column:2/-1;justify-self:start}#cfCaptionsWorkspace .cf-cap-timing-text{grid-column:2/-1}}
