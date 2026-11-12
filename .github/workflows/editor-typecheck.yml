@@ -79,6 +79,15 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version
           ffprobe -version
+      - name: Verify professional inline Shorts preview on Android-size Chromium with real MP4
+        run: npm run test:shorts-inline
+      - name: Upload Shorts mobile preview snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipforge-shorts-inline-preview
+          path: reports/shorts-inline-mobile.png
+          if-no-files-found: ignore
       - name: Verify MP4 phone Gallery duration metadata with real fragmented H.264/AAC input
         run: npm run test:gallery-mp4
       - name: Test mobile editor with real video import, playback, split and undo
