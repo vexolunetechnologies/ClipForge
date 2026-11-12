@@ -211,8 +211,12 @@ try{
   await directSite.close();
  }
  // Test notification visibility on phone and desktop, including the sidebar.
- await directPage.evaluate(()=>err("Test processing warning"));
- const mobileToast=await directPage.evaluate(()=>{
+ const toastSite=await serveLocalSite({rootDir:"."});
+ const warningMobile=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+ try{
+ await warningMobile.goto(toastSite.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
+ await warningMobile.evaluate(()=>err("Test processing warning"));
+ const mobileToast=await warningMobile.evaluate(()=>{
   const box=document.querySelector("#toast").getBoundingClientRect();
   return {left:box.left,right:box.right,viewport:innerWidth,
    z:Number(getComputedStyle(document.querySelector("#toast")).zIndex),
@@ -224,7 +228,7 @@ try{
  assert.ok(mobileToast.z>mobileToast.headerZ,"Toast should be above mobile navigation");
  const desktop=await browser.newPage({viewport:{width:1440,height:900}});
  try{
-  await desktop.goto(directSite.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
+  await desktop.goto(toastSite.origin+"/tools/shorts/",{waitUntil:"domcontentloaded"});
   await desktop.evaluate(()=>err("Test processing warning"));
   const placement=await desktop.evaluate(()=>{
    const toast=document.querySelector("#toast"),header=document.querySelector("header");
@@ -238,6 +242,10 @@ try{
   assert.ok(placement.toastZ>placement.sidebarZ,"Toast must stack above desktop sidebar");
   assert.equal(placement.color,"rgb(255, 255, 255)","Warning must retain readable white text");
  }finally{await desktop.close()}
+ }finally{
+  await warningMobile.close();
+  await toastSite.close();
+ }
 
  // Mock only the browser Wake Lock API, then exercise the real Analyze click.
  // Analysis is stopped before contacting any external AI service.
