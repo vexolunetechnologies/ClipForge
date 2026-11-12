@@ -179,8 +179,19 @@ assert.match(captionExtras,/function decorateContext/, "Custom text styling rend
 assert.match(captionScript,/if\(look\.safe\)STUDIO\.drawSafeGuide/, "Preview-only guide integration missing");
 assert.ok(!from("caption-style-library.js").includes("drawSafeGuide"),
  "Shared Shorts caption renderer should not be altered");
+assert.ok(rootHome.includes('id="counts" role="group"'),"Short count should be accessible as a main setting");
+assert.ok(!rootHome.includes("<summary>Short count and extra options</summary>"),"Count must no longer be collapsed");
+assert.match(rootHome, /class="chip on" data-k="res" data-v="1080"/, "1080p must be the visible Shorts default");
+assert.match(rootHome, /class="chip" data-k="res" data-v="720"/, "720p must remain optional");
+assert.match(from("app.js"), /cs:'creator-yellow',res:'1080',tr:'off'/, "Actual export state must default to 1080p");
+for (const tool of tools) {
+ const direct=from("tools/" + tool + "/index.html");
+ assert.ok(direct.includes('id="counts" role="group"'),"Direct "+tool+" page should show count controls");
+ assert.ok(direct.includes('data-k="res" data-v="1080"'),"Direct "+tool+" page must expose 1080p");
+ assert.ok(direct.includes('src="/app.js?v=20261112-shorts-1080-v1"'),"Direct "+tool+" page needs fresh Shorts logic");
+}
 assert.match(from("app.js"),/cf-short-trim/,"Shorts preview trim UI must remain available");
-assert.match(rootHome,/\/app\.js\?v=20261112-short-cards-v1/,"Home must load fresh MP4 Gallery metadata finalizer integration");
+assert.match(rootHome,/\/app\.js\?v=20261112-shorts-1080-v1/,"Home must load latest Shorts defaults and card features");
 assert.match(from("captions-studio.js"),/cfCapTimingList/,"Cue timing editor must remain included in Captions Studio");
 // Android Gallery duration fix: every raw MP4 recorder must finalize metadata before download.
 const galleryFinalizer=from("montage-mp4.js");
