@@ -3446,3 +3446,13 @@ footer a[href="https://vexolunetech.pages.dev/"]:hover{color:#c5baff!important}
  #cfCaptionsWorkspace .cf-cap-feature-body{padding:12px}
  #cfCaptionsWorkspace .cf-cap-edit-toolbar .cf-muted{flex-basis:100%}
 }
+
+/* Shorts-only compact trim control: source timeline, mobile touch targets. */
+body[data-tool="shorts"] #list .cf-short-trim{display:grid;gap:8px;margin:10px 0 6px;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--card);min-width:0}
+body[data-tool="shorts"] #list .cf-short-trim-title{font-size:12px;font-weight:700;color:var(--text)}
+body[data-tool="shorts"] #list .cf-short-trim-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+body[data-tool="shorts"] #list .cf-short-trim-row label{display:grid;gap:4px;min-width:0;font-size:11px;font-weight:650}
+body[data-tool="shorts"] #list .cf-short-trim-row input[type="range"]{display:block;width:100%;height:28px;min-width:0;accent-color:#8c7af0;touch-action:pan-y}
+body[data-tool="shorts"] #list .cf-short-trim-readout{font-size:12px;font-variant-numeric:tabular-nums;color:var(--text)}
+body[data-tool="shorts"] #list .cf-short-trim button{justify-self:start;min-height:34px}
+@media(max-width:560px){body[data-tool="shorts"] #list .cf-short-trim{padding:10px}body[data-tool="shorts"] #list .cf-short-trim-row{grid-template-columns:minmax(0,1fr)}}

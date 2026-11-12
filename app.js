@@ -747,6 +747,52 @@ function render(){
   const tr=document.createElement('div');tr.className='row';tr.style.marginTop='6px';
   [['◂ start','s',-1],['start ▸','s',1],['◂ end','e',-1],['end ▸','e',1]].forEach(([t,k2,d])=>{const x=document.createElement('button');x.className='sm';x.style.cssText='padding:3px 7px;font-size:12px';x.textContent=t;
    x.onclick=()=>{if(busy)return;const o={s:c.s,e:c.e};o[k2]+=d;if(o.s<0||o.e>v.duration||o.e-o.s<3)return;c.s=o.s;c.e=o.e;c.blob=null;c.pcm=null;c.plan=null;c.cap=S.cap==='file';render()};tr.append(x)});
+  // Frame-accurate, bounded trim controls for the selected Short. Existing +/-1s buttons remain.
+  // Dual ranges use the full source-video timeline, and never alter other clips.
+  if(!c.full){
+   const wrap=document.createElement('div');wrap.className='cf-short-trim';
+   const title=document.createElement('div');title.className='cf-short-trim-title';
+   title.textContent='Preview trim · adjust the beginning and ending';
+   wrap.append(title);
+   const row=document.createElement('div');row.className='cf-short-trim-row';
+   const startLabel=document.createElement('label');startLabel.textContent='Start';
+   const startInput=document.createElement('input');startInput.type='range';startInput.min='0';
+   startInput.max=String(Math.max(0,Math.round((v.duration||c.e)*10)/10));
+   startInput.step='.1';startInput.value=String(c.s);startInput.setAttribute('aria-label','Short '+(i+1)+' trim start');
+   const endLabel=document.createElement('label');endLabel.textContent='End';
+   const endInput=document.createElement('input');endInput.type='range';endInput.min='0';
+   endInput.max=startInput.max;endInput.step='.1';endInput.value=String(c.e);
+   endInput.setAttribute('aria-label','Short '+(i+1)+' trim end');
+   const output=document.createElement('output');output.className='cf-short-trim-readout';
+   const updateOutput=()=>{output.textContent=c.s.toFixed(1)+'s – '+c.e.toFixed(1)+'s · '+(c.e-c.s).toFixed(1)+'s'};
+   updateOutput();
+   const trim=(key,input)=>{
+    if(busy)return;
+    const val=Number(input.value),oldS=c.s,oldE=c.e;
+    if(!Number.isFinite(val))return;
+    if(key==='s')c.s=Math.max(0,Math.min(val,c.e-3));
+    else c.e=Math.min(Number(v.duration)||c.e,Math.max(val,c.s+3));
+    c.s=Math.round(c.s*10)/10;c.e=Math.round(c.e*10)/10;
+    input.value=String(c[key]);updateOutput();
+    if(oldS!==c.s||oldE!==c.e){c.blob=null;c.pcm=null;c.plan=null;c.cap=S.cap==='file';
+     const time=r.querySelector('.info .t');if(time)time.textContent=fmt(c.s)+' – '+fmt(c.e)+' ('+Math.round(c.e-c.s)+'s)';
+     r.querySelector('.bar i').style.width='0%';b.textContent='Export';b.classList.remove('p');
+     r.querySelector('.cf-short-share')?.remove();
+     if(url)th.src=url+'#t='+(c.s+.1);}
+   };
+   startInput.oninput=()=>trim('s',startInput);
+   endInput.oninput=()=>trim('e',endInput);
+   // Persist once after the gesture, not on every mobile slider frame.
+   startInput.onchange=projSave;endInput.onchange=projSave;
+   const previewButton=document.createElement('button');previewButton.className='sm';
+   previewButton.type='button';previewButton.textContent='▶ Preview trimmed';
+   previewButton.onclick=()=>previewSeg(c.s,c.e);
+   for(const [lab,input] of [[startLabel,startInput],[endLabel,endInput]]){
+    lab.append(input);row.append(lab);
+   }
+   wrap.append(row,output,previewButton);
+   r.querySelector('.info').append(wrap);
+  }
   // Preview: plays this short in the player above, from its start to its end.
   {const pv=document.createElement('button');pv.className='sm';pv.style.cssText='padding:3px 7px;font-size:12px';pv.textContent='▶ preview';pv.onclick=()=>previewSeg(c.s,c.e);tr.append(pv)}
   r.querySelector('.info').append(tr);
@@ -1276,7 +1322,7 @@ function save(c,i){const a=document.createElement('a');a.href=URL.createObjectUR
 // Share a finished file. "Share…" opens the phone's own share menu (YouTube, Instagram, Facebook, WhatsApp...) with the video attached.
 // The site buttons save the file first, then open that site's upload page in a new tab (a web page cannot upload to your account by itself: you pick the saved file there).
 const SHARE_SITES=[['YouTube','https://www.youtube.com/upload'],['Facebook','https://www.facebook.com/reels/create'],['Instagram','https://www.instagram.com/'],['TikTok','https://www.tiktok.com/upload']];
-function shareRow(c,i){const d=document.createElement('div');d.className='row';d.style.marginTop='6px';
+function shareRow(c,i){const d=document.createElement('div');d.className='row cf-short-share';d.style.marginTop='6px';
  const mk=(txt,fn)=>{const x=document.createElement('button');x.className='sm';x.style.cssText='padding:3px 8px;font-size:12px';x.textContent=txt;x.onclick=fn;d.append(x)};
  const nm=()=>fname+(c.trailer?'-trailer':c.full?'-full-9x16':'-short-'+(i+1))+'.'+ext;
  const fl=()=>new File([c.blob],nm(),{type:(c.blob.type||'video/mp4').split(';')[0]});
