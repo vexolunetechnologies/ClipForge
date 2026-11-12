@@ -127,6 +127,15 @@ try{
  await page.evaluate(()=>window.ClipForgeNavigation.navigate("/tools/captions/"));
  assert.equal(await second.locator("video").evaluate(v=>v.paused),true);
  assert.equal(await page.evaluate(()=>SHORT_ACTIVE),null);
+ // Uploading a new source must remove the old cards and release object URLs.
+ assert.equal(await page.evaluate(()=>window.ClipForgeNavigation.navigate("/tools/shorts/")),true);
+ const refreshed=await page.evaluate(()=>{
+  load(file);
+  return {cards:document.querySelectorAll("#list .clip").length,
+   active:SHORT_ACTIVE===null,objectUrls:SHORT_RENDER_URLS.length,planned:clips.length};
+ });
+ assert.deepEqual(refreshed,{cards:0,active:true,objectUrls:0,planned:0},
+  "A fresh upload must not retain stale Short previews or outdated trim/export cards");
  assert.deepEqual(errors,[],"No uncaught errors while previewing, trimming, exporting and switching");
  console.log("Shorts inline preview: real local video playback, source player isolation, one active preview, in/out limit, collapsed edit, export state, mobile 9:16 and navigation passed.");
 }finally{
