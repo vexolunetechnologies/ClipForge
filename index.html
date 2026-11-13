@@ -19,14 +19,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ClipForge Studio | Browser Video Editor, Shorts & Captions</title>
-<meta name="description" content="Create short videos, captions, trailers and edited clips with ClipForge Studio. Explore browser-based tools and original step-by-step video editing guides.">
+<title>Free Online Video Editor & Creator Tools | ClipForge Studio</title>
+<meta name="description" content="Edit video in your browser with ClipForge Studio. Create Shorts, captions, trailers, highlights and montages, with free creator guides and no required account.">
 <link rel="canonical" href="https://clipforgestudio.pages.dev/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="ClipForge Studio | Browser Video Tools">
-<meta property="og:description" content="Browser-based video tools for Shorts, Urdu/Hindi captions, trailers and creative editing.">
+<meta property="og:title" content="ClipForge Studio | Free Browser Video Creation Tools">
+<meta property="og:description" content="Create Shorts, captions, trailers, montages and highlights with ClipForge Studio browser video tools.">
 <meta property="og:url" content="https://clipforgestudio.pages.dev/">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Free Online Video Editor & Creator Tools | ClipForge Studio">
+<meta name="twitter:description" content="Create Shorts, captions, trailers, montages and highlights in your browser.">
 <!-- ===== CSS: look and layout ===== -->
 <link rel="stylesheet" href="/styles.css?v=20261112-highlights-layout-v1">
 <!-- Mobile editor presentation only. Isolated from app and export logic. -->
@@ -419,7 +421,7 @@
    a.classList.toggle('active',active);
    if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
   });
-  document.title=page==='tools'?'All Creative Tools – ClipForge Studio':page==='workspace'?'ClipForge Studio – '+(hash==='animator'?'Picture to Video':hash==='reverse'?'Reverse Video':hash==='montage'?'Video Montage Maker':hash==='highlights'?'Highlights Studio':hash==='editor'?'Studio Editor':hash==='captions'?'Captions Studio':hash==='trailer'?'Trailer Maker':'Video to Shorts'):page==='home'?'ClipForge Studio – Creative Workspace':'ClipForge Studio';
+  document.title=page==='tools'?'Free Video Creation Tools | ClipForge Studio':page==='workspace'?({"shorts":"Long Video to Shorts Maker | ClipForge Studio","trailer":"Trailer & Promo Maker Online | ClipForge Studio","animator":"Picture to Video Animator Online | ClipForge Studio","reverse":"Reverse Video and Audio Online | ClipForge Studio","montage":"Online Video Montage Maker | ClipForge Studio","highlights":"AI Video Highlights Maker | ClipForge Studio","editor":"Browser Video Editor with Timeline | ClipForge Studio","captions":"Urdu, Hindi & English Captions Tool | ClipForge Studio"}[hash]||'ClipForge Studio'):page==='home'?'Free Online Video Editor & Creator Tools | ClipForge Studio':'ClipForge Studio';
   if(page==='workspace')window.scrollTo(0,0);
  }
  window.addEventListener('hashchange',route);

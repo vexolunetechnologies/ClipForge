@@ -153,8 +153,10 @@ assert.ok(robots.includes("User-agent: *\nAllow: /\nSitemap: https://clipforgest
 const sitemap = from("public/sitemap.xml");
 assert.match(sitemap, /^<\?xml version="1\.0"/);
 assert.ok(sitemap.includes("<urlset xmlns="));
-assert.equal((sitemap.match(/<loc>/g)||[]).length, 20, "Every guide, legal page and tool should have a discoverable URL");
-const guides = ["long-video-to-shorts","urdu-hindi-captions","export-video-formats","browser-video-privacy"];
+const guides = ["long-video-to-shorts","urdu-hindi-captions","export-video-formats","browser-video-privacy",
+ "video-montage-workflow","reverse-video-audio","ai-video-highlights","picture-to-video"];
+assert.equal((sitemap.match(/<loc>/g)||[]).length, 16 + guides.length,
+  "Every guide, legal page and tool should have a discoverable URL");
 const pageGuide = from("public/guides/index.html");
 for(const slug of guides){
  const location = "/guides/" + slug + "/";

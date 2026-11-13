@@ -1,0 +1,18 @@
+page_type,slug,primary_keyword_hypothesis,secondary_keyword_hypothesis,user_intent,priority,notes
+homepage,/,free online video editor,browser video creator tools,navigate,high,No volume data verified
+tool,/tools/shorts/,video to shorts maker,long video to shorts online,create,high,Context and quality review matter
+tool,/tools/captions/,urdu hindi caption generator,add captions to video online,create,high,No unsupported transcription accuracy claims
+tool,/tools/montage/,online video montage maker,combine video clips online,create,high,Multi-clip sequence and export
+tool,/tools/reverse/,reverse video online,reverse video with sound,create,medium,Source limits and codecs matter
+tool,/tools/highlights/,ai video highlights maker,video highlight reel online,create,medium,Original video audio muted on export
+tool,/tools/animator/,picture to video maker,animate photos with pan and zoom,create,medium,Not object animation
+tool,/tools/trailer/,online video trailer maker,promo video maker,create,medium,User-supplied video source
+tool,/tools/editor/,browser timeline video editor,online multi-track editor,create,high,Device capability affects experience
+guide,/guides/long-video-to-shorts/,how to make shorts from long video,vertical video framing,learn,high,Existing original guide
+guide,/guides/urdu-hindi-captions/,urdu hindi subtitles tutorial,caption timing and readability,learn,high,Existing original guide
+guide,/guides/export-video-formats/,mp4 vs webm for creators,mp4 gallery duration 0,learn,high,Existing original guide
+guide,/guides/browser-video-privacy/,browser video editing privacy,local video processing and ai,learn,medium,Existing original guide
+guide,/guides/video-montage-workflow/,how to make a video montage,trim and reorder video clips,learn,medium,New guide
+guide,/guides/reverse-video-audio/,how to reverse video and audio,reverse sound or mute,learn,medium,New guide
+guide,/guides/ai-video-highlights/,how to make a highlight reel,ai video highlights review,learn,medium,New guide
+guide,/guides/picture-to-video/,how to turn pictures into video,photo zoom pan transitions,learn,medium,New guide

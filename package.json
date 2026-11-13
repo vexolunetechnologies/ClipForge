@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.editor.json && node scripts/build-pages.mjs",
     "typecheck": "tsc -p tsconfig.editor.json --noEmit",
-    "test": "node scripts/check-pages.mjs && node scripts/test-navigation.mjs && node scripts/test-transcription-queue.mjs && node scripts/test-shorts-semantic.mjs && node scripts/test-shorts-framing.mjs",
+    "test": "node scripts/check-pages.mjs && node scripts/test-navigation.mjs && node scripts/test-transcription-queue.mjs && node scripts/test-shorts-semantic.mjs && node scripts/test-shorts-framing.mjs && npm run test:seo",
     "verify": "npm run typecheck && npm run build && npm run test",
     "test:browser": "node scripts/test-browser.mjs",
     "test:phase1": "node scripts/test-phase1-browser.mjs",
@@ -15,7 +15,8 @@
     "test:caption-gallery": "node scripts/test-caption-gallery.mjs",
     "test:gallery-mp4": "node scripts/test-mp4-gallery-browser.mjs",
     "test:shorts-inline": "node scripts/test-shorts-inline-media.mjs",
-    "test:mobile-editor": "node scripts/test-mobile-studio-browser.mjs"
+    "test:mobile-editor": "node scripts/test-mobile-studio-browser.mjs",
+    "test:seo": "node scripts/test-seo.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

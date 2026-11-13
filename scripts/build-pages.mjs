@@ -10,19 +10,49 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const site = join(root, "public");
 const tools = ["shorts", "trailer", "animator", "reverse", "montage", "highlights", "editor", "captions"];
 const guideSlugs = [
-  "long-video-to-shorts", "urdu-hindi-captions", "export-video-formats", "browser-video-privacy"
+  "long-video-to-shorts", "urdu-hindi-captions", "export-video-formats",
+  "browser-video-privacy", "video-montage-workflow", "reverse-video-audio",
+  "ai-video-highlights", "picture-to-video"
 ];
 const origin = "https://clipforgestudio.pages.dev";
+// Search intent descriptions are truthful summaries of the working tools.
+// Do not promise features (AI image motion, cloud storage, etc.) not available.
 const toolSEO = {
-  shorts: ["Video to Shorts Tool", "Turn a long recording into vertical Shorts and review dialogue, framing, subtitles and export quality."],
-  trailer: ["Trailer & Promo Maker", "Create a trailer or promo from your own video footage and review cuts, timing, audio and aspect ratio."],
-  animator: ["Picture to Video Animator", "Animate a still picture into video with ClipForge browser-based picture animation controls."],
-  reverse: ["Reverse Video Tool", "Make reversed video clips in a browser and check playback, audio and export compatibility."],
-  montage: ["Video Montage Maker", "Arrange video moments into a montage with ClipForge editing controls."],
-  highlights: ["Highlights Studio", "Find and review key video highlights from a longer recording in ClipForge."],
-  editor: ["Studio Video Editor", "Edit video with ClipForge Studio Editor. Adjust clips, titles and preview your project before export."],
-  captions: ["Urdu, Hindi & English Captions Studio", "Generate and edit video captions in Urdu, Hindi or English, choose a style and export subtitle files."]
+  shorts: ["Long Video to Shorts Maker", "Turn long videos into vertical Shorts. Review AI-selected dialogue scenes, framing and captions before exporting in ClipForge Studio."],
+  trailer: ["Trailer & Promo Maker Online", "Make a video trailer or promo from your footage. Review selected moments, add title cards and choose a wide or vertical output."],
+  animator: ["Picture to Video Animator Online", "Animate still photos with camera pans, zooms, transitions, music and voiceover. Create a video from your own images in your browser."],
+  reverse: ["Reverse Video and Audio Online", "Reverse a video in your browser. Choose reversed or muted sound, output resolution and download the backwards-playing result."],
+  montage: ["Online Video Montage Maker", "Combine, trim and reorder multiple video clips into a montage. Preview your sequence and export it from your browser."],
+  highlights: ["AI Video Highlights Maker", "Turn long footage into an AI-selected highlight reel. Choose duration, aspect ratio, background music and sound effects."],
+  editor: ["Browser Video Editor with Timeline", "Edit clips using a multi-track browser timeline with video, text, captions, audio controls and export options."],
+  captions: ["Urdu, Hindi & English Captions Tool", "Create and edit Urdu, Hindi or English video captions. Choose caption looks, adjust timing, download SRT or VTT and export video."]
 };
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, ch => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]
+));
+const jsonLd = value => '<script type="application/ld+json">' +
+  JSON.stringify(value).replace(/</g, '\\u003c') + '</script>';
+const publisher = { "@type":"Organization", name:"Vexolune Technologies",
+  url:"https://vexolunetech.pages.dev/" };
+const siteSchema = {
+  "@context":"https://schema.org", "@type":"WebSite",
+  name:"ClipForge Studio", url:origin+"/",
+  publisher
+};
+const appSchema = (name, url, description) => ({
+  "@context":"https://schema.org", "@type":"WebApplication",
+  name, url, description, applicationCategory:"MultimediaApplication",
+  operatingSystem:"Web browser", inLanguage:"en",
+  offers:{"@type":"Offer",price:"0",priceCurrency:"USD"},
+  publisher
+});
+const breadcrumbSchema = (title, url) => ({
+  "@context":"https://schema.org", "@type":"BreadcrumbList",
+  itemListElement:[
+    {"@type":"ListItem",position:1,name:"ClipForge Studio",item:origin+"/"},
+    {"@type":"ListItem",position:2,name:title,item:url}
+  ]
+});
 const read = (path) => readFileSync(join(root, path), "utf8");
 const ensure = (file) => mkdirSync(dirname(file), { recursive: true });
 const put = (relative, content) => {
@@ -111,6 +141,21 @@ function page(tool = null) {
     html = html.replace(/<meta property="og:title" content="[^"]*">/, '<meta property="og:title" content="' + title + '">');
     html = html.replace(/<meta property="og:description" content="[^"]*">/, '<meta property="og:description" content="' + description + '">');
     html = html.replace(/<meta property="og:url" content="[^"]*">/, '<meta property="og:url" content="' + url + '">');
+    // Dedicated tool routes need standalone search metadata, not a homepage
+    // canonical. The original shared editing DOM and tool scripts are untouched.
+    html = html.replace('</head>',
+      '<meta property="og:site_name" content="ClipForge Studio">' +
+      '<meta name="twitter:card" content="summary">' +
+      '<meta name="twitter:title" content="' + escapeHtml(title+' | ClipForge Studio') + '">' +
+      '<meta name="twitter:description" content="' + escapeHtml(description) + '">' +
+      jsonLd(appSchema(title, url, description)) +
+      jsonLd(breadcrumbSchema(title, url)) +
+      '</head>');
+  } else {
+    html = html.replace('</head>',jsonLd(siteSchema) +
+      jsonLd(appSchema("ClipForge Studio", origin+"/",
+        "Browser-based editing tools for Shorts, captions, trailers, highlights and video montage.")) +
+      '</head>');
   }
   return html;
 }
