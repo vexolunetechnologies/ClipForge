@@ -13,7 +13,7 @@
    if(!document.querySelector('link[data-studio-phase1]')){
      const style=document.createElement('link');
      style.rel='stylesheet';
-     style.href='/studio-editor-phase1.css?v=20261114-studio-latest-v2';
+     style.href='/studio-editor-phase1.css?v=20261114-studio-viewport-v1';
      style.dataset.studioPhase1='1';
      document.head.append(style);
    }
