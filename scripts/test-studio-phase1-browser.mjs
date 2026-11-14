@@ -107,6 +107,7 @@ try {
     assert.ok(await panel.locator("button.st-tool-action").count()>=minActions,
       tool+" must preserve its original functional action buttons");
   }
+  await editor.locator('[data-p1-tool="effects"]').click();
   const effectCard = await editor.locator('[data-st-pane="effects"] .st-effect-grid button').first().evaluate(node=>({
     height:node.getBoundingClientRect().height,
     swatch:getComputedStyle(node,"::before").backgroundImage
