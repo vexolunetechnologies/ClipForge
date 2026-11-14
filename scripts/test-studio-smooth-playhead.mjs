@@ -60,6 +60,7 @@ try{
   assert.ok(thumbnails.previews.every(x=>x!=='none'&&x!=='""'),
     "Transition cards need distinct diagrams instead of blank boxes: "+JSON.stringify(thumbnails));
 
+  await toolbar.locator('[data-p1-tool="media"]').click();
   await editor.locator("#stImport").setInputFiles({
     name:"studio-playhead.webm",mimeType:"video/webm",buffer:readFileSync(sample)
   });
