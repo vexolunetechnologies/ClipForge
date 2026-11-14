@@ -34,6 +34,8 @@ try {
   });
   assert.ok(bounds.media.width>260,"Media panel must have usable width: "+JSON.stringify(bounds));
   assert.ok(bounds.monitor.width>350,"Player must have usable width: "+JSON.stringify(bounds));
+  assert.ok(bounds.monitor.width>bounds.media.width*1.2,
+    "Program monitor must be visually larger than Media bin: "+JSON.stringify(bounds));
   assert.ok(bounds.inspector.width>=270,"Inspector must have usable width: "+JSON.stringify(bounds));
   assert.ok(bounds.media.x<bounds.monitor.x && bounds.monitor.x<bounds.inspector.x,
     "Layout order must match Media / Player / Inspector: "+JSON.stringify(bounds));
