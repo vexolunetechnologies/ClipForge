@@ -48,7 +48,7 @@
    font-family:system-ui,sans-serif;font-size:20px;line-height:23px;font-weight:450;
  }
  body.solo[data-tool="editor"] #editorTool.st-phase1 .st-pro-main{
-   display:grid!important;grid-template-columns:minmax(270px,44%) minmax(350px,1fr) minmax(270px,300px)!important;
+   display:grid!important;grid-template-columns:minmax(265px,29%) minmax(360px,1fr) minmax(270px,22%)!important;
    grid-template-rows:minmax(0,1fr) minmax(220px,36%)!important;
    gap:5px!important;height:100%!important;padding:6px 0 0!important;
    background:#121315!important;box-sizing:border-box!important;
