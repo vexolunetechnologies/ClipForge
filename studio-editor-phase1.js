@@ -13,6 +13,7 @@
   const toolbar = document.createElement("nav");
   toolbar.className = "st-p1-toolbar";
   toolbar.setAttribute("aria-label", "Studio creator tools");
+  let applyMediaFilter = () => {};
   const categories = [
     ["media", "▣", "Media"],
     ["audio", "♫", "Audio"],
@@ -91,7 +92,6 @@
       });
     };
     window.ClipForgeEditor?.state?.media && apply();
-    window.ClipForgePhase1Filter = apply; // keeps search stable after render without altering editor state
     input.addEventListener("input", apply);
     search.addEventListener("click", e => {
       const b = e.target.closest("[data-p1-filter]");
@@ -105,12 +105,11 @@
     // hidden attributes, so filtering never creates an observer loop.
     new MutationObserver(apply).observe(mediaList, {childList:true});
     const originalApply = apply;
-    // The shelf's media filter only serves the Tools pane. Reset it so it
-    // does not override the visible Project-bin filter.
-    function applyMediaFilter() {
+    // Reset hidden legacy filters so they cannot override the visible Project-bin filter.
+    applyMediaFilter = () => {
       $('[data-st-filter="all"]')?.click();
       originalApply();
-    }
+    };
     root.addEventListener("click", e => {
       const link = e.target.closest('[data-project-tab="project"]');
       if (link) queueMicrotask(originalApply);
