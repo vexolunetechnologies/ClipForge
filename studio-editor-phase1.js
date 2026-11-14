@@ -14,20 +14,28 @@
   toolbar.className = "st-p1-toolbar";
   toolbar.setAttribute("aria-label", "Studio creator tools");
   let applyMediaFilter = () => {};
+  // One consistent 16px line-icon language instead of mixed oversized symbols.
+  // Static SVG markup is decorative; real buttons and their click handlers remain.
+  const svg = body => '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + body + '</svg>';
+  const icons = {
+    media:svg('<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m10 8 6 4-6 4z"/>'),
+    audio:svg('<path d="M9 18V5l12-2v13"/><path d="M9 8l12-2"/><ellipse cx="6" cy="19" rx="3" ry="2"/><ellipse cx="18" cy="17" rx="3" ry="2"/>'),
+    text:svg('<path d="M4 6h16M12 6v13m-5 0h10"/>'),
+    stickers:svg('<path d="m12 3 2.7 5.7L21 9.6l-4.5 4.2 1 6.2L12 17l-5.5 3 1-6.2L3 9.6l6.3-.9z"/>'),
+    effects:svg('<path d="m12 3 1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8zM19 2v4m-2-2h4"/>'),
+    transitions:svg('<path d="M3 12h8m-4-4 4 4-4 4M21 12h-8m4-4-4 4 4 4"/>'),
+    filters:svg('<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/>'),
+    adjustment:svg('<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="#202125"/><circle cx="16" cy="12" r="2" fill="#202125"/><circle cx="10" cy="18" r="2" fill="#202125"/>')
+  };
   const categories = [
-    ["media", "▣", "Media"],
-    ["audio", "♫", "Audio"],
-    ["text", "T", "Text"],
-    ["stickers", "✿", "Stickers"],
-    ["effects", "✧", "Effects"],
-    ["transitions", "◀▶", "Transitions"],
-    ["filters", "◐", "Filters"],
-    ["adjustment", "☷", "Adjustment"]
+    ["media","Media"],["audio","Audio"],["text","Text"],
+    ["stickers","Stickers"],["effects","Effects"],["transitions","Transitions"],
+    ["filters","Filters"],["adjustment","Adjustment"]
   ];
-  toolbar.innerHTML = categories.map(([key, icon, label]) =>
+  toolbar.innerHTML = categories.map(([key,label]) =>
     '<button type="button" data-p1-tool="' + key + '" aria-pressed="' + (key === "media") +
     '" title="' + label + '"><span aria-hidden="true" class="st-p1-icon">' +
-    icon + '</span><span>' + label + '</span></button>'
+    icons[key] + '</span><span>' + label + '</span></button>'
   ).join("");
   root.querySelector(".st-menubar")?.insertAdjacentElement("afterend", toolbar);
 
