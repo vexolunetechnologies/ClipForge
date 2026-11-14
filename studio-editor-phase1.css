@@ -476,35 +476,30 @@
  */
 @media screen and (min-width:761px) {
   body.solo[data-tool="editor"] #editorTool.st-phase1 {
-    display:grid!important;
-    grid-template-columns:minmax(0,1fr)!important;
-    grid-template-rows:46px 25px 63px minmax(0,1fr)!important;
+    position:relative!important;display:block!important;
     box-sizing:border-box!important;
     width:100%!important;height:100dvh!important;max-height:100dvh!important;
     min-height:0!important;margin:0!important;
     padding:0 8px 8px!important;overflow:hidden!important;
   }
   body.solo[data-tool="editor"] #editorTool.st-phase1>.st-appbar {
-    grid-column:1!important;grid-row:1!important;
     height:46px!important;min-height:0!important;max-height:46px!important;
     margin-bottom:0!important;box-sizing:border-box!important;
   }
   body.solo[data-tool="editor"] #editorTool.st-phase1>.st-menubar {
-    grid-column:1!important;grid-row:2!important;
     height:25px!important;min-height:0!important;max-height:25px!important;
     margin-bottom:0!important;box-sizing:border-box!important;
   }
   body.solo[data-tool="editor"] #editorTool.st-phase1>.st-p1-toolbar {
-    grid-column:1!important;grid-row:3!important;
     box-sizing:border-box!important;height:63px!important;
     min-height:0!important;max-height:63px!important;
     margin:0 -8px!important;
   }
   body.solo[data-tool="editor"] #editorTool.st-phase1>.st-workspace {
-    grid-column:1!important;grid-row:4!important;
+    position:absolute!important;inset:134px 8px 8px!important;
     display:block!important;box-sizing:border-box!important;
-    width:100%!important;height:auto!important;max-height:none!important;
-    min-width:0!important;min-height:0!important;align-self:stretch!important;
+    width:auto!important;height:auto!important;max-height:none!important;
+    min-width:0!important;min-height:0!important;
     padding:0!important;margin:0!important;overflow:hidden!important;
   }
   body.solo[data-tool="editor"] #editorTool.st-phase1 .st-pro-main {
