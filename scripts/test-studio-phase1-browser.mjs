@@ -88,6 +88,41 @@ try {
   await editor.locator('[data-st-action="sticker"]').click();
   assert.equal(await page.evaluate(() => window.ClipForgeEditor.state.overlays.length),count+1,
     "Stickers action must create real overlay state");
+  // Opened tool panels should be actual responsive workspaces, not the old
+  // cramped vertical list. The same original action buttons stay in the DOM.
+  for (const [tool,paneName,minActions] of [
+    ["audio","audio",2],["text","text",1],["stickers","stickers",2],
+    ["effects","effects",1],["transitions","transitions",0]
+  ]) {
+    await editor.locator('[data-p1-tool="'+tool+'"]').click();
+    const panel = editor.locator('[data-st-pane="'+paneName+'"]');
+    assert.ok(await panel.isVisible(),tool+" opened pane must be visible");
+    const layout = await panel.evaluate(node => ({
+      display:getComputedStyle(node).display,
+      width:node.clientWidth,
+      scrollWidth:node.scrollWidth
+    }));
+    assert.equal(layout.display,"grid",tool+" opened pane uses clean card layout");
+    assert.ok(layout.scrollWidth<=layout.width+3,tool+" pane has no horizontal overflow");
+    assert.ok(await panel.locator("button.st-tool-action").count()>=minActions,
+      tool+" must preserve its original functional action buttons");
+  }
+  await editor.locator('[data-p1-tool="effects"]').click();
+  const effectCard = await editor.locator('[data-st-pane="effects"] .st-effect-grid button').first().evaluate(node=>({
+    height:node.getBoundingClientRect().height,
+    swatch:getComputedStyle(node,"::before").backgroundImage
+  }));
+  assert.ok(effectCard.height>=110,"Effect choices need a usable card layout");
+  assert.notEqual(effectCard.swatch,"none","Effect cards should have style previews");
+  const inspectorTabs = await editor.locator(".st-p1-inspector-tabs").evaluate(node=>({
+    width:node.clientWidth,scrollWidth:node.scrollWidth,
+    columns:getComputedStyle(node).gridTemplateColumns.split(" ").filter(Boolean).length
+  }));
+  assert.ok(inspectorTabs.scrollWidth<=inspectorTabs.width+3,
+    "All inspector categories should fit without horizontal scrolling");
+  assert.equal(inspectorTabs.columns,3,"Inspector categories need a readable two-row layout");
+  assert.equal(await editor.locator('.st-p1-inspector-tabs button:visible').count(),6,
+    "All six original inspector tabs remain visible");
   assert.deepEqual(errors,[],"No browser exceptions: "+errors.join(" | "));
   mkdirSync("reports",{recursive:true});
   await page.screenshot({path:"reports/studio-phase1-desktop.png",fullPage:true});
