@@ -95,6 +95,15 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version
           ffprobe -version
+      - name: Test Studio browser fit after real MP4 import and desktop resizing
+        run: node scripts/test-studio-viewport-browser.mjs
+      - name: Upload Studio browser fit screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipforge-studio-viewport-after-import
+          path: reports/studio-viewport-after-import-desktop.png
+          if-no-files-found: ignore
       - name: Verify professional inline Shorts preview on Android-size Chromium with real local video
         run: npm run test:shorts-inline
       - name: Upload Shorts mobile preview snapshot
