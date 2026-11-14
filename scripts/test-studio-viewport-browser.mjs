@@ -8,11 +8,11 @@ import {chromium} from "playwright";
 import {serveLocalSite} from "./test-http-server.mjs";
 
 const working = mkdtempSync(join(tmpdir(),"clipforge-studio-viewport-"));
-const sample = join(working,"studio-fit-test.mp4");
+const sample = join(working,"studio-fit-test.webm");
 execFileSync("ffmpeg",[
   "-hide_banner","-loglevel","error","-y",
   "-f","lavfi","-i","testsrc2=size=640x360:rate=15:duration=2",
-  "-c:v","libx264","-pix_fmt","yuv420p","-movflags","+faststart",sample
+  "-c:v","libvpx","-b:v","250k","-an",sample
 ],{timeout:30000});
 
 const site = await serveLocalSite({rootDir:"public"});
@@ -56,6 +56,8 @@ try {
     assert.ok(m.root.height<=m.viewport.height+margin,stage+" root exceeds viewport "+JSON.stringify(m));
     assert.ok(m.timeline.bottom<=m.viewport.height+margin,
       stage+" timeline disappears below browser "+JSON.stringify(m));
+    assert.ok(m.timeline.bottom>=m.viewport.height-24,
+      stage+" Studio does not fill the available browser height "+JSON.stringify(m));
     assert.ok(m.timeline.top>=m.preview.bottom-margin,
       stage+" timeline overlaps preview "+JSON.stringify(m));
     assert.ok(m.timeline.height>=145,
@@ -77,9 +79,9 @@ try {
 
   await verifyFit("initial 1589x928");
 
-  // Import a genuine H.264 MP4, then put it on the existing timeline.
+  // Import a genuine Chromium-compatible VP8 WebM, then put it on the existing timeline.
   await editor.locator("#stImport").setInputFiles({
-    name:"studio-fit-test.mp4",mimeType:"video/mp4",buffer:readFileSync(sample)
+    name:"studio-fit-test.webm",mimeType:"video/webm",buffer:readFileSync(sample)
   });
   await page.waitForFunction(() =>
     window.ClipForgeEditor?.state?.media?.some(media=>media.kind==="video"),null,{timeout:15000});
