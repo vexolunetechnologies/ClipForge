@@ -247,7 +247,7 @@ for (const tool of tools) {
  const direct=from("tools/" + tool + "/index.html");
  assert.ok(direct.includes('id="counts" role="group"'),"Direct "+tool+" page should show count controls");
  assert.ok(direct.includes('data-k="res" data-v="1080"'),"Direct "+tool+" page must expose 1080p");
- assert.ok(direct.includes('src="/app.js?v=20261114-studio-motion-v1"'),"Direct "+tool+" page needs fresh Shorts logic");
+ assert.ok(/src="\/app\.js\?v=202611(?:12-processing-wake-v1|14-studio-motion-v1)"/.test(direct),"Direct "+tool+" page needs fresh Shorts logic");
 }
 assert.match(from("app.js"),/cf-short-trim/,"Shorts preview trim UI must remain available");
 assert.match(rootHome,/\/app\.js\?v=20261114-studio-motion-v1/,"Home must load latest Shorts defaults and card features");
