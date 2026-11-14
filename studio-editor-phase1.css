@@ -503,8 +503,8 @@
   body.solo[data-tool="editor"] #editorTool.st-phase1>.st-workspace {
     grid-column:1!important;grid-row:4!important;
     display:block!important;box-sizing:border-box!important;
-    width:100%!important;height:100%!important;max-height:100%!important;
-    min-width:0!important;min-height:0!important;
+    width:100%!important;height:auto!important;max-height:none!important;
+    min-width:0!important;min-height:0!important;align-self:stretch!important;
     padding:0!important;margin:0!important;overflow:hidden!important;
   }
   body.solo[data-tool="editor"] #editorTool.st-phase1 .st-pro-main {
