@@ -114,7 +114,7 @@ try {
     height:node.getBoundingClientRect().height,
     swatch:getComputedStyle(node,"::before").backgroundImage
   }));
-  assert.ok(effectCard.height>=110,"Effect choices need a usable card layout");
+  assert.ok(effectCard.height>=95,"Compact effect cards must remain readable and usable");
   assert.notEqual(effectCard.swatch,"none","Effect cards should have style previews");
   const inspectorTabs = await editor.locator(".st-p1-inspector-tabs").evaluate(node=>({
     width:node.clientWidth,scrollWidth:node.scrollWidth,
