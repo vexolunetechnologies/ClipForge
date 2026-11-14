@@ -9,7 +9,7 @@ const has = (p) => assert.ok(existsSync(join(root, p)), "Missing: " + p);
 const tools = ["shorts", "trailer", "animator", "reverse", "montage", "highlights", "editor", "captions"];
 assert.ok(from("editor-loader.js").includes("studio-editor-phase1.js"), "Studio Phase 1 module must load lazily");
 assert.ok(from("editor-loader.js").includes("studio-editor-phase1.css"), "Studio Phase 1 stylesheet must load lazily");
-assert.match(from("tools/editor/index.html"), /src="\/editor-loader\.js\?v=20261114-studio-viewport-v1"/, "Checked-in Editor route must load the new Studio UI");
+assert.match(from("tools/editor/index.html"), /src="\/editor-loader\.js\?v=20261114-studio-motion-v1"/, "Checked-in Editor route must load the new Studio UI");
 assert.doesNotMatch(from("tools/editor/index.html"), /src="\/dist\/editor\/(?:timeline|studio-ui)\.js"/, "Standalone Editor must not bypass Phase 1");
 const files = [
   ["_worker.js", "public/_worker.js"],
@@ -51,7 +51,7 @@ for (const tool of tools) {
   assert.match(html, /\/assets\/css\/styles\.css/);
   assert.match(html, /\/editor-mobile-layout\.css\?v=capcut-reference-2/, "CapCut-inspired editor stylesheet must load on tool pages");
   assert.match(html, /src="\/assets\/js\/core\/editor-loader\.js(?:\?[^"]*)?"/);
-  assert.match(html, /src="\/assets\/js\/core\/editor-loader\.js\?v=20261114-studio-viewport-v1"/, "All generated routes must fetch the new Studio loader");
+  assert.match(html, /src="\/assets\/js\/core\/editor-loader\.js\?v=20261114-studio-motion-v1"/, "All generated routes must fetch the new Studio loader");
   assert.doesNotMatch(html, /<script[^>]+src="\/dist\/editor\/(?:timeline|studio-ui)\.js"/);
   assert.match(html, /src="\/assets\/js\/core\/navigation\.js"/);
 }
