@@ -17,7 +17,7 @@
      style.dataset.studioPhase1='1';
      document.head.append(style);
    }
-   await import('/studio-editor-phase1.js');
+   await import('/studio-editor-phase1.js?v=20261114-studio-latest-v2');
    // Decorative thumbnails are optional and cannot block editing tools.
    if(window.matchMedia('(max-width:760px)').matches){
      import('/editor-mobile-thumbnails.js').catch(error=>console.warn('Optional filmstrip unavailable',error));
