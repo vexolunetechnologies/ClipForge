@@ -465,3 +465,82 @@
     grid-template-columns:repeat(auto-fill,minmax(112px,1fr))!important;
   }
 }
+
+
+/*
+ * Desktop viewport fit — Phase 1 shell owns exactly one viewport.
+ * Earlier CSS gave .st-pro-main height:100% without reserving space for the
+ * newly added category toolbar; importing media made the timeline disappear
+ * beneath the browser window. Keep all editing controls and track scrolling
+ * intact, while only the inner panels scroll.
+ */
+@media screen and (min-width:761px) {
+  body.solo[data-tool="editor"] #editorTool.st-phase1 {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:46px 25px 63px minmax(0,1fr)!important;
+    box-sizing:border-box!important;
+    width:100%!important;height:100dvh!important;max-height:100dvh!important;
+    min-height:0!important;margin:0!important;
+    padding:0 8px 8px!important;overflow:hidden!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-phase1>.st-appbar {
+    grid-column:1!important;grid-row:1!important;
+    height:46px!important;min-height:0!important;max-height:46px!important;
+    margin-bottom:0!important;box-sizing:border-box!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-phase1>.st-menubar {
+    grid-column:1!important;grid-row:2!important;
+    height:25px!important;min-height:0!important;max-height:25px!important;
+    margin-bottom:0!important;box-sizing:border-box!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-phase1>.st-p1-toolbar {
+    grid-column:1!important;grid-row:3!important;
+    box-sizing:border-box!important;height:63px!important;
+    min-height:0!important;max-height:63px!important;
+    margin:0 -8px!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-phase1>.st-workspace {
+    grid-column:1!important;grid-row:4!important;
+    display:block!important;box-sizing:border-box!important;
+    width:100%!important;height:100%!important;max-height:100%!important;
+    min-width:0!important;min-height:0!important;
+    padding:0!important;margin:0!important;overflow:hidden!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-phase1 .st-pro-main {
+    position:relative!important;
+    width:100%!important;height:100%!important;max-height:100%!important;
+    min-width:0!important;min-height:0!important;
+    grid-template-rows:minmax(0,1fr) minmax(165px,36%)!important;
+    overflow:hidden!important;box-sizing:border-box!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-phase1 .st-assets,
+  body.solo[data-tool="editor"] #editorTool.st-phase1 .st-preview-panel,
+  body.solo[data-tool="editor"] #editorTool.st-phase1 .st-source-panel,
+  body.solo[data-tool="editor"] #editorTool.st-phase1 .st-timeline-panel {
+    min-height:0!important;max-height:100%!important;
+    box-sizing:border-box!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-phase1 .st-timeline-panel {
+    height:100%!important;overflow:hidden!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-phase1 .st-timeline-scroll {
+    display:block!important;flex:1 1 0!important;
+    height:auto!important;max-height:none!important;
+    min-height:0!important;overflow:auto!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-phase1 .st-preview-panel .st-canvas-wrap {
+    flex:1 1 0!important;min-height:0!important;max-height:100%!important;
+    overflow:hidden!important;
+  }
+  body.solo[data-tool="editor"] #editorTool.st-phase1>.st-export-status {
+    position:absolute!important;width:1px!important;height:1px!important;
+    min-height:0!important;margin:0!important;padding:0!important;
+    clip-path:inset(50%);overflow:hidden!important;
+  }
+}
+@media screen and (min-width:761px) and (max-height:650px){
+  body.solo[data-tool="editor"] #editorTool.st-phase1 .st-pro-main {
+    grid-template-rows:minmax(0,1fr) minmax(145px,38%)!important;
+  }
+}
