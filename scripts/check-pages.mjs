@@ -7,10 +7,14 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const from = (p) => readFileSync(join(root, p), "utf8");
 const has = (p) => assert.ok(existsSync(join(root, p)), "Missing: " + p);
 const tools = ["shorts", "trailer", "animator", "reverse", "montage", "highlights", "editor", "captions"];
+assert.ok(from("editor-loader.js").includes("studio-editor-phase1.js"), "Studio Phase 1 module must load lazily");
+assert.ok(from("editor-loader.js").includes("studio-editor-phase1.css"), "Studio Phase 1 stylesheet must load lazily");
 const files = [
   ["_worker.js", "public/_worker.js"],
   ["styles.css", "public/assets/css/styles.css"],
   ["editor-mobile-layout.css", "public/editor-mobile-layout.css"],
+  ["studio-editor-phase1.js", "public/studio-editor-phase1.js"],
+  ["studio-editor-phase1.css", "public/studio-editor-phase1.css"],
   ["editor-mobile-thumbnails.js", "public/editor-mobile-thumbnails.js"],
   ["app.js", "public/assets/js/core/app.js"],
   ["navigation.js", "public/navigation.js"],

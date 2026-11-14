@@ -68,6 +68,7 @@ const copy = (from, to = from) => {
 
 for (const file of [
   "_worker.js", "about.html", "contact.html", "privacy.html", "terms.html",
+  "studio-editor-phase1.js", "studio-editor-phase1.css",
   "cookies.html", "copyright.html", "styles.css", "editor-mobile-layout.css", "app.js", "navigation.js",
   "caption-style-library.js", "captions-studio.js", "captions-studio-enhancements.js", "highlights-studio.js", "transcription-queue.js",
   "editor-loader.js", "editor-mobile-thumbnails.js", "animator-idle.js", "montage-mp4.js", "montage-enhancements.js",
